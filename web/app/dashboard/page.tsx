@@ -17,6 +17,7 @@ import {
 import { formatUnits, parseUnits } from 'viem';
 import { bscTestnet } from 'wagmi/chains';
 import toast from 'react-hot-toast';
+import ParticleField from '@/components/fx/ParticleField';
 
 const fadeUp = {
   hidden: { opacity: 0, y: 30 },
@@ -123,6 +124,9 @@ export default function DashboardPage() {
     return (
       <div className="relative min-h-screen pt-24 pb-20 flex items-center justify-center">
         <div className="absolute inset-0 bg-grid-pattern" />
+      <ParticleField count={30} />
+      <div className="aurora-blob" style={{ top: '10%', left: '15%', width: 300, height: 300, background: '#d4af37' }} />
+      <div className="aurora-blob" style={{ bottom: '15%', right: '10%', width: 250, height: 250, background: '#3d4a2a', animationDelay: '7s' }} />
         <div className="absolute top-1/3 left-1/2 -translate-x-1/2 h-96 w-96 rounded-full bg-gold/10 blur-[120px]" />
         <motion.div variants={fadeUp} initial="hidden" animate="visible" className="relative text-center max-w-md mx-auto px-4">
           <Wallet className="h-16 w-16 text-gold mx-auto mb-6 float" />
@@ -137,6 +141,9 @@ export default function DashboardPage() {
   return (
     <div className="relative min-h-screen pt-24 pb-20">
       <div className="absolute inset-0 bg-grid-pattern" />
+      <ParticleField count={30} />
+      <div className="aurora-blob" style={{ top: '10%', left: '15%', width: 300, height: 300, background: '#d4af37' }} />
+      <div className="aurora-blob" style={{ bottom: '15%', right: '10%', width: 250, height: 250, background: '#3d4a2a', animationDelay: '7s' }} />
       <div className="absolute top-20 left-1/4 h-96 w-96 rounded-full bg-gold/10 blur-[120px]" />
 
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -171,7 +178,7 @@ export default function DashboardPage() {
             <div className="text-2xl font-black text-gold-gradient">{fmtNum(vyrBalanceData, 18, 0)}</div>
           </motion.div>
 
-          <motion.div variants={fadeUp} className="rounded-2xl border border-dark-border bg-dark-card p-6">
+          <motion.div variants={fadeUp} className="rounded-2xl glass-card p-6">
             <div className="flex items-center gap-2 mb-2">
               <Wallet className="h-5 w-5 text-gold" />
               <span className="text-xs text-beige-muted uppercase tracking-wider">USDT Balance</span>
@@ -179,7 +186,7 @@ export default function DashboardPage() {
             <div className="text-2xl font-black text-white">{fmtNum(usdtBalanceData, 18, 2)}</div>
           </motion.div>
 
-          <motion.div variants={fadeUp} className="rounded-2xl border border-dark-border bg-dark-card p-6">
+          <motion.div variants={fadeUp} className="rounded-2xl glass-card p-6">
             <div className="flex items-center gap-2 mb-2">
               <Lock className="h-5 w-5 text-gold" />
               <span className="text-xs text-beige-muted uppercase tracking-wider">Active Stakes</span>
@@ -187,7 +194,7 @@ export default function DashboardPage() {
             <div className="text-2xl font-black text-white">{stakeCount}</div>
           </motion.div>
 
-          <motion.div variants={fadeUp} className="rounded-2xl border border-dark-border bg-dark-card p-6">
+          <motion.div variants={fadeUp} className="rounded-2xl glass-card p-6">
             <div className="flex items-center gap-2 mb-2">
               <Users className="h-5 w-5 text-gold" />
               <span className="text-xs text-beige-muted uppercase tracking-wider">Referrals</span>
@@ -199,7 +206,7 @@ export default function DashboardPage() {
         {/* Presale Purchases */}
         {buyerInfo && buyerInfo[0] > BigInt(0) && (
           <motion.div variants={fadeUp} initial="hidden" animate="visible" className="mb-12">
-            <div className="rounded-2xl border border-dark-border bg-dark-card p-6">
+            <div className="rounded-2xl glass-card p-6">
               <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
                 <Gift className="h-5 w-5 text-gold" /> Presale Purchases
               </h2>

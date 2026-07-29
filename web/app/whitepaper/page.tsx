@@ -1,11 +1,13 @@
 'use client';
 
-import { motion } from 'framer-motion';
+import {
+motion } from 'framer-motion';
 import Link from 'next/link';
 import {
   FileText, Check, Shield, Brain, Coins, TrendingUp,
   Flame, Target, Rocket, Users, Clock, ArrowRight, Download
 } from 'lucide-react';
+import ParticleField from '@/components/fx/ParticleField';
 
 const fadeUp = {
   hidden: { opacity: 0, y: 30 },
@@ -34,6 +36,9 @@ export default function WhitepaperPage() {
   return (
     <div className="relative min-h-screen pt-24 pb-20">
       <div className="absolute inset-0 bg-grid-pattern" />
+      <ParticleField count={30} />
+      <div className="aurora-blob" style={{ top: '10%', left: '15%', width: 300, height: 300, background: '#d4af37' }} />
+      <div className="aurora-blob" style={{ bottom: '15%', right: '10%', width: 250, height: 250, background: '#3d4a2a', animationDelay: '7s' }} />
       <div className="absolute top-20 left-1/4 h-96 w-96 rounded-full bg-gold/10 blur-[120px]" />
 
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -165,7 +170,7 @@ export default function WhitepaperPage() {
                       <li className="flex justify-between items-center"><span className="text-beige">Burn (Permanent)</span><span className="text-gold font-bold">2%</span></li>
                     </ul>
                   </div>
-                  <div className="rounded-2xl border border-dark-border bg-dark-card p-6">
+                  <div className="rounded-2xl glass-card p-6">
                     <h3 className="text-lg font-bold text-white mb-4">Sell Tax — 8% (in BNB)</h3>
                     <ul className="space-y-3">
                       <li className="flex justify-between items-center pb-2 border-b border-dark-border/50"><span className="text-beige">Project Wallet 1</span><span className="text-gold font-bold">2%</span></li>

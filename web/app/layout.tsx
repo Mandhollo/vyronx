@@ -5,6 +5,7 @@ import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { Web3Provider } from "@/components/web3/Web3Provider";
 import { Toaster } from "react-hot-toast";
+import { ScrollProgress, CustomCursor } from "@/components/fx/CursorFX";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -47,6 +48,8 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+        <ScrollProgress />
+        <CustomCursor />
         <Web3Provider>
           <div className="flex min-h-screen flex-col bg-background text-foreground">
             <Header />

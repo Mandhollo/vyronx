@@ -15,6 +15,7 @@ import {
 import { formatUnits } from 'viem';
 import { bscTestnet } from 'wagmi/chains';
 import toast from 'react-hot-toast';
+import ParticleField from '@/components/fx/ParticleField';
 
 const fadeUp = { hidden: { opacity: 0, y: 30 }, visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: 'easeOut' as const } } };
 const stagger = { hidden: { opacity: 0 }, visible: { opacity: 1, transition: { staggerChildren: 0.08 } } };
@@ -185,6 +186,9 @@ export default function AdminPage() {
   return (
     <div className="relative min-h-screen pt-24 pb-20">
       <div className="absolute inset-0 bg-grid-pattern" />
+      <ParticleField count={30} />
+      <div className="aurora-blob" style={{ top: '10%', left: '15%', width: 300, height: 300, background: '#d4af37' }} />
+      <div className="aurora-blob" style={{ bottom: '15%', right: '10%', width: 250, height: 250, background: '#3d4a2a', animationDelay: '7s' }} />
       <div className="absolute top-20 left-1/4 h-96 w-96 rounded-full bg-gold/10 blur-[120px]" />
 
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -237,7 +241,7 @@ export default function AdminPage() {
             </div>
 
             {/* System Status */}
-            <div className="rounded-2xl border border-dark-border bg-dark-card p-6">
+            <div className="rounded-2xl glass-card p-6">
               <h3 className="text-lg font-bold text-white mb-4">System Status</h3>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 <StatusPill label="Trading" active={tradingEnabled === true} />
@@ -248,7 +252,7 @@ export default function AdminPage() {
             </div>
 
             {/* Quick Actions */}
-            <div className="rounded-2xl border border-dark-border bg-dark-card p-6">
+            <div className="rounded-2xl glass-card p-6">
               <h3 className="text-lg font-bold text-white mb-4">Quick Actions</h3>
               <div className="flex flex-wrap gap-3">
                 <ActionBtn onClick={handleEnableTrading} disabled={tradingEnabled === true || pending === 'Enable Trading'} loading={pending === 'Enable Trading'}
@@ -261,7 +265,7 @@ export default function AdminPage() {
             </div>
 
             {/* Contract Addresses */}
-            <div className="rounded-2xl border border-dark-border bg-dark-card p-6">
+            <div className="rounded-2xl glass-card p-6">
               <h3 className="text-lg font-bold text-white mb-4">Contract Addresses</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <AddrRow label="Token (VYR)" addr={TOKEN_ADDRESS} />
@@ -299,7 +303,7 @@ export default function AdminPage() {
               </motion.div>
 
               {/* Sell Fees */}
-              <motion.div variants={fadeUp} className="rounded-2xl border border-dark-border bg-dark-card p-6">
+              <motion.div variants={fadeUp} className="rounded-2xl glass-card p-6">
                 <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
                   <ArrowRight className="h-5 w-5 text-gold" /> Sell Tax — Current: {sellFeeData ? Number(sellFeeData[0]) + Number(sellFeeData[1]) + Number(sellFeeData[2]) + Number(sellFeeData[3]) : 8}% (BNB)
                 </h3>
@@ -321,7 +325,7 @@ export default function AdminPage() {
             </div>
 
             {/* Limits */}
-            <motion.div variants={fadeUp} className="rounded-2xl border border-dark-border bg-dark-card p-6">
+            <motion.div variants={fadeUp} className="rounded-2xl glass-card p-6">
               <h3 className="text-lg font-bold text-white mb-4">Token Limits</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="rounded-xl bg-dark-elevated p-4">
@@ -338,7 +342,7 @@ export default function AdminPage() {
             </motion.div>
 
             {/* Trading */}
-            <motion.div variants={fadeUp} className="rounded-2xl border border-dark-border bg-dark-card p-6">
+            <motion.div variants={fadeUp} className="rounded-2xl glass-card p-6">
               <h3 className="text-lg font-bold text-white mb-4">Trading Status</h3>
               <ActionBtn onClick={handleEnableTrading} disabled={tradingEnabled === true || pending === 'Enable Trading'} loading={pending === 'Enable Trading'}
                 icon={Power} label={tradingEnabled ? 'Trading Active' : 'Enable Trading'} variant="gold" />
@@ -349,7 +353,7 @@ export default function AdminPage() {
         {/* ════════════ PRESALE ════════════ */}
         {activeTab === 'presale' && (
           <motion.div variants={stagger} initial="hidden" animate="visible" className="space-y-6">
-            <motion.div variants={fadeUp} className="rounded-2xl border border-dark-border bg-dark-card p-6">
+            <motion.div variants={fadeUp} className="rounded-2xl glass-card p-6">
               <h3 className="text-lg font-bold text-white mb-4">Presale Status</h3>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
                 <InfoBox label="Current Phase" value={`Phase ${String(Number(presaleInfo?.[0] || BigInt(0)) + 1)}`} />
@@ -372,7 +376,7 @@ export default function AdminPage() {
             </motion.div>
 
             {/* Distribution Info */}
-            <motion.div variants={fadeUp} className="rounded-2xl border border-dark-border bg-dark-card p-6">
+            <motion.div variants={fadeUp} className="rounded-2xl glass-card p-6">
               <h3 className="text-lg font-bold text-white mb-4">Presale Phases (30 days total)</h3>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <InfoBox label="Phase 1" value="$0.01 • 15 days" gold />
@@ -422,7 +426,7 @@ export default function AdminPage() {
               const currentRate = chain ? Number(chain[1]) : 0;
               const currentLock = chain ? Number(chain[0]) : 0;
               return (
-                <motion.div key={pool.id} variants={fadeUp} className="rounded-2xl border border-dark-border bg-dark-card p-6">
+                <motion.div key={pool.id} variants={fadeUp} className="rounded-2xl glass-card p-6">
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-3">
                       <div className={`flex items-center justify-center h-10 w-10 rounded-lg ${active ? 'bg-green-500/10 border border-green-500/20' : 'bg-red-500/10 border border-red-500/20'}`}>
@@ -479,6 +483,9 @@ function GateScreen({ icon: Icon, title, subtitle, danger, extra }: { icon: type
   return (
     <div className="relative min-h-screen pt-24 pb-20 flex items-center justify-center">
       <div className="absolute inset-0 bg-grid-pattern" />
+      <ParticleField count={30} />
+      <div className="aurora-blob" style={{ top: '10%', left: '15%', width: 300, height: 300, background: '#d4af37' }} />
+      <div className="aurora-blob" style={{ bottom: '15%', right: '10%', width: 250, height: 250, background: '#3d4a2a', animationDelay: '7s' }} />
       <div className={`absolute top-1/3 left-1/2 -translate-x-1/2 h-96 w-96 rounded-full ${danger ? 'bg-red-500/10' : 'bg-gold/10'} blur-[120px]`} />
       <motion.div variants={fadeUp} initial="hidden" animate="visible" className="relative text-center max-w-md mx-auto px-4">
         <Icon className={`h-16 w-16 mx-auto mb-6 float ${danger ? 'text-red-400' : 'text-gold'}`} />

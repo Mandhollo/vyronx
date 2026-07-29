@@ -12,6 +12,7 @@ import { PRESALE_ADDRESS, USDT_ADDRESS, PresaleABI } from '@/lib/contracts';
 import { parseUnits, formatUnits } from 'viem';
 import { bscTestnet } from 'wagmi/chains';
 import toast from 'react-hot-toast';
+import ParticleField from '@/components/fx/ParticleField';
 
 const fadeUp = {
   hidden: { opacity: 0, y: 30 },
@@ -181,6 +182,9 @@ export default function PresalePage() {
   return (
     <div className="relative min-h-screen pt-24 pb-20">
       <div className="absolute inset-0 bg-grid-pattern" />
+      <ParticleField count={30} />
+      <div className="aurora-blob" style={{ top: '10%', left: '15%', width: 300, height: 300, background: '#d4af37' }} />
+      <div className="aurora-blob" style={{ bottom: '15%', right: '10%', width: 250, height: 250, background: '#3d4a2a', animationDelay: '7s' }} />
       <div className="absolute top-20 left-1/2 -translate-x-1/2 h-96 w-96 rounded-full bg-gold/10 blur-[120px]" />
 
       {''}
@@ -196,7 +200,7 @@ export default function PresalePage() {
           animate="visible"
           className="text-center mb-16"
         >
-          <motion.span variants={fadeUp} className="inline-block px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-gold border border-gold/30 rounded-full bg-gold/5 mb-4">
+          <motion.span variants={fadeUp} className="inline-block px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-gold border border-gold/30 rounded-full bg-gold/5 mb-4 neon-pulse">
             <span className="inline-flex items-center gap-2">
               <span className="h-2 w-2 rounded-full bg-gold animate-pulse" /> Presale Phase 1 — Live
             </span>
@@ -444,7 +448,7 @@ export default function PresalePage() {
             { icon: Shield, title: 'Secure & Audited', desc: 'Smart contracts audited before launch. Chainlink oracle for accurate pricing.' },
             { icon: Zap, title: 'Instant Receipt', desc: 'VYR tokens credited immediately upon presale confirmation. Claimable after presale ends.' },
           ].map((card) => (
-            <motion.div key={card.title} variants={fadeUp} className="rounded-2xl border border-dark-border bg-dark-card p-6">
+            <motion.div key={card.title} variants={fadeUp} className="rounded-2xl glass-card p-6">
               <card.icon className="h-8 w-8 text-gold mb-3" />
               <h3 className="text-base font-bold text-white mb-2">{card.title}</h3>
               <p className="text-sm text-beige-muted">{card.desc}</p>
@@ -454,7 +458,7 @@ export default function PresalePage() {
 
         {''}
         <div className="mt-16 text-center">
-          <Link href="/staking" className="inline-flex items-center gap-2 px-6 py-3 text-sm font-bold rounded-xl border border-gold/30 bg-gold/5 text-gold hover:bg-gold/10 transition-colors">
+          <Link href="/staking" className="magnetic-btn inline-flex items-center gap-2 px-6 py-3 text-sm font-bold rounded-xl border border-gold/30 bg-gold/5 text-gold hover:bg-gold/10 transition-colors">
             Explore Staking Pools <ArrowRight className="h-4 w-4" />
           </Link>
         </div>

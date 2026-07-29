@@ -1,11 +1,13 @@
 'use client';
 
-import { motion } from 'framer-motion';
+import {
+motion } from 'framer-motion';
 import Link from 'next/link';
 import {
   Check, Circle, ArrowRight, Rocket, Brain, TrendingUp,
   Coins, Target, Flame, Users, Lock, Shield, Zap
 } from 'lucide-react';
+import ParticleField from '@/components/fx/ParticleField';
 
 const fadeUp = {
   hidden: { opacity: 0, y: 30 },
@@ -101,6 +103,9 @@ export default function RoadmapPage() {
   return (
     <div className="relative min-h-screen pt-24 pb-20">
       <div className="absolute inset-0 bg-grid-pattern" />
+      <ParticleField count={30} />
+      <div className="aurora-blob" style={{ top: '10%', left: '15%', width: 300, height: 300, background: '#d4af37' }} />
+      <div className="aurora-blob" style={{ bottom: '15%', right: '10%', width: 250, height: 250, background: '#3d4a2a', animationDelay: '7s' }} />
       <div className="absolute top-20 left-1/2 -translate-x-1/2 h-96 w-96 rounded-full bg-gold/10 blur-[120px]" />
 
       <div className="relative mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
@@ -111,7 +116,7 @@ export default function RoadmapPage() {
           animate="visible"
           className="text-center mb-16"
         >
-          <motion.span variants={fadeUp} className="inline-block px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-gold border border-gold/30 rounded-full bg-gold/5 mb-4">
+          <motion.span variants={fadeUp} className="inline-block px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-gold border border-gold/30 rounded-full bg-gold/5 mb-4 neon-pulse">
             Project Roadmap
           </motion.span>
           <motion.h1 variants={fadeUp} className="text-4xl sm:text-5xl lg:text-6xl font-black text-white">

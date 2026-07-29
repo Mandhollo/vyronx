@@ -8,6 +8,7 @@ import {
   ArrowRight, Check, Flame, Users, Globe, Target, Award, BarChart3
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import ParticleField from '@/components/fx/ParticleField';
 
 // ═══════════════════════════════════════════════════════════════
 // Animation variants
@@ -127,15 +128,21 @@ function AnimatedCounter({ target, suffix = '' }: { target: number; suffix?: str
 
 function Hero() {
   return (
-    <section className="relative min-h-screen flex items-center overflow-hidden pt-20">
+    <section className="relative min-h-screen flex items-center overflow-hidden pt-20 scanline-overlay">
       {/* Background effects */}
       <div className="absolute inset-0 bg-grid-pattern" />
-      <div className="absolute inset-0 bg-dot-pattern opacity-50" />
-      <div className="absolute top-1/4 left-1/4 h-96 w-96 rounded-full bg-gold/10 blur-[120px]" />
-      <div className="absolute bottom-1/4 right-1/4 h-96 w-96 rounded-full bg-green-moss/20 blur-[120px]" />
+      <ParticleField count={50} />
+
+      {/* Aurora blobs */}
+      <div className="aurora-blob" style={{ top: '10%', left: '15%', width: 400, height: 400, background: '#d4af37' }} />
+      <div className="aurora-blob" style={{ bottom: '20%', right: '10%', width: 350, height: 350, background: '#3d4a2a', animationDelay: '5s' }} />
+
+      {/* Tron grid floor */}
+      <div className="grid-floor" />
+
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-dark" />
 
-      <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center">
+      <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center" style={{ zIndex: 2 }}>
         <motion.div
           variants={stagger}
           initial="hidden"
@@ -144,7 +151,7 @@ function Hero() {
         >
           {/* Badge */}
           <motion.div variants={fadeUp} className="mb-8">
-            <span className="inline-flex items-center gap-2 px-4 py-2 text-xs font-bold uppercase tracking-wider text-gold border border-gold/30 rounded-full bg-gold/5 glow-gold">
+            <span className="inline-flex items-center gap-2 px-4 py-2 text-xs font-bold uppercase tracking-wider text-gold border border-gold/30 rounded-full bg-gold/5 neon-pulse">
               <span className="h-2 w-2 rounded-full bg-gold animate-pulse" />
               Presale Live Soon
             </span>
@@ -156,15 +163,15 @@ function Hero() {
             <img
               src="/vyronx-banner.jpeg"
               alt="VyronX — Vision • Innovation • Freedom • Purpose"
-              className="relative max-w-full sm:max-w-2xl lg:max-w-3xl mx-auto rounded-2xl glow-gold-strong"
-              style={{ maxHeight: '60vh', width: 'auto' }}
+              className="relative max-w-full sm:max-w-2xl lg:max-w-3xl mx-auto rounded-2xl glow-gold-strong float"
+              style={{ maxHeight: '50vh', width: 'auto' }}
             />
           </motion.div>
 
           {/* Tagline */}
           <motion.p variants={fadeUp} className="mt-8 text-xl sm:text-2xl lg:text-3xl font-light text-beige max-w-3xl">
             The Next-Generation{' '}
-            <span className="text-gold font-medium">DeFi Ecosystem</span>{' '}
+            <span className="text-gold font-medium glitch">DeFi Ecosystem</span>{' '}
             Powered by Artificial Intelligence
           </motion.p>
 
@@ -176,14 +183,14 @@ function Hero() {
           <motion.div variants={fadeUp} className="mt-10 flex flex-col sm:flex-row gap-4">
             <Link
               href="/presale"
-              className="group inline-flex items-center justify-center gap-2 px-8 py-4 text-base font-bold rounded-xl bg-gradient-to-r from-gold-light to-gold-dark text-dark hover:shadow-2xl hover:shadow-gold/40 hover:scale-[1.02] transition-all"
+              className="magnetic-btn group inline-flex items-center justify-center gap-2 px-8 py-4 text-base font-bold rounded-xl bg-gradient-to-r from-gold-light to-gold-dark text-dark hover:shadow-2xl hover:shadow-gold/40 transition-all"
             >
               Join Presale
               <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
             </Link>
             <Link
               href="/whitepaper"
-              className="inline-flex items-center justify-center gap-2 px-8 py-4 text-base font-bold rounded-xl border border-dark-border bg-dark-card/50 text-white hover:border-gold/50 hover:text-gold transition-all"
+              className="magnetic-btn inline-flex items-center justify-center gap-2 px-8 py-4 text-base font-bold rounded-xl border border-dark-border bg-dark-card/50 text-white hover:border-gold/50 hover:text-gold glow-border-hover transition-all"
             >
               Read Whitepaper
             </Link>
@@ -224,7 +231,7 @@ function FeaturesSection() {
           <motion.div
             key={feature.title}
             variants={fadeUp}
-            className="group relative rounded-2xl border border-dark-border bg-dark-card p-6 hover:border-gold/40 transition-all hover:translate-y-[-4px]"
+            className="group relative rounded-2xl glass-card p-6"
           >
             <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-gold/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
             <div className="relative">
