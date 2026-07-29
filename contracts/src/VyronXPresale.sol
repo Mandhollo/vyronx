@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.24;
 
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+
 interface IVyronXToken {
     function transfer(address to, uint256 amount) external returns (bool);
     function balanceOf(address account) external view returns (uint256);
@@ -19,7 +21,7 @@ interface IUSDT {
 /// @title VyronX Presale Contract
 /// @notice Multi-phase presale accepting USDT, distributing funds every 48h to 7 designated wallets
 /// @dev Funds distribution: 10% marketing, 15% LP, 15% buyback, 20% tech, 40% dev (4x10%)
-contract VyronXPresale {
+contract VyronXPresale is ReentrancyGuard {
     // ════════════════════════════════════════════════════════════
     // Immutable / Config
     // ════════════════════════════════════════════════════════════
@@ -188,7 +190,7 @@ contract VyronXPresale {
     // ════════════════════════════════════════════════════════════
     /// @notice Buy VYR tokens with USDT
     /// @param usdtAmount Amount of USDT to spend (in 1e6 decimals)
-    function buyWithUsdt(uint256 usdtAmount) external {
+    function buyWithUsdt(uint256 usdtAmount) external nonReentrant {
         require(presaleActive, "Presale not active");
         require(!presaleFinalized, "Presale finalized");
         require(usdtAmount >= minBuy, "Below minimum");
@@ -343,6 +345,10 @@ contract VyronXPresale {
     function transferOwnership(address newOwner) external onlyOwner {
         require(newOwner != address(0), "Zero address");
         owner = newOwner;
+    }
+
+    function renounceOwnership() external onlyOwner {
+        owner = address(0);
     }
 
     // ════════════════════════════════════════════════════════════

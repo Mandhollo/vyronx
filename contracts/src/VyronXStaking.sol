@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.24;
 
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+
 interface IERC20 {
     function transfer(address to, uint256 amount) external returns (bool);
     function transferFrom(address from, address to, uint256 amount) external returns (bool);
@@ -11,7 +13,7 @@ interface IERC20 {
 /// @title VyronX Staking Contract
 /// @notice 4 staking pools: deposit USDT, earn VYR via oracle. Includes accelerator + 11-level affiliate.
 /// @dev Pool 360 has accelerator (10% of referral deposit → early withdrawal) and affiliate commissions on profit.
-contract VyronXStaking {
+contract VyronXStaking is ReentrancyGuard {
     // ════════════════════════════════════════════════════════════
     // Token references
     // ════════════════════════════════════════════════════════════
@@ -157,7 +159,7 @@ contract VyronXStaking {
     /// @notice Stake USDT in a pool
     /// @param poolId 0-3 (30/60/180/360 days)
     /// @param usdtAmount Amount in USDT 1e6
-    function stake(uint256 poolId, uint256 usdtAmount) external {
+    function stake(uint256 poolId, uint256 usdtAmount) external nonReentrant {
         require(poolId < POOL_COUNT, "Invalid pool");
         Pool storage pool = pools[poolId];
         require(pool.active, "Pool not active");
@@ -245,7 +247,7 @@ contract VyronXStaking {
     // ════════════════════════════════════════════════════════════
     /// @notice Withdraw earnings from a matured stake (or early via accelerator)
     /// @param stakeIndex Index in user's stake array
-    function withdraw(uint256 stakeIndex) external {
+    function withdraw(uint256 stakeIndex) external nonReentrant {
         Stake[] storage stakes = userStakes[msg.sender];
         require(stakeIndex < stakes.length, "Invalid stake index");
         Stake storage s = stakes[stakeIndex];
@@ -471,5 +473,9 @@ contract VyronXStaking {
     function transferOwnership(address newOwner) external onlyOwner {
         require(newOwner != address(0), "Zero address");
         owner = newOwner;
+    }
+
+    function renounceOwnership() external onlyOwner {
+        owner = address(0);
     }
 }
