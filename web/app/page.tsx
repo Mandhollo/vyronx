@@ -150,14 +150,19 @@ function Hero() {
             </span>
           </motion.div>
 
-          {/* Title */}
-          <motion.h1 variants={fadeUp} className="text-5xl sm:text-6xl lg:text-8xl font-black tracking-tight">
-            <span className="block text-white">VYRON</span>
-            <span className="block text-gold-gradient">X</span>
-          </motion.h1>
+          {/* Banner Image */}
+          <motion.div variants={fadeUp} className="mb-8 relative">
+            <div className="absolute inset-0 bg-gold/10 blur-[80px] rounded-full" />
+            <img
+              src="/vyronx-banner.jpeg"
+              alt="VyronX — Vision • Innovation • Freedom • Purpose"
+              className="relative max-w-full sm:max-w-2xl lg:max-w-3xl mx-auto rounded-2xl glow-gold-strong"
+              style={{ maxHeight: '60vh', width: 'auto' }}
+            />
+          </motion.div>
 
           {/* Tagline */}
-          <motion.p variants={fadeUp} className="mt-6 text-xl sm:text-2xl lg:text-3xl font-light text-beige max-w-3xl">
+          <motion.p variants={fadeUp} className="mt-8 text-xl sm:text-2xl lg:text-3xl font-light text-beige max-w-3xl">
             The Next-Generation{' '}
             <span className="text-gold font-medium">DeFi Ecosystem</span>{' '}
             Powered by Artificial Intelligence

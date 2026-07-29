@@ -568,6 +568,29 @@
   },
   {
     "type": "function",
+    "name": "setBuyFees",
+    "inputs": [
+      {
+        "name": "_rewards",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "_liquidity",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "_burn",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
     "name": "setExcludedFromFees",
     "inputs": [
       {
@@ -677,6 +700,34 @@
         "name": "_w4",
         "type": "address",
         "internalType": "address payable"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "setSellFees",
+    "inputs": [
+      {
+        "name": "_w1",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "_w2",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "_w3",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "_w4",
+        "type": "uint256",
+        "internalType": "uint256"
       }
     ],
     "outputs": [],

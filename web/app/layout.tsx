@@ -24,12 +24,18 @@ export const metadata: Metadata = {
   description:
     "VyronX is a next-generation DeFi ecosystem on BNB Smart Chain featuring AI arbitrage agents, multi-tier staking pools, and a comprehensive utility-driven token economy.",
   keywords: ["VyronX", "VYR", "DeFi", "BEP-20", "BNB Chain", "Staking", "AI Arbitrage", "Presale"],
+  icons: {
+    icon: '/favicon.ico',
+    shortcut: '/favicon.ico',
+    apple: '/apple-icon.png',
+  },
   openGraph: {
     title: "VyronX ($VYR) — AI-Powered DeFi Ecosystem",
     description: "AI arbitrage agents, multi-tier staking pools, and a comprehensive utility-driven token economy on BNB Smart Chain.",
     type: "website",
     locale: "en_US",
     siteName: "VyronX",
+    images: ['/vyronx-banner.jpeg'],
   },
 };
 

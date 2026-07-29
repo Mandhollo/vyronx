@@ -411,6 +411,35 @@ contract VyronXStaking {
         emit PoolRateUpdated(poolId, newDailyRateBps);
     }
 
+    /// @notice Update pool lock period (in days)
+    function setPoolLockPeriod(uint256 poolId, uint256 newLockDays) external onlyOwner {
+        require(poolId < POOL_COUNT, "Invalid pool");
+        pools[poolId].lockPeriodDays = newLockDays;
+    }
+
+    /// @notice Update pool tier name
+    function setPoolName(uint256 poolId, string calldata newName) external onlyOwner {
+        require(poolId < POOL_COUNT, "Invalid pool");
+        pools[poolId].tierName = newName;
+    }
+
+    /// @notice Update all pool params at once (rate + lock period + active)
+    function setPoolConfig(
+        uint256 poolId,
+        uint256 newDailyRateBps,
+        uint256 newLockDays,
+        bool active,
+        string calldata newName
+    ) external onlyOwner {
+        require(poolId < POOL_COUNT, "Invalid pool");
+        pools[poolId].dailyRateBps = newDailyRateBps;
+        pools[poolId].lockPeriodDays = newLockDays;
+        pools[poolId].active = active;
+        pools[poolId].tierName = newName;
+        emit PoolRateUpdated(poolId, newDailyRateBps);
+        emit PoolStatusChanged(poolId, active);
+    }
+
     /// @notice Update VYR price (oracle integration — for production, replace with Chainlink)
     function setVyrPrice(uint256 _pricePerTokenInUsdt1e6) external onlyOwner {
         vyrPriceInUsdt = _pricePerTokenInUsdt1e6;

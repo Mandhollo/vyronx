@@ -411,12 +411,24 @@ contract VyronXToken is IERC20, IERC20Metadata {
         swapAndLiquifyEnabled = _enabled;
     }
 
-    /// @notice Set LP pair address manually (useful if constructor couldn't create it)
+    /// @notice Set LP pair address manually
     function setLpPair(address pair) external onlyOwner {
         require(pair != address(0), "Zero address");
         lpPair = pair;
         isAuthorized[pair] = true;
         isExcludedFromLimits[pair] = true;
+    }
+
+    /// @notice Update buy fee structure (rewards, liquidity, burn)
+    function setBuyFees(uint256 _rewards, uint256 _liquidity, uint256 _burn) external onlyOwner {
+        require(_rewards + _liquidity + _burn <= 25, "Total buy fee max 25%");
+        buyFee = BuyFees({rewards: _rewards, liquidity: _liquidity, burn: _burn});
+    }
+
+    /// @notice Update sell fee structure (4 wallet percentages)
+    function setSellFees(uint256 _w1, uint256 _w2, uint256 _w3, uint256 _w4) external onlyOwner {
+        require(_w1 + _w2 + _w3 + _w4 <= 25, "Total sell fee max 25%");
+        sellFee = SellFees({wallet1: _w1, wallet2: _w2, wallet3: _w3, wallet4: _w4});
     }
 
     function setNumTokensSellToAddToLiquidity(uint256 amount) external onlyOwner {
