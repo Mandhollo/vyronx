@@ -42,10 +42,6 @@ export default function AdminPage() {
     address: TOKEN_ADDRESS, abi: TokenABI, functionName: 'buyFee', chainId: bscTestnet.id,
   }) as { data: readonly [bigint, bigint, bigint] | undefined };
 
-  const { data: sellFeeData } = useReadContract({
-    address: TOKEN_ADDRESS, abi: TokenABI, functionName: 'sellFee', chainId: bscTestnet.id,
-  }) as { data: readonly [bigint, bigint, bigint, bigint] | undefined };
-
   const { data: maxWallet } = useReadContract({
     address: TOKEN_ADDRESS, abi: TokenABI, functionName: 'maxWalletAmount', chainId: bscTestnet.id,
   }) as { data: bigint | undefined };
@@ -95,10 +91,6 @@ export default function AdminPage() {
   const [buyRewards, setBuyRewards] = useState('4');
   const [buyLiq, setBuyLiq] = useState('2');
   const [buyBurn, setBuyBurn] = useState('2');
-  const [sellW1, setSellW1] = useState('2');
-  const [sellW2, setSellW2] = useState('2');
-  const [sellW3, setSellW3] = useState('2');
-  const [sellW4, setSellW4] = useState('2');
   const [priceInput, setPriceInput] = useState('');
   const [poolRates, setPoolRates] = useState<Record<number, string>>({});
   const [poolLocks, setPoolLocks] = useState<Record<number, string>>({});
@@ -121,11 +113,6 @@ export default function AdminPage() {
   const handleSetBuyFees = () => exec('Update Buy Fees', () =>
     writeContractAsync({ address: TOKEN_ADDRESS, abi: TokenABI, functionName: 'setBuyFees',
       args: [BigInt(buyRewards), BigInt(buyLiq), BigInt(buyBurn)], chainId: bscTestnet.id })
-  );
-
-  const handleSetSellFees = () => exec('Update Sell Fees', () =>
-    writeContractAsync({ address: TOKEN_ADDRESS, abi: TokenABI, functionName: 'setSellFees',
-      args: [BigInt(sellW1), BigInt(sellW2), BigInt(sellW3), BigInt(sellW4)], chainId: bscTestnet.id })
   );
 
   const handleEnableTrading = () => exec('Enable Trading', () =>
@@ -299,27 +286,6 @@ export default function AdminPage() {
                   </div>
                   <ActionBtn onClick={handleSetBuyFees} disabled={pending === 'Update Buy Fees'} loading={pending === 'Update Buy Fees'}
                     icon={Percent} label="Update Buy Fees" variant="gold" full />
-                </div>
-              </motion.div>
-
-              {/* Sell Fees */}
-              <motion.div variants={fadeUp} className="rounded-2xl glass-card p-6">
-                <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-                  <ArrowRight className="h-5 w-5 text-gold" /> Sell Tax — Current: {sellFeeData ? Number(sellFeeData[0]) + Number(sellFeeData[1]) + Number(sellFeeData[2]) + Number(sellFeeData[3]) : 8}% (BNB)
-                </h3>
-                <div className="space-y-3">
-                  <FeeInput label="Wallet 1" value={sellW1} onChange={setSellW1} current={sellFeeData?.[0]} />
-                  <FeeInput label="Wallet 2" value={sellW2} onChange={setSellW2} current={sellFeeData?.[1]} />
-                  <FeeInput label="Wallet 3" value={sellW3} onChange={setSellW3} current={sellFeeData?.[2]} />
-                  <FeeInput label="Wallet 4" value={sellW4} onChange={setSellW4} current={sellFeeData?.[3]} />
-                </div>
-                <div className="mt-4 pt-4 border-t border-dark-border">
-                  <div className="flex justify-between items-center mb-3">
-                    <span className="text-sm text-beige-muted">Total Sell Tax</span>
-                    <span className="text-xl font-black text-gold">{Number(sellW1) + Number(sellW2) + Number(sellW3) + Number(sellW4)}%</span>
-                  </div>
-                  <ActionBtn onClick={handleSetSellFees} disabled={pending === 'Update Sell Fees'} loading={pending === 'Update Sell Fees'}
-                    icon={Percent} label="Update Sell Fees" variant="gold" full />
                 </div>
               </motion.div>
             </div>
