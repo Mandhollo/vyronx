@@ -28,6 +28,7 @@ export default function Footer() {
             <ul className="space-y-3">
               <li><Link href="/presale" className="text-sm text-beige hover:text-gold transition-colors">Presale</Link></li>
               <li><Link href="/staking" className="text-sm text-beige hover:text-gold transition-colors">Staking Pools</Link></li>
+              <li><Link href="/dashboard" className="text-sm text-beige hover:text-gold transition-colors">Dashboard</Link></li>
               <li><Link href="/whitepaper" className="text-sm text-beige hover:text-gold transition-colors">Whitepaper</Link></li>
               <li><Link href="/roadmap" className="text-sm text-beige hover:text-gold transition-colors">Roadmap</Link></li>
             </ul>

@@ -10,6 +10,8 @@ const NAV_ITEMS = [
   { label: 'Home', href: '/' },
   { label: 'Presale', href: '/presale' },
   { label: 'Staking', href: '/staking' },
+  { label: 'Dashboard', href: '/dashboard' },
+  { label: 'Admin', href: '/admin' },
   { label: 'Whitepaper', href: '/whitepaper' },
   { label: 'Roadmap', href: '/roadmap' },
 ];

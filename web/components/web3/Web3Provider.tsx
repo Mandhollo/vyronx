@@ -1,6 +1,7 @@
 'use client';
 
 import { createConfig, http, WagmiProvider } from 'wagmi';
+import { createPublicClient, http as viemHttp } from 'viem';
 import { mainnet, bsc, bscTestnet } from 'wagmi/chains';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { injected } from 'wagmi/connectors';
@@ -35,3 +36,9 @@ export function Web3Provider({ children }: { children: ReactNode }) {
 }
 
 export { config };
+
+// Public client for read-only contract calls
+export const publicClient = createPublicClient({
+  chain: bscTestnet,
+  transport: viemHttp('https://data-seed-prebsc-1-s1.binance.org:8545'),
+});
