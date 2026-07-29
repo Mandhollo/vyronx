@@ -1,0 +1,470 @@
+'use client';
+
+import { useState } from 'react';
+import { motion } from 'framer-motion';
+import Link from 'next/link';
+import { useAccount, useReadContract, useWriteContract, useSimulateContract } from 'wagmi';
+import {
+  Wallet, Clock, TrendingUp, Check, AlertCircle,
+  ArrowRight, Shield, Zap, Loader2, ExternalLink
+} from 'lucide-react';
+import { PRESALE_ADDRESS, USDT_ADDRESS, PresaleABI } from '@/lib/contracts';
+import { parseUnits, formatUnits } from 'viem';
+import { bscTestnet } from 'wagmi/chains';
+import toast from 'react-hot-toast';
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 30 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: 'easeOut' as const } },
+};
+const stagger = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1, transition: { staggerChildren: 0.1 } },
+};
+
+// Minimal ERC20 ABI for approve
+const ERC20_ABI = [
+  {
+    inputs: [
+      { name: 'spender', type: 'address' },
+      { name: 'amount', type: 'uint256' },
+    ],
+    name: 'approve',
+    outputs: [{ name: '', type: 'bool' }],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    inputs: [
+      { name: 'owner', type: 'address' },
+      { name: 'spender', type: 'address' },
+    ],
+    name: 'allowance',
+    outputs: [{ name: '', type: 'uint256' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [{ name: 'account', type: 'address' }],
+    name: 'balanceOf',
+    outputs: [{ name: '', type: 'uint256' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+] as const;
+
+const PRESALE_PHASES = [
+  { phase: 'Phase 1', bonus: '20%', price: '$0.010', status: 'active', allocation: '75M VYR' },
+  { phase: 'Phase 2', bonus: '15%', price: '$0.015', status: 'upcoming', allocation: '75M VYR' },
+  { phase: 'Phase 3', bonus: '10%', price: '$0.020', status: 'upcoming', allocation: '75M VYR' },
+  { phase: 'Phase 4', bonus: '5%', price: '$0.025', status: 'upcoming', allocation: '75M VYR' },
+];
+
+const DISTRIBUTION = [
+  { label: 'Marketing', percent: 10, color: 'bg-amber-500' },
+  { label: 'Initial LP', percent: 15, color: 'bg-yellow-400' },
+  { label: 'Buyback', percent: 15, color: 'bg-orange-400' },
+  { label: 'Tech Infrastructure', percent: 20, color: 'bg-green-500' },
+  { label: 'Development (4 wallets)', percent: 40, color: 'bg-gold' },
+];
+
+export default function PresalePage() {
+  const { address, isConnected, chainId } = useAccount();
+  const [amount, setAmount] = useState('');
+  const [txPending, setTxPending] = useState(false);
+  const { writeContractAsync } = useWriteContract();
+
+  const onCorrectChain = chainId === bscTestnet.id;
+
+  // Read presale info
+  const { data: presaleInfo } = useReadContract({
+    address: PRESALE_ADDRESS,
+    abi: PresaleABI,
+    functionName: 'getPresaleInfo',
+    chainId: bscTestnet.id,
+  });
+
+  // Read buyer info
+  const { data: buyerInfo } = useReadContract({
+    address: PRESALE_ADDRESS,
+    abi: PresaleABI,
+    functionName: 'getBuyerInfo',
+    args: [address || '0x0'],
+    chainId: bscTestnet.id,
+  });
+
+  // Read token preview
+  const { data: tokenPreview } = useReadContract({
+    address: PRESALE_ADDRESS,
+    abi: PresaleABI,
+    functionName: 'getTokensForUsdt',
+    args: [amount ? parseUnits(amount, 6) : BigInt(0)],
+    chainId: bscTestnet.id,
+  }) as { data: readonly [bigint, bigint] | undefined };
+
+  // Read USDT allowance
+  const { data: allowanceData } = useReadContract({
+    address: USDT_ADDRESS,
+    abi: ERC20_ABI,
+    functionName: 'allowance',
+    args: [address || '0x0', PRESALE_ADDRESS],
+    chainId: bscTestnet.id,
+  });
+  const allowance = allowanceData ?? BigInt(0);
+
+  // Read USDT balance
+  const { data: balanceData } = useReadContract({
+    address: USDT_ADDRESS,
+    abi: ERC20_ABI,
+    functionName: 'balanceOf',
+    args: [address || '0x0'],
+    chainId: bscTestnet.id,
+  });
+  const usdtBalance = balanceData ?? BigInt(0);
+
+  const usdtAmountBigInt = amount ? parseUnits(amount, 6) : BigInt(0);
+  const needsApproval = allowance < usdtAmountBigInt;
+  const vyrTokens = tokenPreview ? formatUnits(tokenPreview[0], 18) : '0';
+  const vyrBonus = tokenPreview ? formatUnits(tokenPreview[1], 18) : '0';
+  const totalVyrBigInt = tokenPreview ? tokenPreview[0] + tokenPreview[1] : BigInt(0);
+  const totalVyr = tokenPreview ? formatUnits(totalVyrBigInt, 18) : '0';
+
+  // Format numbers
+  const fmtNum = (val: string) => {
+    const n = parseFloat(val);
+    if (isNaN(n)) return '0';
+    return n.toLocaleString('en-US', { maximumFractionDigits: 0 });
+  };
+
+  // Approve USDT
+  const handleApprove = async () => {
+    if (!isConnected || !amount) return;
+    setTxPending(true);
+    const toastId = toast.loading('Approving USDT spending...');
+    try {
+      await writeContractAsync({
+        address: USDT_ADDRESS,
+        abi: ERC20_ABI,
+        functionName: 'approve',
+        args: [PRESALE_ADDRESS, parseUnits(amount, 6)],
+        chainId: bscTestnet.id,
+      });
+      toast.success('USDT approved! Now you can buy VYR.', { id: toastId });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Approval failed', { id: toastId });
+    } finally {
+      setTxPending(false);
+    }
+  };
+
+  // Buy VYR
+  const handleBuy = async () => {
+    if (!isConnected || !amount) return;
+    setTxPending(true);
+    const toastId = toast.loading('Buying VYR tokens...');
+    try {
+      await writeContractAsync({
+        address: PRESALE_ADDRESS,
+        abi: PresaleABI,
+        functionName: 'buyWithUsdt',
+        args: [parseUnits(amount, 6)],
+        chainId: bscTestnet.id,
+      });
+      toast.success(`Successfully bought ${fmtNum(totalVyr)} VYR! 🎉`, { id: toastId });
+      setAmount('');
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Purchase failed', { id: toastId });
+    } finally {
+      setTxPending(false);
+    }
+  };
+
+  return (
+    <div className="relative min-h-screen pt-24 pb-20">
+      <div className="absolute inset-0 bg-grid-pattern" />
+      <div className="absolute top-20 left-1/2 -translate-x-1/2 h-96 w-96 rounded-full bg-gold/10 blur-[120px]" />
+
+      {''}
+      <div className="fixed top-20 right-4 z-50 sm:right-6">
+        {''}
+      </div>
+
+      <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        {''}
+        <motion.div
+          variants={stagger}
+          initial="hidden"
+          animate="visible"
+          className="text-center mb-16"
+        >
+          <motion.span variants={fadeUp} className="inline-block px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-gold border border-gold/30 rounded-full bg-gold/5 mb-4">
+            <span className="inline-flex items-center gap-2">
+              <span className="h-2 w-2 rounded-full bg-gold animate-pulse" /> Presale Phase 1 — Live
+            </span>
+          </motion.span>
+          <motion.h1 variants={fadeUp} className="text-4xl sm:text-5xl lg:text-6xl font-black text-white">
+            Buy <span className="text-gold-gradient">$VYR</span> at the Best Price
+          </motion.h1>
+          <motion.p variants={fadeUp} className="mt-4 text-lg text-beige-muted max-w-2xl mx-auto">
+            Join the presale and receive a <span className="text-gold font-bold">20% bonus</span> on every purchase during Phase 1. Funds are distributed automatically every 48 hours.
+          </motion.p>
+        </motion.div>
+
+        {''}
+        <motion.div
+          variants={fadeUp}
+          initial="hidden"
+          animate="visible"
+          className="mx-auto max-w-2xl mb-16"
+        >
+          <div className="rounded-3xl border border-gold/30 bg-dark-card p-8 glow-gold">
+            {''}
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-2">
+                <Wallet className="h-5 w-5 text-gold" />
+                <span className="text-sm font-medium text-beige">
+                  {isConnected
+                    ? `${address?.slice(0, 6)}...${address?.slice(-4)}`
+                    : 'Wallet not connected'}
+                </span>
+                {isConnected && !onCorrectChain && (
+                  <span className="ml-2 px-2 py-0.5 text-xs font-bold rounded-full bg-red-500/20 text-red-400 border border-red-500/30">
+                    Wrong Network
+                  </span>
+                )}
+              </div>
+              {!isConnected ? (
+                <span className="text-sm text-beige-muted">← Click "Connect Wallet" above</span>
+              ) : null}
+            </div>
+
+            {''}
+            {isConnected && !onCorrectChain && (
+              <div className="mb-6 rounded-xl bg-red-500/10 border border-red-500/30 p-4">
+                <div className="flex items-center gap-2">
+                  <AlertCircle className="h-5 w-5 text-red-400" />
+                  <span className="text-sm text-red-400 font-bold">You're on the wrong network</span>
+                </div>
+                <p className="text-xs text-beige-muted mt-1">Please switch to BSC Testnet in your wallet to continue.</p>
+              </div>
+            )}
+
+            {''}
+            {isConnected && onCorrectChain && (
+              <div className="mb-4 flex justify-between text-sm">
+                <span className="text-beige-muted">Your USDT Balance</span>
+                <span className="font-bold text-beige">
+                  {usdtBalance ? formatUnits(usdtBalance, 18) : '0'} USDT
+                </span>
+              </div>
+            )}
+
+            {''}
+            <div className="mb-6">
+              <label className="text-sm font-medium text-beige mb-2 block">Amount in USDT</label>
+              <div className="relative">
+                <input
+                  type="number"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  placeholder="0.00"
+                  disabled={!isConnected || !onCorrectChain}
+                  className="w-full bg-dark-elevated border border-dark-border rounded-xl px-4 py-4 text-2xl text-white placeholder:text-beige-muted/40 focus:outline-none focus:border-gold/50 transition-colors disabled:opacity-50"
+                />
+                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-lg font-bold text-gold">USDT</span>
+              </div>
+              {''}
+              <div className="mt-3 flex gap-2">
+                {[100, 500, 1000, 5000].map((val) => (
+                  <button
+                    key={val}
+                    onClick={() => setAmount(String(val))}
+                    disabled={!isConnected || !onCorrectChain}
+                    className="flex-1 py-2 text-xs font-bold rounded-lg border border-dark-border bg-dark-elevated text-beige hover:border-gold/30 hover:text-gold transition-colors disabled:opacity-50"
+                  >
+                    ${val.toLocaleString()}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {''}
+            {amount && isConnected && (
+              <div className="rounded-xl bg-dark-elevated border border-dark-border p-5 space-y-3 mb-6">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-beige-muted">Presale Price</span>
+                  <span className="text-sm font-bold text-white">$0.010 / VYR</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-beige-muted">Phase 1 Bonus (20%)</span>
+                  <span className="text-sm font-bold text-green-400">+{fmtNum(vyrBonus)} VYR</span>
+                </div>
+                <div className="border-t border-dark-border pt-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-base font-bold text-white">You Receive</span>
+                    <span className="text-2xl font-black text-gold-gradient">{fmtNum(totalVyr)} VYR</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {''}
+            {!isConnected ? (
+              <div className="text-center py-4">
+                <p className="text-sm text-beige-muted mb-3">Connect your wallet to start</p>
+              </div>
+            ) : !onCorrectChain ? (
+              <div className="text-center py-4">
+                <p className="text-sm text-red-400">Switch to BSC Testnet to continue</p>
+              </div>
+            ) : amount && needsApproval ? (
+              <button
+                onClick={handleApprove}
+                disabled={txPending}
+                className="w-full py-4 text-base font-bold rounded-xl border border-gold/30 bg-gold/10 text-gold hover:bg-gold/20 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {txPending ? <Loader2 className="h-5 w-5 animate-spin" /> : <Shield className="h-5 w-5" />}
+                {txPending ? 'Confirming...' : 'Approve USDT'}
+              </button>
+            ) : (
+              <button
+                onClick={handleBuy}
+                disabled={!amount || txPending}
+                className="w-full py-4 text-base font-bold rounded-xl bg-gradient-to-r from-gold-light to-gold-dark text-dark hover:shadow-lg hover:shadow-gold/40 hover:scale-[1.01] transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
+              >
+                {txPending ? <Loader2 className="h-5 w-5 animate-spin" /> : null}
+                {txPending ? 'Processing...' : `Buy ${amount ? fmtNum(totalVyr) : ''} VYR`}
+              </button>
+            )}
+
+            <p className="mt-4 text-xs text-beige-muted text-center">
+              <Shield className="inline h-3 w-3 mr-1" />
+              Funds distributed automatically every 48 hours. Transactions are on-chain and verifiable.
+            </p>
+          </div>
+        </motion.div>
+
+        {''}
+        {isConnected && onCorrectChain && presaleInfo ? (() => {
+          const info = presaleInfo as [bigint, bigint, bigint, bigint, bigint, bigint, boolean, boolean];
+          return (
+          <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} className="mb-12 mx-auto max-w-3xl">
+            <div className="grid grid-cols-3 gap-4">
+              <div className="rounded-xl border border-dark-border bg-dark-card p-4 text-center">
+                <div className="text-2xl font-black text-gold-gradient">
+                  {info[3] ? formatUnits(info[3], 18) : '0'}
+                </div>
+                <div className="text-xs text-beige-muted mt-1">USDT Raised</div>
+              </div>
+              <div className="rounded-xl border border-dark-border bg-dark-card p-4 text-center">
+                <div className="text-2xl font-black text-gold-gradient">
+                  {info[4] ? formatUnits(info[4], 18) : '0'}
+                </div>
+                <div className="text-xs text-beige-muted mt-1">VYR Sold</div>
+              </div>
+              <div className="rounded-xl border border-dark-border bg-dark-card p-4 text-center">
+                <div className="text-2xl font-black text-gold-gradient">{String(info[5] || BigInt(0))}</div>
+                <div className="text-xs text-beige-muted mt-1">Buyers</div>
+              </div>
+            </div>
+          </motion.div>
+          );
+        })() : null}
+
+        {''}
+        {isConnected && onCorrectChain && buyerInfo ? (() => {
+          const bi = buyerInfo as [bigint, bigint, bigint];
+          if (bi[0] <= BigInt(0)) return null;
+          return (
+          <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} className="mb-12 mx-auto max-w-2xl">
+            <div className="rounded-2xl border border-gold/30 bg-dark-card p-6">
+              <h3 className="text-lg font-bold text-white mb-4">Your Purchase History</h3>
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <div className="text-xs text-beige-muted">Spent</div>
+                  <div className="text-lg font-bold text-white">${formatUnits(bi[0], 6)}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-beige-muted">Tokens</div>
+                  <div className="text-lg font-bold text-gold">{fmtNum(formatUnits(bi[1], 18))}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-beige-muted">Bonus</div>
+                  <div className="text-lg font-bold text-green-400">{fmtNum(formatUnits(bi[2], 18))}</div>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+          );
+        })() : null}
+        {''}
+        <motion.div variants={stagger} initial="hidden" whileInView="visible" viewport={{ once: true }} className="mb-16">
+          <h2 className="text-2xl font-bold text-white text-center mb-8">Presale Phases</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {PRESALE_PHASES.map((phase) => (
+              <motion.div key={phase.phase} variants={fadeUp}
+                className={`rounded-2xl border p-5 ${phase.status === 'active' ? 'border-gold/50 bg-gold/5 glow-gold' : 'border-dark-border bg-dark-card'}`}>
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-sm font-bold text-white">{phase.phase}</span>
+                  {phase.status === 'active' && (
+                    <span className="px-2 py-0.5 text-xs font-bold rounded-full bg-gold/20 text-gold border border-gold/30">LIVE</span>
+                  )}
+                </div>
+                <div className="text-3xl font-black text-gold-gradient mb-1">{phase.bonus}</div>
+                <div className="text-xs text-beige-muted mb-3">Bonus</div>
+                <div className="space-y-1 text-sm border-t border-dark-border pt-3">
+                  <div className="flex justify-between"><span className="text-beige-muted">Price</span><span className="text-beige font-medium">{phase.price}</span></div>
+                  <div className="flex justify-between"><span className="text-beige-muted">Allocation</span><span className="text-beige font-medium">{phase.allocation}</span></div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </motion.div>
+
+        {''}
+        <motion.div variants={stagger} initial="hidden" whileInView="visible" viewport={{ once: true }} className="mb-16">
+          <h2 className="text-2xl font-bold text-white text-center mb-2">Fund Distribution</h2>
+          <p className="text-sm text-beige-muted text-center mb-8">100% of presale funds distributed automatically every 48 hours</p>
+          <div className="rounded-2xl border border-dark-border bg-dark-card p-8">
+            <div className="flex h-6 rounded-lg overflow-hidden mb-6">
+              {DISTRIBUTION.map((item) => (
+                <div key={item.label} className={item.color} style={{ width: `${item.percent}%` }} title={`${item.label}: ${item.percent}%`} />
+              ))}
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {DISTRIBUTION.map((item) => (
+                <div key={item.label} className="flex items-center gap-3">
+                  <span className={`h-3 w-3 rounded ${item.color}`} />
+                  <span className="text-sm text-beige">{item.label}</span>
+                  <span className="text-sm font-bold text-gold ml-auto">{item.percent}%</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </motion.div>
+
+        {''}
+        <motion.div variants={stagger} initial="hidden" whileInView="visible" viewport={{ once: true }} className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+          {[
+            { icon: Clock, title: '48h Auto-Distribution', desc: 'Funds sent to designated wallets every 48 hours, fully on-chain and transparent.' },
+            { icon: Shield, title: 'Secure & Audited', desc: 'Smart contracts audited before launch. Chainlink oracle for accurate pricing.' },
+            { icon: Zap, title: 'Instant Receipt', desc: 'VYR tokens credited immediately upon presale confirmation. Claimable after presale ends.' },
+          ].map((card) => (
+            <motion.div key={card.title} variants={fadeUp} className="rounded-2xl border border-dark-border bg-dark-card p-6">
+              <card.icon className="h-8 w-8 text-gold mb-3" />
+              <h3 className="text-base font-bold text-white mb-2">{card.title}</h3>
+              <p className="text-sm text-beige-muted">{card.desc}</p>
+            </motion.div>
+          ))}
+        </motion.div>
+
+        {''}
+        <div className="mt-16 text-center">
+          <Link href="/staking" className="inline-flex items-center gap-2 px-6 py-3 text-sm font-bold rounded-xl border border-gold/30 bg-gold/5 text-gold hover:bg-gold/10 transition-colors">
+            Explore Staking Pools <ArrowRight className="h-4 w-4" />
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+}
