@@ -64,7 +64,7 @@ const DISTRIBUTION = [
   { label: 'Initial LP', percent: 15, color: 'bg-yellow-400' },
   { label: 'Buyback', percent: 15, color: 'bg-orange-400' },
   { label: 'Tech Infrastructure', percent: 20, color: 'bg-green-500' },
-  { label: 'Development (4 wallets)', percent: 40, color: 'bg-gold' },
+  { label: 'Liquidity Pool', percent: 20, color: 'bg-yellow-400' },
 ];
 
 export default function PresalePage() {
@@ -384,7 +384,7 @@ export default function PresalePage() {
                   <div className="text-lg font-bold text-gold">{fmtNum(formatUnits(bi[1], 18))}</div>
                 </div>
                 <div>
-                  <div className="text-xs text-beige-muted">Bonus</div>
+                  <div className="text-xs text-beige-muted">VYR</div>
                   <div className="text-lg font-bold text-green-400">{fmtNum(formatUnits(bi[2], 18))}</div>
                 </div>
               </div>

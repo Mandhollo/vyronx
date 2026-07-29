@@ -25,7 +25,7 @@ const PHASES = [
     icon: Rocket,
     items: [
       'VYR token deployment (BEP-20)',
-      'Presale launch (4 phases with bonuses)',
+      'Presale launch (2 phases, 30 days)',
       'DEX liquidity pool (PancakeSwap)',
       'Web platform (Home + Presale)',
       'Community channels setup',

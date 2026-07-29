@@ -353,8 +353,7 @@ export default function AdminPage() {
               <h3 className="text-lg font-bold text-white mb-4">Presale Status</h3>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
                 <InfoBox label="Current Phase" value={`Phase ${String(Number(presaleInfo?.[0] || BigInt(0)) + 1)}`} />
-                <InfoBox label="Price / VYR" value={`$${presaleInfo ? (Number(presaleInfo[1]) / 1e6 * 100).toFixed(2) : '--'}`} />
-                <InfoBox label="Bonus" value={`${presaleInfo ? Number(presaleInfo[2]) : 0}%`} />
+                <InfoBox label="VYR Price" value={`$${presaleInfo ? (Number(presaleInfo[1]) / 1e6 * 100).toFixed(2) : '--'}`} />
                 <InfoBox label="Status" value={presaleInfo?.[6] ? '🟢 Active' : '🔴 Paused'} />
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-6">

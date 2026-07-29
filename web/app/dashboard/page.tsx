@@ -213,7 +213,7 @@ export default function DashboardPage() {
                   <div className="text-lg font-bold text-gold">{fmtNum(buyerInfo[1], 18, 0)} VYR</div>
                 </div>
                 <div>
-                  <div className="text-xs text-beige-muted">Bonus Tokens</div>
+                  <div className="text-xs text-beige-muted">Total VYR</div>
                   <div className="text-lg font-bold text-green-400">{fmtNum(buyerInfo[2], 18, 0)} VYR</div>
                 </div>
               </div>
