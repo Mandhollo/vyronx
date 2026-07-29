@@ -54,10 +54,9 @@ const ERC20_ABI = [
 ] as const;
 
 const PRESALE_PHASES = [
-  { phase: 'Phase 1', bonus: '20%', price: '$0.010', status: 'active', allocation: '75M VYR' },
-  { phase: 'Phase 2', bonus: '15%', price: '$0.015', status: 'upcoming', allocation: '75M VYR' },
-  { phase: 'Phase 3', bonus: '10%', price: '$0.020', status: 'upcoming', allocation: '75M VYR' },
-  { phase: 'Phase 4', bonus: '5%', price: '$0.025', status: 'upcoming', allocation: '75M VYR' },
+  { phase: 'Phase 1', price: '$0.010', duration: '15 days', status: 'active', allocation: '150M VYR' },
+  { phase: 'Phase 2', price: '$0.020', duration: '15 days', status: 'upcoming', allocation: '150M VYR' },
+  { phase: 'Launch', price: '$0.030', duration: 'DEX Listing', status: 'upcoming', allocation: 'Public Sale' },
 ];
 
 const DISTRIBUTION = [
@@ -206,7 +205,7 @@ export default function PresalePage() {
             Buy <span className="text-gold-gradient">$VYR</span> at the Best Price
           </motion.h1>
           <motion.p variants={fadeUp} className="mt-4 text-lg text-beige-muted max-w-2xl mx-auto">
-            Join the presale and receive a <span className="text-gold font-bold">20% bonus</span> on every purchase during Phase 1. Funds are distributed automatically every 48 hours.
+            Join the presale — <span className="text-gold font-bold">Phase 1: $0.01/VYR</span> for the first 15 days, then Phase 2 at $0.02.
           </motion.p>
         </motion.div>
 
@@ -295,10 +294,6 @@ export default function PresalePage() {
                   <span className="text-sm text-beige-muted">Presale Price</span>
                   <span className="text-sm font-bold text-white">$0.010 / VYR</span>
                 </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-beige-muted">Phase 1 Bonus (20%)</span>
-                  <span className="text-sm font-bold text-green-400">+{fmtNum(vyrBonus)} VYR</span>
-                </div>
                 <div className="border-t border-dark-border pt-3">
                   <div className="flex justify-between items-center">
                     <span className="text-base font-bold text-white">You Receive</span>
@@ -339,7 +334,7 @@ export default function PresalePage() {
 
             <p className="mt-4 text-xs text-beige-muted text-center">
               <Shield className="inline h-3 w-3 mr-1" />
-              Funds distributed automatically every 48 hours. Transactions are on-chain and verifiable.
+              Secure smart contracts on BNB Chain. All transactions are on-chain and verifiable.
             </p>
           </div>
         </motion.div>
@@ -410,10 +405,9 @@ export default function PresalePage() {
                     <span className="px-2 py-0.5 text-xs font-bold rounded-full bg-gold/20 text-gold border border-gold/30">LIVE</span>
                   )}
                 </div>
-                <div className="text-3xl font-black text-gold-gradient mb-1">{phase.bonus}</div>
-                <div className="text-xs text-beige-muted mb-3">Bonus</div>
+                <div className="text-3xl font-black text-gold-gradient mb-1">{phase.price}</div>
+                <div className="text-xs text-beige-muted mb-3">{phase.duration}</div>
                 <div className="space-y-1 text-sm border-t border-dark-border pt-3">
-                  <div className="flex justify-between"><span className="text-beige-muted">Price</span><span className="text-beige font-medium">{phase.price}</span></div>
                   <div className="flex justify-between"><span className="text-beige-muted">Allocation</span><span className="text-beige font-medium">{phase.allocation}</span></div>
                 </div>
               </motion.div>
@@ -424,7 +418,7 @@ export default function PresalePage() {
         {''}
         <motion.div variants={stagger} initial="hidden" whileInView="visible" viewport={{ once: true }} className="mb-16">
           <h2 className="text-2xl font-bold text-white text-center mb-2">Fund Distribution</h2>
-          <p className="text-sm text-beige-muted text-center mb-8">100% of presale funds distributed automatically every 48 hours</p>
+          <p className="text-sm text-beige-muted text-center mb-8">Presale runs for 30 days — 2 phases at increasing prices</p>
           <div className="rounded-2xl border border-dark-border bg-dark-card p-8">
             <div className="flex h-6 rounded-lg overflow-hidden mb-6">
               {DISTRIBUTION.map((item) => (
@@ -446,7 +440,7 @@ export default function PresalePage() {
         {''}
         <motion.div variants={stagger} initial="hidden" whileInView="visible" viewport={{ once: true }} className="grid grid-cols-1 sm:grid-cols-3 gap-6">
           {[
-            { icon: Clock, title: '48h Auto-Distribution', desc: 'Funds sent to designated wallets every 48 hours, fully on-chain and transparent.' },
+            { icon: Clock, title: '30-Day Presale', desc: 'Phase 1 at $0.01 for 15 days, Phase 2 at $0.02 for 15 days. Launch at $0.03.' },
             { icon: Shield, title: 'Secure & Audited', desc: 'Smart contracts audited before launch. Chainlink oracle for accurate pricing.' },
             { icon: Zap, title: 'Instant Receipt', desc: 'VYR tokens credited immediately upon presale confirmation. Claimable after presale ends.' },
           ].map((card) => (

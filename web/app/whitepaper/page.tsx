@@ -283,15 +283,14 @@ export default function WhitepaperPage() {
               <motion.section variants={fadeUp} id="presale" className="scroll-mt-24">
                 <h2 className="text-2xl font-bold text-white mb-4">8. Presale & Distribution</h2>
                 <p className="text-beige leading-relaxed mb-6">
-                  Presale funds are distributed automatically every <span className="text-gold font-bold">48 hours</span> to designated wallets, fully on-chain and transparent.
+                  Presale runs for 30 days across 2 phases (15 days each), with a launch price of $0.03 on DEX listing.
                 </p>
                 <div className="space-y-3">
                   {[
-                    ['Marketing', '10%'],
-                    ['Initial LP', '15%'],
-                    ['Buyback Reserve', '15%'],
-                    ['Tech Infrastructure', '20%'],
-                    ['Development (4 wallets × 10%)', '40%'],
+                    ['Presale Allocation', '30% (300M VYR)'],
+                    ['Phase 1 Price', '$0.01 (15 days)'],
+                    ['Phase 2 Price', '$0.02 (15 days)'],
+                    ['Launch Price', '$0.03 (DEX)'],
                   ].map(([label, pct]) => (
                     <div key={label} className="flex items-center justify-between rounded-lg bg-dark-card border border-dark-border px-5 py-3">
                       <span className="text-sm text-beige">{label}</span>
@@ -336,10 +335,10 @@ export default function WhitepaperPage() {
                     'Progressive qualification system in affiliate program prevents abuse',
                     'Timelock and multi-sig on admin functions',
                   ].map((item) => (
-                    <li key={item} className="flex items-start gap-3 text-beige">
-                      <Shield className="h-5 w-5 text-gold shrink-0 mt-0.5" />
-                      <span className="text-sm">{item}</span>
-                    </li>
+                    <li className="flex items-start gap-3 text-beige">
+                            <Shield className="h-5 w-5 text-gold shrink-0 mt-0.5" />
+                            <span className="text-sm">Smart contracts with timelock and multi-sig on admin functions</span>
+                          </li>
                   ))}
                 </ul>
               </motion.section>

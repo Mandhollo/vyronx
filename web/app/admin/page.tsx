@@ -374,10 +374,11 @@ export default function AdminPage() {
 
             {/* Distribution Info */}
             <motion.div variants={fadeUp} className="rounded-2xl border border-dark-border bg-dark-card p-6">
-              <h3 className="text-lg font-bold text-white mb-4">Fund Distribution (48h Cycle)</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <InfoBox label="Distribution Due" value={distDue ? '🟢 YES' : '🔴 No'} highlight={distDue === true} />
-                <InfoBox label="Time Remaining" value={distTime ? `${Math.floor(Number(distTime) / 3600)}h ${Math.floor((Number(distTime) % 3600) / 60)}m` : 'Due now'} />
+              <h3 className="text-lg font-bold text-white mb-4">Presale Phases (30 days total)</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <InfoBox label="Phase 1" value="$0.01 • 15 days" gold />
+                <InfoBox label="Phase 2" value="$0.02 • 15 days" />
+                <InfoBox label="Launch" value="$0.03 • DEX" />
               </div>
               <div className="mt-4 rounded-xl bg-dark-elevated p-4">
                 <div className="text-xs text-beige-muted mb-2">Distribution Breakdown</div>

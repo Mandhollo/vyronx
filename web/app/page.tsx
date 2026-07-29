@@ -31,7 +31,7 @@ const FEATURES = [
   { icon: Flame, title: 'Buyback & Burn', description: 'Strategic token buybacks with a discount mechanism plus permanent burn to reduce supply.' },
   { icon: Target, title: 'Predictive Markets', description: 'On-chain prediction markets where users can forecast outcomes and earn rewards.' },
   { icon: Rocket, title: 'Launchpad', description: 'Launch platform for future governance tokens with community airdrop distribution.' },
-  { icon: Shield, title: 'Secure & Transparent', description: 'Chainlink oracle price feeds, automatic on-chain distribution every 48 hours.' },
+  { icon: Shield, title: 'Secure & Transparent', description: 'Chainlink oracle price feeds, AI-powered arbitrage, and fully on-chain transactions.' },
 ];
 
 const TOKENOMICS = [
