@@ -173,9 +173,9 @@ export default function WhitepaperPage() {
                   <div className="rounded-2xl glass-card p-6">
                     <h3 className="text-lg font-bold text-white mb-4">Sell Tax — 8% (in BNB)</h3>
                     <ul className="space-y-3">
-                      <li className="flex justify-between items-center pb-2 border-b border-dark-border/50"><span className="text-beige">Colaboradores</span><span className="text-gold font-bold">2%</span></li>
-                      <li className="flex justify-between items-center pb-2 border-b border-dark-border/50"><span className="text-beige">Estrutura</span><span className="text-gold font-bold">2%</span></li>
-                      <li className="flex justify-between items-center pb-2 border-b border-dark-border/50"><span className="text-beige">Desenvolvimento</span><span className="text-gold font-bold">2%</span></li>
+                      <li className="flex justify-between items-center pb-2 border-b border-dark-border/50"><span className="text-beige">Collaborators</span><span className="text-gold font-bold">2%</span></li>
+                      <li className="flex justify-between items-center pb-2 border-b border-dark-border/50"><span className="text-beige">Infrastructure</span><span className="text-gold font-bold">2%</span></li>
+                      <li className="flex justify-between items-center pb-2 border-b border-dark-border/50"><span className="text-beige">Development</span><span className="text-gold font-bold">2%</span></li>
                       <li className="flex justify-between items-center"><span className="text-beige">Marketing</span><span className="text-gold font-bold">2%</span></li>
                     </ul>
                     <p className="mt-4 text-xs text-beige-muted">Sell tax is automatically converted to BNB via in-contract swap.</p>

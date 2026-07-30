@@ -61,9 +61,9 @@ const PRESALE_PHASES = [
 ];
 
 const DISTRIBUTION = [
-  { label: 'Colaboradores', percent: 10, color: 'bg-amber-500' },
-  { label: 'Estrutura', percent: 10, color: 'bg-yellow-400' },
-  { label: 'Desenvolvimento', percent: 10, color: 'bg-orange-400' },
+  { label: 'Collaborators', percent: 10, color: 'bg-amber-500' },
+  { label: 'Infrastructure', percent: 10, color: 'bg-yellow-400' },
+  { label: 'Development', percent: 10, color: 'bg-orange-400' },
   { label: 'Marketing', percent: 10, color: 'bg-green-500' },
   { label: 'Liquidity Pool', percent: 15, color: 'bg-yellow-300' },
   { label: 'Buyback', percent: 15, color: 'bg-amber-600' },

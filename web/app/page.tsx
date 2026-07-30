@@ -342,9 +342,9 @@ function TokenomicsSection() {
             <h3 className="text-lg font-bold text-white">Sell Tax — 8% (in BNB)</h3>
           </div>
           <ul className="space-y-3">
-            <li className="flex items-center justify-between"><span className="text-beige flex items-center gap-2"><Users className="h-4 w-4 text-gold" /> Colaboradores</span><span className="text-gold font-bold">2%</span></li>
-            <li className="flex items-center justify-between"><span className="text-beige flex items-center gap-2"><Users className="h-4 w-4 text-gold" /> Estrutura</span><span className="text-gold font-bold">2%</span></li>
-            <li className="flex items-center justify-between"><span className="text-beige flex items-center gap-2"><Users className="h-4 w-4 text-gold" /> Desenvolvimento</span><span className="text-gold font-bold">2%</span></li>
+            <li className="flex items-center justify-between"><span className="text-beige flex items-center gap-2"><Users className="h-4 w-4 text-gold" /> Collaborators</span><span className="text-gold font-bold">2%</span></li>
+            <li className="flex items-center justify-between"><span className="text-beige flex items-center gap-2"><Users className="h-4 w-4 text-gold" /> Infrastructure</span><span className="text-gold font-bold">2%</span></li>
+            <li className="flex items-center justify-between"><span className="text-beige flex items-center gap-2"><Users className="h-4 w-4 text-gold" /> Development</span><span className="text-gold font-bold">2%</span></li>
             <li className="flex items-center justify-between"><span className="text-beige flex items-center gap-2"><Users className="h-4 w-4 text-gold" /> Marketing</span><span className="text-gold font-bold">2%</span></li>
           </ul>
         </motion.div>
