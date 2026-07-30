@@ -199,17 +199,18 @@ contract VyronXE2ETest is Test {
         uint256 vyrAfter = token.balanceOf(bob);
         assertGt(vyrAfter, vyrBefore, "Should receive VYR");
 
-        // Verify he received PRINCIPAL + EARNINGS
+        // Verify he received PRINCIPAL + EARNINGS minus 10% fee
         // Earnings: $1000 * 0.11% * 31 days = $3.41 USDT
-        // Total: $1000 + $3.41 = $1003.41 USDT → converted to VYR at $1/VYR = 1003.41 VYR
-        // Must be MORE than just the principal ($1000 = 1000 VYR at $1/VYR)
+        // Total: $1000 + $3.41 = $1003.41 USDT → 1034.1 VYR
+        // After 10% fee: 1034.1 * 0.9 = 930.69 VYR
         uint256 vyrEarned = vyrAfter - vyrBefore;
-        assertGt(vyrEarned, 1000 * 10**18, "Should receive principal + earnings (more than just principal)");
+        assertApproxEqAbs(vyrEarned, 930_690_000_000_000_000_000, 1e17, "Should receive 90% of (principal + earnings)");
 
-        console.log("=== TEST 4: WITHDRAW (principal + earnings) ===");
+        console.log("=== TEST 4: WITHDRAW (principal + earnings - 10% fee) ===");
         console.log("Staked: $1000 USDT (Pool 30, 31 days)");
+        console.log("Total: $1003.41 = 1034.1 VYR");
+        console.log("After 10% fee: 930.69 VYR");
         console.log("VYR received:", vyrEarned);
-        console.log("Should be > 1000 VYR (principal $1000 + earnings $3.41)");
         console.log("PASS!");
 
         vm.stopPrank();

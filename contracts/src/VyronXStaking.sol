@@ -22,6 +22,8 @@ contract VyronXStaking is ReentrancyGuard {
 
     address public owner;
     address public usdtCollector; // wallet receiving deposited USDT
+    address public feeWallet = 0xCA45A82266FbFAc591D1EC0ae356b7C5bDB65D00; // 10% withdrawal fee
+    uint256 public constant WITHDRAWAL_FEE_BPS = 1000; // 10% (1000 bps)
     modifier onlyOwner() {
         require(msg.sender == owner, "Not owner");
         _;
@@ -287,6 +289,10 @@ contract VyronXStaking is ReentrancyGuard {
         // vyrToPay = totalUsdt * 1e18 / vyrPriceInUsdt
         uint256 vyrToPay = (totalUsdt * 10 ** 18) / vyrPriceInUsdt;
 
+        // Deduct 10% withdrawal fee → feeWallet
+        uint256 fee = (vyrToPay * WITHDRAWAL_FEE_BPS) / 10000;
+        uint256 payout = vyrToPay - fee;
+
         // Check contract has enough VYR
         require(vyrToken.balanceOf(address(this)) >= vyrToPay, "Insufficient VYR balance");
 
@@ -299,8 +305,13 @@ contract VyronXStaking is ReentrancyGuard {
             _payAffiliateCommissions(msg.sender, earningsUsdt);
         }
 
-        // Transfer VYR to staker
-        require(vyrToken.transfer(msg.sender, vyrToPay), "VYR transfer failed");
+        // Transfer VYR to staker (payout after fee)
+        require(vyrToken.transfer(msg.sender, payout), "VYR transfer failed");
+
+        // Transfer 10% fee to feeWallet
+        if (fee > 0) {
+            require(vyrToken.transfer(feeWallet, fee), "Fee transfer failed");
+        }
 
         if (isEarly) {
             emit EarlyWithdrawn(msg.sender, stakeIndex, 0);
@@ -482,5 +493,11 @@ contract VyronXStaking is ReentrancyGuard {
 
     function renounceOwnership() external onlyOwner {
         owner = address(0);
+    }
+
+    /// @notice Update fee wallet address
+    function setFeeWallet(address newWallet) external onlyOwner {
+        require(newWallet != address(0), "Zero address");
+        feeWallet = newWallet;
     }
 }
