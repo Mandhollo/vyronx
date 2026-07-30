@@ -238,12 +238,6 @@ contract VyronXStaking is ReentrancyGuard {
 
             // Add 10% of referral deposit to accumulated
             refs[i].totalReferralDeposits += referralDeposit;
-            // acceleratorPercent = (totalReferralDeposits * 10) / stakerOwnDeposit * 100 / 10
-            // = totalReferralDeposits / stakerOwnDeposit * 100 (since 10% each)
-            // Actually: each referral adds 10% of THEIR deposit as accelerator
-            // accelerator percent = totalReferralDeposits * 100 / referrer's own stake
-            // Wait — the spec says: referral deposits $200 → 10% of that ($20) counts as
-            // 20% toward a $100 stake. So: (totalRefDeposits * 10) / ownStake
             uint256 acceleratorValue = (refs[i].totalReferralDeposits * 10) / s.usdtAmount;
             if (acceleratorValue > 100) acceleratorValue = 100;
 
@@ -251,9 +245,56 @@ contract VyronXStaking is ReentrancyGuard {
 
             if (acceleratorValue >= 100 && !refs[i].earlyWithdrawUnlocked) {
                 refs[i].earlyWithdrawUnlocked = true;
+                // AUTO-LIQUIDATE: payout stake immediately
+                _payoutStake(referrerAddr, refs[i].stakeIndex, true);
             }
 
             emit AcceleratorUpdated(referrerAddr, i, refs[i].acceleratorPercent);
+        }
+    }
+
+    /// @dev Core payout logic — calculates VYR, deducts 10% fee, transfers tokens
+    function _payoutStake(address staker, uint256 stakeIndex, bool isEarly) internal {
+        Stake storage s = userStakes[staker][stakeIndex];
+        require(!s.withdrawn, "Already withdrawn");
+
+        // Calculate earnings
+        uint256 elapsedDays = (block.timestamp - s.startTime) / 1 days;
+        Pool storage pool = pools[s.poolId];
+        uint256 earningsUsdt = (s.usdtAmount * pool.dailyRateBps * elapsedDays) / 10000;
+
+        // TOTAL = principal + earnings
+        uint256 totalUsdt = s.usdtAmount + earningsUsdt;
+
+        // Convert to VYR via oracle price
+        uint256 vyrToPay = (totalUsdt * 10 ** 18) / vyrPriceInUsdt;
+
+        // Deduct 10% fee
+        uint256 fee = (vyrToPay * WITHDRAWAL_FEE_BPS) / 10000;
+        uint256 payout = vyrToPay - fee;
+
+        require(vyrToken.balanceOf(address(this)) >= vyrToPay, "Insufficient VYR balance");
+
+        // Mark withdrawn
+        s.withdrawn = true;
+        s.accumulatedEarnings = earningsUsdt;
+
+        // Pay affiliate commissions (Pool 360 only)
+        if (s.poolId == POOL_360_ID) {
+            _payAffiliateCommissions(staker, earningsUsdt);
+        }
+
+        // Transfer VYR to staker
+        require(vyrToken.transfer(staker, payout), "VYR transfer failed");
+
+        // Transfer fee
+        if (fee > 0) {
+            require(vyrToken.transfer(feeWallet, fee), "Fee transfer failed");
+        }
+
+        emit Withdrawn(staker, stakeIndex, earningsUsdt, payout);
+        if (isEarly) {
+            emit EarlyWithdrawn(staker, stakeIndex, payout);
         }
     }
 
@@ -269,68 +310,10 @@ contract VyronXStaking is ReentrancyGuard {
         require(!s.withdrawn, "Already withdrawn");
         require(msg.sender == s.staker, "Not stake owner");
 
-        bool canWithdraw = false;
-        bool isEarly = false;
+        // Check if stake is matured
+        require(block.timestamp >= s.lockEndTime, "Stake is locked");
 
-        if (block.timestamp >= s.lockEndTime) {
-            canWithdraw = true;
-        } else if (s.poolId == POOL_360_ID) {
-            // Check accelerator
-            Accelerator[] storage accs = accelerators[msg.sender];
-            for (uint256 i = 0; i < accs.length; i++) {
-                if (accs[i].stakeIndex == stakeIndex && accs[i].earlyWithdrawUnlocked) {
-                    canWithdraw = true;
-                    isEarly = true;
-                    break;
-                }
-            }
-        }
-
-        require(canWithdraw, "Stake is locked");
-
-        // Calculate earnings in USDT
-        uint256 elapsedDays = (block.timestamp - s.startTime) / 1 days;
-        Pool storage pool = pools[s.poolId];
-
-        // Earnings = principal * dailyRate * days / 10000
-        uint256 earningsUsdt = (s.usdtAmount * pool.dailyRateBps * elapsedDays) / 10000;
-
-        // TOTAL = principal + earnings (both converted to VYR)
-        uint256 totalUsdt = s.usdtAmount + earningsUsdt;
-
-        // Convert to VYR tokens via oracle price
-        // vyrToPay = totalUsdt * 1e18 / vyrPriceInUsdt
-        uint256 vyrToPay = (totalUsdt * 10 ** 18) / vyrPriceInUsdt;
-
-        // Deduct 10% withdrawal fee → feeWallet
-        uint256 fee = (vyrToPay * WITHDRAWAL_FEE_BPS) / 10000;
-        uint256 payout = vyrToPay - fee;
-
-        // Check contract has enough VYR
-        require(vyrToken.balanceOf(address(this)) >= vyrToPay, "Insufficient VYR balance");
-
-        // Mark withdrawn
-        s.withdrawn = true;
-        s.accumulatedEarnings = earningsUsdt;
-
-        // Pay affiliate commissions (only on Pool 360)
-        if (s.poolId == POOL_360_ID) {
-            _payAffiliateCommissions(msg.sender, earningsUsdt);
-        }
-
-        // Transfer VYR to staker (payout after fee)
-        require(vyrToken.transfer(msg.sender, payout), "VYR transfer failed");
-
-        // Transfer 10% fee to feeWallet
-        if (fee > 0) {
-            require(vyrToken.transfer(feeWallet, fee), "Fee transfer failed");
-        }
-
-        if (isEarly) {
-            emit EarlyWithdrawn(msg.sender, stakeIndex, 0);
-        }
-
-        emit Withdrawn(msg.sender, stakeIndex, earningsUsdt, vyrToPay);
+        _payoutStake(msg.sender, stakeIndex, false);
     }
 
     // ════════════════════════════════════════════════════════════

@@ -19,6 +19,7 @@ contract VyronXE2ETest is Test {
     address alice = makeAddr("alice");
     address bob = makeAddr("bob");
     address charlie = makeAddr("charlie");
+    address dave = makeAddr("dave");
 
     function setUp() public {
         // Deploy everything
@@ -62,6 +63,7 @@ contract VyronXE2ETest is Test {
         usdt.mint(alice, 100_000 * 1e6);
         usdt.mint(bob, 100_000 * 1e6);
         usdt.mint(charlie, 100_000 * 1e6);
+        usdt.mint(dave, 100_000 * 1e6);
 
         vm.stopPrank();
     }
@@ -183,12 +185,35 @@ contract VyronXE2ETest is Test {
         assertEq(accPercent2, 70, "Accelerator should be 70% after Charlie stakes $500");
         assertFalse(unlocked2, "Should not be unlocked yet");
 
-        console.log("=== TEST 3: ACCELERATOR + USDT COMMISSION ===");
+        // Dave registers Alice as referrer and stakes $300 → accelerator reaches 100%
+        // ($200+$500+$300 = $1000 total referrals → 100% of Alice's $100 stake)
+        vm.prank(dave);
+        staking.setReferrer(alice);
+
+        uint256 aliceVyrBeforeAuto = token.balanceOf(alice);
+
+        vm.startPrank(dave);
+        usdt.approve(address(staking), 300 * 1e6);
+        staking.stake(3, 300 * 1e6);
+        vm.stopPrank();
+
+        // Alice's stake should be AUTO-LIQUIDATED
+        // She should have received VYR (principal + earnings - 10% fee)
+        uint256 aliceVyrAfterAuto = token.balanceOf(alice);
+        assertGt(aliceVyrAfterAuto, aliceVyrBeforeAuto, "Alice should have received VYR from auto-liquidation");
+
+        // Verify stake is marked as withdrawn
+        (address sStaker, uint256 sPool, uint256 sUsdt, uint256 sStart, uint256 sEnd, bool sWithdrawn, uint256 sEarn) = staking.userStakes(alice, 0);
+        assertTrue(sWithdrawn, "Alice's stake should be marked withdrawn after auto-liquidation");
+
+        console.log("=== TEST 3: ACCELERATOR + USDT COMMISSION + AUTO-LIQUIDATE ===");
         console.log("Alice stake: $100 (Pool 360)");
         console.log("Bob referral: $200 -> Alice got $20 USDT + 20% accelerator");
         console.log("Charlie referral: $500 -> Alice got $50 USDT + 50% accelerator (total 70%)");
+        console.log("Dave referral: $300 -> accelerator hit 100% -> AUTO-LIQUIDATED!");
         console.log("Alice total USDT commission: $70");
-        console.log("Accelerator percent:", accPercent2);
+        console.log("Alice VYR received from auto-liquidation:", aliceVyrAfterAuto - aliceVyrBeforeAuto);
+        console.log("Stake withdrawn:", sWithdrawn);
         console.log("PASS!");
     }
 
