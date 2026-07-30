@@ -280,9 +280,12 @@ contract VyronXStaking is ReentrancyGuard {
         // Earnings = principal * dailyRate * days / 10000
         uint256 earningsUsdt = (s.usdtAmount * pool.dailyRateBps * elapsedDays) / 10000;
 
+        // TOTAL = principal + earnings (both converted to VYR)
+        uint256 totalUsdt = s.usdtAmount + earningsUsdt;
+
         // Convert to VYR tokens via oracle price
-        // vyrToPay = earningsUsdt * 1e18 / vyrPriceInUsdt
-        uint256 vyrToPay = (earningsUsdt * 10 ** 18) / vyrPriceInUsdt;
+        // vyrToPay = totalUsdt * 1e18 / vyrPriceInUsdt
+        uint256 vyrToPay = (totalUsdt * 10 ** 18) / vyrPriceInUsdt;
 
         // Check contract has enough VYR
         require(vyrToken.balanceOf(address(this)) >= vyrToPay, "Insufficient VYR balance");
@@ -369,7 +372,9 @@ contract VyronXStaking is ReentrancyGuard {
         uint256 elapsedDays = (block.timestamp - s.startTime) / 1 days;
         Pool storage pool = pools[s.poolId];
         earningsUsdt = (s.usdtAmount * pool.dailyRateBps * elapsedDays) / 10000;
-        vyrValue = (earningsUsdt * 10 ** 18) / vyrPriceInUsdt;
+        // Total = principal + earnings (both in VYR)
+        uint256 totalUsdt = s.usdtAmount + earningsUsdt;
+        vyrValue = (totalUsdt * 10 ** 18) / vyrPriceInUsdt;
     }
 
     /// @notice Get accelerator status for a user's 360-day stake

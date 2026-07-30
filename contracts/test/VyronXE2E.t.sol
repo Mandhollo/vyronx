@@ -183,10 +183,10 @@ contract VyronXE2ETest is Test {
     // TEST 4: Full Withdraw Flow
     // ════════════════════════════════════════════════════════════
     function test_Withdraw_After_Maturity() public {
-        // Bob stakes $10,000 in Pool 30
+        // Bob stakes $1,000 in Pool 30
         vm.startPrank(bob);
-        usdt.approve(address(staking), 10_000 * 1e6);
-        staking.stake(0, 10_000 * 1e6);
+        usdt.approve(address(staking), 1_000 * 1e6);
+        staking.stake(0, 1_000 * 1e6);
 
         uint256 vyrBefore = token.balanceOf(bob);
 
@@ -199,10 +199,17 @@ contract VyronXE2ETest is Test {
         uint256 vyrAfter = token.balanceOf(bob);
         assertGt(vyrAfter, vyrBefore, "Should receive VYR");
 
-        console.log("=== TEST 4: WITHDRAW ===");
-        console.log("VYR before:", vyrBefore);
-        console.log("VYR after:", vyrAfter);
-        console.log("VYR earned:", vyrAfter - vyrBefore);
+        // Verify he received PRINCIPAL + EARNINGS
+        // Earnings: $1000 * 0.11% * 31 days = $3.41 USDT
+        // Total: $1000 + $3.41 = $1003.41 USDT → converted to VYR at $1/VYR = 1003.41 VYR
+        // Must be MORE than just the principal ($1000 = 1000 VYR at $1/VYR)
+        uint256 vyrEarned = vyrAfter - vyrBefore;
+        assertGt(vyrEarned, 1000 * 10**18, "Should receive principal + earnings (more than just principal)");
+
+        console.log("=== TEST 4: WITHDRAW (principal + earnings) ===");
+        console.log("Staked: $1000 USDT (Pool 30, 31 days)");
+        console.log("VYR received:", vyrEarned);
+        console.log("Should be > 1000 VYR (principal $1000 + earnings $3.41)");
         console.log("PASS!");
 
         vm.stopPrank();
