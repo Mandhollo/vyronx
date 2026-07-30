@@ -1,14 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { useAccount, useReadContract, useWriteContract } from 'wagmi';
 import {
   Lock, Unlock, TrendingUp, Wallet, Award,
   Zap, Users, ChevronDown, Info, ArrowRight, Clock, Loader2, AlertCircle
 } from 'lucide-react';
 import { STAKING_ADDRESS, USDT_ADDRESS, StakingABI } from '@/lib/contracts';
+import { publicClient } from '@/components/web3/Web3Provider';
 import { parseUnits, formatUnits } from 'viem';
 import { bscTestnet } from 'wagmi/chains';
 import toast from 'react-hot-toast';
@@ -51,6 +53,14 @@ const AFFILIATE_LEVELS = [
 ];
 
 export default function StakingPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen pt-24 flex items-center justify-center"><div className="h-12 w-12 animate-spin rounded-full border-4 border-gold/20 border-t-gold" /></div>}>
+      <StakingPageContent />
+    </Suspense>
+  );
+}
+
+function StakingPageContent() {
   const { address, isConnected, chainId } = useAccount();
   const [activePool, setActivePool] = useState<number | null>(null);
   const [stakeAmount, setStakeAmount] = useState('');
@@ -95,6 +105,34 @@ export default function StakingPage() {
   const usdtAmountBigInt = stakeAmount ? parseUnits(stakeAmount, 6) : BigInt(0);
   const needsApproval = allowance < usdtAmountBigInt;
   const selectedPool = activePool !== null ? POOLS[activePool] : null;
+
+  // Auto-register referrer from URL ?ref=0x...
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    if (!isConnected || !onCorrectChain) return;
+    const refAddress = searchParams.get('ref');
+    if (refAddress && refAddress.match(/^0x[a-fA-F0-9]{40}$/) && refAddress.toLowerCase() !== address?.toLowerCase()) {
+      (async () => {
+        try {
+          const res = await publicClient.readContract({
+            address: STAKING_ADDRESS as `0x${string}`, abi: StakingABI,
+            functionName: 'referrer', args: [address as `0x${string}`],
+          }) as `0x${string}`;
+          if (res === '0x0000000000000000000000000000000000000000') {
+            toast.promise(
+              writeContractAsync({
+                address: STAKING_ADDRESS as `0x${string}`, abi: StakingABI,
+                functionName: 'setReferrer', args: [refAddress as `0x${string}`],
+                chainId: bscTestnet.id,
+              }),
+              { loading: 'Registering referrer...', success: 'Referrer registered!', error: 'Failed to register' }
+            );
+          }
+        } catch {}
+      })();
+    }
+  }, [isConnected, onCorrectChain, address, searchParams, writeContractAsync]);
 
   const handleApprove = async () => {
     if (!isConnected || !stakeAmount || activePool === null) return;
