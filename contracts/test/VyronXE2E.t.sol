@@ -147,16 +147,26 @@ contract VyronXE2ETest is Test {
         vm.prank(charlie);
         staking.setReferrer(alice);
 
+        // Check Alice's USDT balance before Bob stakes
+        uint256 aliceUsdtBefore = usdt.balanceOf(alice);
+
         // Bob stakes $200 in Pool 360
         vm.startPrank(bob);
         usdt.approve(address(staking), 200 * 1e6);
         staking.stake(3, 200 * 1e6);
         vm.stopPrank();
 
+        // Alice should have received 10% of $200 = $20 USDT commission immediately
+        uint256 aliceUsdtAfterBob = usdt.balanceOf(alice);
+        assertEq(aliceUsdtAfterBob - aliceUsdtBefore, 20 * 1e6, "Alice should get $20 USDT commission from Bob");
+
         // Check accelerator — Alice should be at 20% ($20/$100)
         (uint256 accPercent1, bool unlocked1, uint256 totalRef1) = staking.getAcceleratorStatus(alice, 0);
         assertEq(accPercent1, 20, "Accelerator should be 20% after Bob stakes $200");
         assertFalse(unlocked1, "Should not be unlocked yet");
+
+        // Check Alice's USDT balance before Charlie stakes
+        uint256 aliceUsdtBeforeCharlie = usdt.balanceOf(alice);
 
         // Charlie stakes $500 in Pool 360
         vm.startPrank(charlie);
@@ -164,18 +174,21 @@ contract VyronXE2ETest is Test {
         staking.stake(3, 500 * 1e6);
         vm.stopPrank();
 
+        // Alice should have received 10% of $500 = $50 USDT commission immediately
+        uint256 aliceUsdtAfterCharlie = usdt.balanceOf(alice);
+        assertEq(aliceUsdtAfterCharlie - aliceUsdtBeforeCharlie, 50 * 1e6, "Alice should get $50 USDT commission from Charlie");
+
         // Check accelerator — Alice should be at 70% ($70/$100)
         (uint256 accPercent2, bool unlocked2, uint256 totalRef2) = staking.getAcceleratorStatus(alice, 0);
         assertEq(accPercent2, 70, "Accelerator should be 70% after Charlie stakes $500");
         assertFalse(unlocked2, "Should not be unlocked yet");
 
-        console.log("=== TEST 3: ACCELERATOR ===");
+        console.log("=== TEST 3: ACCELERATOR + USDT COMMISSION ===");
         console.log("Alice stake: $100 (Pool 360)");
-        console.log("Bob referral: $200 -> +20%");
-        console.log("Charlie referral: $500 -> +50% (total 70%)");
+        console.log("Bob referral: $200 -> Alice got $20 USDT + 20% accelerator");
+        console.log("Charlie referral: $500 -> Alice got $50 USDT + 50% accelerator (total 70%)");
+        console.log("Alice total USDT commission: $70");
         console.log("Accelerator percent:", accPercent2);
-        console.log("Total referral deposits:", totalRef2);
-        console.log("Unlocked:", unlocked2);
         console.log("PASS!");
     }
 

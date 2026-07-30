@@ -167,9 +167,22 @@ contract VyronXStaking is ReentrancyGuard {
         require(pool.active, "Pool not active");
         require(usdtAmount >= 50e6, "Below minimum ($50)");
 
-        // Transfer USDT from staker → contract → collector
+        // Transfer USDT from staker → contract
         require(usdt.transferFrom(msg.sender, address(this), usdtAmount), "USDT transfer failed");
-        require(usdt.transfer(usdtCollector, usdtAmount), "USDT forward failed");
+
+        // If Pool 360 and has referrer: pay 10% commission in USDT to referrer immediately
+        uint256 amountToCollector = usdtAmount;
+        if (poolId == POOL_360_ID) {
+            address ref = referrer[msg.sender];
+            if (ref != address(0)) {
+                uint256 commission = (usdtAmount * 1000) / 10000; // 10%
+                require(usdt.transfer(ref, commission), "Referral commission failed");
+                amountToCollector = usdtAmount - commission;
+            }
+        }
+
+        // Forward remaining USDT to project wallet
+        require(usdt.transfer(usdtCollector, amountToCollector), "USDT forward failed");
 
         uint256 lockEndTime = block.timestamp + (pool.lockPeriodDays * 1 days);
 
