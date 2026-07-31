@@ -45,9 +45,8 @@ export default function Header() {
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2 group">
-            <div className="relative h-9 w-9 rounded-full bg-gradient-to-br from-gold-light via-gold to-gold-dark flex items-center justify-center shadow-lg shadow-gold/30 group-hover:scale-105 transition-transform">
-              <span className="text-dark font-black text-sm">V</span>
-              <span className="absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full bg-green-moss border border-dark" />
+            <div className="relative flex items-center justify-center group-hover:scale-105 transition-transform">
+              <img src="/vyronx-logo.png" alt="VyronX" className="h-9 w-9 object-contain spin-360" style={{ perspective: '400px' }} />
             </div>
             <span className="text-xl font-bold tracking-tight">
               <span className="text-white">Vyron</span>
