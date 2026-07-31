@@ -16,11 +16,10 @@ import { formatUnits } from 'viem';
 import { bscTestnet } from 'wagmi/chains';
 import toast from 'react-hot-toast';
 import ParticleField from '@/components/fx/ParticleField';
+import { isAdminWallet } from '@/lib/admin-wallets';
 
 const fadeUp = { hidden: { opacity: 0, y: 30 }, visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: 'easeOut' as const } } };
 const stagger = { hidden: { opacity: 0 }, visible: { opacity: 1, transition: { staggerChildren: 0.08 } } };
-
-const OWNER_ADDRESS = '0xd7A8484fD713D28870FCd4ad198fAB9e3ffDedB1';
 
 type TabId = 'overview' | 'token' | 'presale' | 'staking';
 
@@ -31,7 +30,7 @@ export default function AdminPage() {
   const [pending, setPending] = useState<string | null>(null);
 
   const onCorrectChain = chainId === bscTestnet.id;
-  const isOwner = address?.toLowerCase() === OWNER_ADDRESS.toLowerCase();
+  const isOwner = isAdminWallet(address);
 
   // === READS: TOKEN ===
   const { data: tradingEnabled } = useReadContract({
@@ -156,11 +155,10 @@ export default function AdminPage() {
 
   // === GATE ===
   if (!isConnected) return (
-    <GateScreen icon={Lock} title="Admin Access" subtitle="Connect the owner wallet to access the admin panel." />
+    <GateScreen icon={Lock} title="Admin Access" subtitle="Connect an authorized wallet to access the admin panel." />
   );
   if (!isOwner) return (
-    <GateScreen icon={Shield} title="Access Denied" subtitle="This wallet is not the contract owner." danger
-      extra={`Owner: ${OWNER_ADDRESS.slice(0, 6)}...${OWNER_ADDRESS.slice(-4)}`} />
+    <GateScreen icon={Shield} title="Access Denied" subtitle="This wallet is not authorized to view the admin panel." danger />
   );
 
   const TABS: { id: TabId; label: string; icon: typeof Shield }[] = [
