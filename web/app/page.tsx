@@ -249,8 +249,19 @@ function FeaturesSection() {
           >
             <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-gold/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
             <div className="relative">
-              <div className="mb-4 inline-flex items-center justify-center h-12 w-12 rounded-xl bg-gold/10 border border-gold/20 group-hover:bg-gold/20 transition-colors">
-                <feature.icon className="h-6 w-6 text-gold" />
+              <div
+                className="group/icon mb-4 inline-flex items-center justify-center h-14 w-14 rounded-xl bg-gold/10 border border-gold/20 group-hover:bg-gold/20 transition-all group-hover:shadow-lg group-hover:shadow-gold/30 float"
+                style={{ transformStyle: 'preserve-3d', perspective: '400px' }}
+                onMouseMove={(e) => {
+                  const el = e.currentTarget;
+                  const rect = el.getBoundingClientRect();
+                  const x = (e.clientX - rect.left) / rect.width - 0.5;
+                  const y = (e.clientY - rect.top) / rect.height - 0.5;
+                  el.style.transform = `perspective(400px) rotateX(${-y * 25}deg) rotateY(${x * 25}deg) scale(1.15)`;
+                }}
+                onMouseLeave={(e) => { e.currentTarget.style.transform = ''; }}
+              >
+                <feature.icon className="h-7 w-7 text-gold" />
               </div>
               <h3 className="text-lg font-bold text-white mb-2">{feature.title}</h3>
               <p className="text-sm text-beige-muted leading-relaxed">{feature.description}</p>
