@@ -20,17 +20,17 @@ const stagger = {
 };
 
 const SECTIONS = [
-  { id: 'overview', label: 'Overview' },
-  { id: 'token', label: 'Token' },
-  { id: 'tokenomics', label: 'Tokenomics' },
-  { id: 'fees', label: 'Fee Mechanism' },
-  { id: 'staking', label: 'Staking' },
-  { id: 'accelerator', label: 'Accelerator' },
-  { id: 'affiliates', label: 'Affiliates' },
-  { id: 'presale', label: 'Presale' },
-  { id: 'ecosystem', label: 'Ecosystem' },
-  { id: 'security', label: 'Security' },
-  { id: 'disclaimer', label: 'Disclaimer' },
+  { id: 'overview', labelKey: 'wp.overview' },
+  { id: 'token', labelKey: 'wp.token' },
+  { id: 'tokenomics', labelKey: 'wp.tokenomics' },
+  { id: 'fees', labelKey: 'wp.fees' },
+  { id: 'staking', labelKey: 'wp.staking' },
+  { id: 'accelerator', labelKey: 'wp.accelerator' },
+  { id: 'affiliates', labelKey: 'wp.affiliates' },
+  { id: 'presale', labelKey: 'wp.presale' },
+  { id: 'ecosystem', labelKey: 'wp.ecosystem' },
+  { id: 'security', labelKey: 'wp.security' },
+  { id: 'disclaimer', labelKey: 'wp.disclaimer' },
 ];
 
 export default function WhitepaperPage() {
@@ -56,7 +56,7 @@ export default function WhitepaperPage() {
                     href={`#${section.id}`}
                     className="block px-3 py-2 text-sm text-beige hover:text-gold hover:bg-gold/5 rounded-lg transition-colors"
                   >
-                    {section.label}
+                    {t(section.labelKey)}
                   </a>
                 ))}
               </nav>
@@ -99,12 +99,12 @@ export default function WhitepaperPage() {
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
                   <div className="rounded-xl bg-dark-card border border-dark-border p-4">
-                    <div className="text-xs font-bold text-gold uppercase tracking-wider mb-1">Vision</div>
-                    <p className="text-sm text-beige">Become a leading DeFi platform where cutting-edge technology meets innovative financial mechanisms.</p>
+                    <div className="text-xs font-bold text-gold uppercase tracking-wider mb-1">{t('wp.vision')}</div>
+                    <p className="text-sm text-beige">{t('wp.vision.desc')}</p>
                   </div>
                   <div className="rounded-xl bg-dark-card border border-dark-border p-4">
-                    <div className="text-xs font-bold text-gold uppercase tracking-wider mb-1">Mission</div>
-                    <p className="text-sm text-beige">Democratize access to sophisticated decentralized financial instruments through an intuitive, transparent platform.</p>
+                    <div className="text-xs font-bold text-gold uppercase tracking-wider mb-1">{t('wp.mission')}</div>
+                    <p className="text-sm text-beige">{t('wp.mission.desc')}</p>
                   </div>
                 </div>
               </motion.section>
@@ -116,12 +116,12 @@ export default function WhitepaperPage() {
                   <table className="w-full">
                     <tbody>
                       {[
-                        ['Name', 'VyronX'],
-                        ['Symbol / Ticker', 'VYR'],
-                        ['Standard', 'BEP-20'],
-                        ['Network', 'BNB Smart Chain'],
-                        ['Total Supply', '1,000,000,000 VYR (1 Billion)'],
-                        ['Decimals', '18'],
+                        [t('wp.tName'), 'VyronX'],
+                        [t('wp.tSymbol'), 'VYR'],
+                        [t('wp.tStandard'), 'BEP-20'],
+                        [t('wp.tNetwork'), 'BNB Smart Chain'],
+                        [t('wp.tSupply'), '1,000,000,000 VYR (1 Billion)'],
+                        [t('wp.tDecimals'), '18'],
                       ].map(([key, val]) => (
                         <tr key={key} className="border-b border-dark-border/50 last:border-0">
                           <td className="px-6 py-3 text-sm font-medium text-beige-muted w-1/3">{key}</td>
@@ -165,7 +165,7 @@ export default function WhitepaperPage() {
                 <h2 className="text-2xl font-bold text-white mb-4">{t('wp.fees')}</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="rounded-2xl border border-green-moss/30 bg-green-moss-dark/20 p-6">
-                    <h3 className="text-lg font-bold text-white mb-4">Buy Tax — 8%</h3>
+                    <h3 className="text-lg font-bold text-white mb-4">{t('wp.buyTax')}</h3>
                     <ul className="space-y-3">
                       <li className="flex justify-between items-center pb-2 border-b border-dark-border/50"><span className="text-beige">Holder Rewards (Staking)</span><span className="text-gold font-bold">4%</span></li>
                       <li className="flex justify-between items-center pb-2 border-b border-dark-border/50"><span className="text-beige">Auto-Liquidity</span><span className="text-gold font-bold">2%</span></li>
@@ -173,7 +173,7 @@ export default function WhitepaperPage() {
                     </ul>
                   </div>
                   <div className="rounded-2xl glass-card p-6">
-                    <h3 className="text-lg font-bold text-white mb-4">Sell Tax — 8% (in BNB)</h3>
+                    <h3 className="text-lg font-bold text-white mb-4">{t('wp.sellTax')}</h3>
                     <ul className="space-y-3">
                       <li className="flex justify-between items-center pb-2 border-b border-dark-border/50"><span className="text-beige">Collaborators</span><span className="text-gold font-bold">2%</span></li>
                       <li className="flex justify-between items-center pb-2 border-b border-dark-border/50"><span className="text-beige">Infrastructure</span><span className="text-gold font-bold">2%</span></li>

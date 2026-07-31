@@ -392,6 +392,19 @@ const DICT: Record<Lang, Record<string, string>> = {
     'rm.title4': 'Buyback & Auction',
     'rm.title5': 'Fund & Predictive',
     'rm.title6': 'Launchpad',
+    // Whitepaper extra
+    'wp.vision': 'Vision',
+    'wp.vision.desc': 'Become a leading DeFi platform where cutting-edge technology meets innovative financial mechanisms.',
+    'wp.mission': 'Mission',
+    'wp.mission.desc': 'Democratize access to sophisticated decentralized financial instruments through an intuitive, transparent platform.',
+    'wp.buyTax': 'Buy Tax — 8%',
+    'wp.sellTax': 'Sell Tax — 8% (in BNB)',
+    'wp.tName': 'Name',
+    'wp.tSymbol': 'Symbol / Ticker',
+    'wp.tStandard': 'Standard',
+    'wp.tNetwork': 'Network',
+    'wp.tSupply': 'Total Supply',
+    'wp.tDecimals': 'Decimals',
   },
   pt: {
     // Nav
@@ -773,6 +786,19 @@ const DICT: Record<Lang, Record<string, string>> = {
     'rm.title4': 'Recompra e Leilão',
     'rm.title5': 'Fundo e Preditivo',
     'rm.title6': 'Launchpad',
+    // Whitepaper extra
+    'wp.vision': 'Visão',
+    'wp.vision.desc': 'Tornar-se uma plataforma DeFi líder onde tecnologia de ponta encontra mecanismos financeiros inovadores.',
+    'wp.mission': 'Missão',
+    'wp.mission.desc': 'Democratizar o acesso a instrumentos financeiros descentralizados sofisticados através de uma plataforma intuitiva e transparente.',
+    'wp.buyTax': 'Taxa de Compra — 8%',
+    'wp.sellTax': 'Taxa de Venda — 8% (em BNB)',
+    'wp.tName': 'Nome',
+    'wp.tSymbol': 'Símbolo / Ticker',
+    'wp.tStandard': 'Padrão',
+    'wp.tNetwork': 'Rede',
+    'wp.tSupply': 'Fornecimento Total',
+    'wp.tDecimals': 'Decimais',
   },
   es: {
     // Nav
@@ -1154,6 +1180,19 @@ const DICT: Record<Lang, Record<string, string>> = {
     'rm.title4': 'Recompra y Subasta',
     'rm.title5': 'Fondo y Predictivo',
     'rm.title6': 'Launchpad',
+    // Whitepaper extra
+    'wp.vision': 'Visión',
+    'wp.vision.desc': 'Convertirse en una plataforma DeFi líder donde la tecnología de vanguardia se encuentra con mecanismos financieros innovadores.',
+    'wp.mission': 'Misión',
+    'wp.mission.desc': 'Democratizar el acceso a instrumentos financieros descentralizados sofisticados a través de una plataforma intuitiva y transparente.',
+    'wp.buyTax': 'Impuesto de Compra — 8%',
+    'wp.sellTax': 'Impuesto de Venta — 8% (en BNB)',
+    'wp.tName': 'Nombre',
+    'wp.tSymbol': 'Símbolo / Ticker',
+    'wp.tStandard': 'Estándar',
+    'wp.tNetwork': 'Red',
+    'wp.tSupply': 'Suministro Total',
+    'wp.tDecimals': 'Decimales',
   },
 };
 
