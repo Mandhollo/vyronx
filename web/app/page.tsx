@@ -173,9 +173,9 @@ function Hero() {
           <motion.div variants={fadeUp} className="mb-8 relative">
             <div className="absolute inset-0 bg-gold/10 blur-[80px] rounded-full" />
             <img
-              src="/vyronx-banner.jpeg"
+              src="/vyronx-banner-clean.png"
               alt="VyronX — Vision • Innovation • Freedom • Purpose"
-              className="relative max-w-full sm:max-w-2xl lg:max-w-3xl mx-auto rounded-2xl glow-gold-strong float"
+              className="relative max-w-full sm:max-w-2xl lg:max-w-3xl mx-auto float"
               style={{ maxHeight: '50vh', width: 'auto' }}
             />
           </motion.div>
