@@ -159,14 +159,13 @@ function Hero() {
             </span>
           </motion.div>
 
-          {/* Banner Image */}
+          {/* Logo */}
           <motion.div variants={fadeUp} className="mb-8 relative">
             <div className="absolute inset-0 bg-gold/10 blur-[80px] rounded-full" />
             <img
-              src="/vyronx-banner.jpeg"
-              alt="VyronX — Vision • Innovation • Freedom • Purpose"
-              className="relative max-w-full sm:max-w-2xl lg:max-w-3xl mx-auto rounded-2xl glow-gold-strong float"
-              style={{ maxHeight: '50vh', width: 'auto' }}
+              src="/vyronx-logo.png"
+              alt="VyronX Logo"
+              className="relative mx-auto w-40 h-40 sm:w-56 sm:h-56 lg:w-64 lg:h-64 object-contain float"
             />
           </motion.div>
 
