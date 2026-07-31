@@ -109,24 +109,21 @@ function AnimatedCounter({ target, suffix = '' }: { target: number; suffix?: str
   useEffect(() => {
     if (!isInView) return;
     let frame = 0;
-    const totalFrames = 60; // ~1s at 60fps
+    const totalFrames = 60;
     const tick = () => {
       frame++;
       if (frame < totalFrames) {
-        // Rapidly cycle random numbers (slot machine)
         if (frame < totalFrames - 15) {
-          // Fast random spin
           const random = Math.floor(Math.random() * Math.max(target * 1.5, 100));
-          setDisplay(String(random));
+          setDisplay(random.toLocaleString('en-US'));
         } else {
-          // Decelerate — interpolate to target
           const progress = (frame - (totalFrames - 15)) / 15;
           const eased = 1 - Math.pow(1 - progress, 3);
-          setDisplay(String(Math.floor(eased * target)));
+          setDisplay(Math.floor(eased * target).toLocaleString('en-US'));
         }
         requestAnimationFrame(tick);
       } else {
-        setDisplay(String(target));
+        setDisplay(target.toLocaleString('en-US'));
       }
     };
     requestAnimationFrame(tick);
