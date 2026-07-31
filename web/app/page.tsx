@@ -165,7 +165,8 @@ function Hero() {
             <img
               src="/vyronx-logo.png"
               alt="VyronX Logo"
-              className="relative mx-auto w-40 h-40 sm:w-56 sm:h-56 lg:w-64 lg:h-64 object-contain float"
+              className="relative mx-auto w-40 h-40 sm:w-56 sm:h-56 lg:w-64 lg:h-64 object-contain spin-360"
+              style={{ perspective: '800px' }}
             />
           </motion.div>
 

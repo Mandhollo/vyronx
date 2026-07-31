@@ -134,6 +134,16 @@ body {
    GAMER FX — Advanced animations & effects
    ════════════════════════════════════════════════════════════ */
 
+/* 360 spin */
+@keyframes spin-360 {
+  from { transform: rotateY(0deg); }
+  to { transform: rotateY(360deg); }
+}
+.spin-360 {
+  animation: spin-360 6s linear infinite;
+  transform-style: preserve-3d;
+}
+
 /* 3D Perspective grid floor (Tron-style) */
 .grid-floor {
   position: absolute;
