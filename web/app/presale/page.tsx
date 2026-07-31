@@ -13,6 +13,7 @@ import { parseUnits, formatUnits } from 'viem';
 import { bscTestnet } from 'wagmi/chains';
 import toast from 'react-hot-toast';
 import ParticleField from '@/components/fx/ParticleField';
+import { useI18n } from '@/lib/i18n';
 
 const fadeUp = {
   hidden: { opacity: 0, y: 30 },
@@ -71,6 +72,7 @@ const DISTRIBUTION = [
 ];
 
 export default function PresalePage() {
+  const { t } = useI18n();
   const { address, isConnected, chainId } = useAccount();
   const [amount, setAmount] = useState('');
   const [txPending, setTxPending] = useState(false);
@@ -208,10 +210,10 @@ export default function PresalePage() {
             </span>
           </motion.span>
           <motion.h1 variants={fadeUp} className="text-4xl sm:text-5xl lg:text-6xl font-black text-white">
-            Buy <span className="text-gold-gradient">$VYR</span> at the Best Price
+            Buy <span className="text-gold-gradient">$VYR</span> {t('presale.subtitle')}
           </motion.h1>
           <motion.p variants={fadeUp} className="mt-4 text-lg text-beige-muted max-w-2xl mx-auto">
-            Join the presale — <span className="text-gold font-bold">Phase 1: $0.01/VYR</span> for the first 15 days, then Phase 2 at $0.02.
+            Join the presale — <span className="text-gold font-bold">{t('presale.phase1desc')}</span>
           </motion.p>
         </motion.div>
 
@@ -248,7 +250,7 @@ export default function PresalePage() {
               <div className="mb-6 rounded-xl bg-red-500/10 border border-red-500/30 p-4">
                 <div className="flex items-center gap-2">
                   <AlertCircle className="h-5 w-5 text-red-400" />
-                  <span className="text-sm text-red-400 font-bold">You're on the wrong network</span>
+                  <span className="text-sm text-red-400 font-bold">{t('presale.wrong')}</span>
                 </div>
                 <p className="text-xs text-beige-muted mt-1">Please switch to BSC Testnet in your wallet to continue.</p>
               </div>
@@ -257,7 +259,7 @@ export default function PresalePage() {
             {''}
             {isConnected && onCorrectChain && (
               <div className="mb-4 flex justify-between text-sm">
-                <span className="text-beige-muted">Your USDT Balance</span>
+                <span className="text-beige-muted">{t('presale.usdtBal')}</span>
                 <span className="font-bold text-beige">
                   {usdtBalance ? formatUnits(usdtBalance, 18) : '0'} USDT
                 </span>
@@ -266,7 +268,7 @@ export default function PresalePage() {
 
             {''}
             <div className="mb-6">
-              <label className="text-sm font-medium text-beige mb-2 block">Amount in USDT</label>
+              <label className="text-sm font-medium text-beige mb-2 block">{t('presale.amountLabel')}</label>
               <div className="relative">
                 <input
                   type="number"
@@ -297,12 +299,12 @@ export default function PresalePage() {
             {amount && isConnected && (
               <div className="rounded-xl bg-dark-elevated border border-dark-border p-5 space-y-3 mb-6">
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-beige-muted">Presale Price</span>
+                  <span className="text-sm text-beige-muted">{t('presale.price')}</span>
                   <span className="text-sm font-bold text-white">$0.010 / VYR</span>
                 </div>
                 <div className="border-t border-dark-border pt-3">
                   <div className="flex justify-between items-center">
-                    <span className="text-base font-bold text-white">You Receive</span>
+                    <span className="text-base font-bold text-white">{t('presale.receive')}</span>
                     <span className="text-2xl font-black text-gold-gradient">{fmtNum(totalVyr)} VYR</span>
                   </div>
                 </div>
@@ -312,11 +314,11 @@ export default function PresalePage() {
             {''}
             {!isConnected ? (
               <div className="text-center py-4">
-                <p className="text-sm text-beige-muted mb-3">Connect your wallet to start</p>
+                <p className="text-sm text-beige-muted mb-3">{t('presale.connect1')}</p>
               </div>
             ) : !onCorrectChain ? (
               <div className="text-center py-4">
-                <p className="text-sm text-red-400">Switch to BSC Testnet to continue</p>
+                <p className="text-sm text-red-400">{t('presale.switch')}</p>
               </div>
             ) : amount && needsApproval ? (
               <button
@@ -325,7 +327,7 @@ export default function PresalePage() {
                 className="w-full py-4 text-base font-bold rounded-xl border border-gold/30 bg-gold/10 text-gold hover:bg-gold/20 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {txPending ? <Loader2 className="h-5 w-5 animate-spin" /> : <Shield className="h-5 w-5" />}
-                {txPending ? 'Confirming...' : 'Approve USDT'}
+                {txPending ? t('presale.approving') : 'Approve USDT'}
               </button>
             ) : (
               <button
@@ -334,13 +336,13 @@ export default function PresalePage() {
                 className="w-full py-4 text-base font-bold rounded-xl bg-gradient-to-r from-gold-light to-gold-dark text-dark hover:shadow-lg hover:shadow-gold/40 hover:scale-[1.01] transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
               >
                 {txPending ? <Loader2 className="h-5 w-5 animate-spin" /> : null}
-                {txPending ? 'Processing...' : `Buy ${amount ? fmtNum(totalVyr) : ''} VYR`}
+                {txPending ? t('presale.buying') : `${t('presale.buy')}${amount ? ' ' + fmtNum(totalVyr) : ''}`}
               </button>
             )}
 
             <p className="mt-4 text-xs text-beige-muted text-center">
               <Shield className="inline h-3 w-3 mr-1" />
-              Secure smart contracts on BNB Chain. All transactions are on-chain and verifiable.
+              {t('presale.secure')}
             </p>
           </div>
         </motion.div>
@@ -365,7 +367,7 @@ export default function PresalePage() {
               </div>
               <div className="rounded-xl border border-dark-border bg-dark-card p-4 text-center">
                 <div className="text-2xl font-black text-gold-gradient">{String(info[5] || BigInt(0))}</div>
-                <div className="text-xs text-beige-muted mt-1">Buyers</div>
+                <div className="text-xs text-beige-muted mt-1">{t('presale.buyers')}</div>
               </div>
             </div>
           </motion.div>
@@ -379,14 +381,14 @@ export default function PresalePage() {
           return (
           <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} className="mb-12 mx-auto max-w-2xl">
             <div className="rounded-2xl border border-gold/30 bg-dark-card p-6">
-              <h3 className="text-lg font-bold text-white mb-4">Your Purchase History</h3>
+              <h3 className="text-lg font-bold text-white mb-4">{t('presale.history')}</h3>
               <div className="grid grid-cols-3 gap-4">
                 <div>
-                  <div className="text-xs text-beige-muted">Spent</div>
+                  <div className="text-xs text-beige-muted">{t('presale.spent')}</div>
                   <div className="text-lg font-bold text-white">${formatUnits(bi[0], 6)}</div>
                 </div>
                 <div>
-                  <div className="text-xs text-beige-muted">Tokens</div>
+                  <div className="text-xs text-beige-muted">{t('presale.tokens')}</div>
                   <div className="text-lg font-bold text-gold">{fmtNum(formatUnits(bi[1], 18))}</div>
                 </div>
                 <div>
@@ -400,7 +402,7 @@ export default function PresalePage() {
         })() : null}
         {''}
         <motion.div variants={stagger} initial="hidden" whileInView="visible" viewport={{ once: true }} className="mb-16">
-          <h2 className="text-2xl font-bold text-white text-center mb-8">Presale Phases</h2>
+          <h2 className="text-2xl font-bold text-white text-center mb-8">{t('presale.phases2')}</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {PRESALE_PHASES.map((phase) => (
               <motion.div key={phase.phase} variants={fadeUp}
@@ -414,7 +416,7 @@ export default function PresalePage() {
                 <div className="text-3xl font-black text-gold-gradient mb-1">{phase.price}</div>
                 <div className="text-xs text-beige-muted mb-3">{phase.duration}</div>
                 <div className="space-y-1 text-sm border-t border-dark-border pt-3">
-                  <div className="flex justify-between"><span className="text-beige-muted">Allocation</span><span className="text-beige font-medium">{phase.allocation}</span></div>
+                  <div className="flex justify-between"><span className="text-beige-muted">{t('presale.allocation')}</span><span className="text-beige font-medium">{phase.allocation}</span></div>
                 </div>
               </motion.div>
             ))}
@@ -423,8 +425,8 @@ export default function PresalePage() {
 
         {''}
         <motion.div variants={stagger} initial="hidden" whileInView="visible" viewport={{ once: true }} className="mb-16">
-          <h2 className="text-2xl font-bold text-white text-center mb-2">Fund Distribution</h2>
-          <p className="text-sm text-beige-muted text-center mb-8">Presale runs for 30 days — 2 phases at increasing prices</p>
+          <h2 className="text-2xl font-bold text-white text-center mb-2">{t('presale.distribution')}</h2>
+          <p className="text-sm text-beige-muted text-center mb-8">{t('presale.runs30')}</p>
           <div className="rounded-2xl border border-dark-border bg-dark-card p-8">
             <div className="flex h-6 rounded-lg overflow-hidden mb-6">
               {DISTRIBUTION.map((item) => (
@@ -446,7 +448,7 @@ export default function PresalePage() {
         {''}
         <motion.div variants={stagger} initial="hidden" whileInView="visible" viewport={{ once: true }} className="grid grid-cols-1 sm:grid-cols-3 gap-6">
           {[
-            { icon: Clock, title: '30-Day Presale', desc: 'Phase 1 at $0.01 for 15 days, Phase 2 at $0.02 for 15 days. Launch at $0.03.' },
+            { icon: Clock, title: t('presale.days30'), desc: t('presale.days30desc') },
             { icon: Shield, title: 'Secure & Audited', desc: 'Smart contracts audited before launch. Chainlink oracle for accurate pricing.' },
             { icon: Zap, title: 'Instant Receipt', desc: 'VYR tokens credited immediately upon presale confirmation. Claimable after presale ends.' },
           ].map((card) => (

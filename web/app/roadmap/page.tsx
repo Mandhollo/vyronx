@@ -8,6 +8,7 @@ import {
   Coins, Target, Flame, Users, Lock, Shield, Zap
 } from 'lucide-react';
 import ParticleField from '@/components/fx/ParticleField';
+import { useI18n } from '@/lib/i18n';
 
 const fadeUp = {
   hidden: { opacity: 0, y: 30 },
@@ -100,6 +101,7 @@ const PHASES = [
 ];
 
 export default function RoadmapPage() {
+  const { t } = useI18n();
   return (
     <div className="relative min-h-screen pt-24 pb-20">
       <div className="absolute inset-0 bg-grid-pattern" />
@@ -117,13 +119,13 @@ export default function RoadmapPage() {
           className="text-center mb-16"
         >
           <motion.span variants={fadeUp} className="inline-block px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-gold border border-gold/30 rounded-full bg-gold/5 mb-4 neon-pulse">
-            Project Roadmap
+            {t('rm.badge')}
           </motion.span>
           <motion.h1 variants={fadeUp} className="text-4xl sm:text-5xl lg:text-6xl font-black text-white">
-            Building the <span className="text-gold-gradient">Future</span>
+            {t('rm.title')} <span className="text-gold-gradient">{t('rm.titleHighlight')}</span>
           </motion.h1>
           <motion.p variants={fadeUp} className="mt-4 text-lg text-beige-muted max-w-2xl mx-auto">
-            A phased approach to building a comprehensive DeFi ecosystem — from foundation to launchpad.
+            {t('rm.subtitle')}
           </motion.p>
         </motion.div>
 
@@ -165,11 +167,11 @@ export default function RoadmapPage() {
                   }`}>
                     <div className="flex items-center justify-between mb-4">
                       <div>
-                        <div className="text-xs font-bold uppercase tracking-widest text-gold">{phase.phase}</div>
-                        <h3 className="text-xl font-bold text-white mt-1">{phase.title}</h3>
+                        <div className="text-xs font-bold uppercase tracking-widest text-gold">{t(`rm.${phase.phase.toLowerCase().replace(' ', '')}`)}</div>
+                        <h3 className="text-xl font-bold text-white mt-1">{t(`rm.${phase.phase.toLowerCase().replace(' ', '')}Title`)}</h3>
                       </div>
                       {phase.status === 'active' ? (
-                        <span className="px-2.5 py-1 text-xs font-bold rounded-full bg-gold/20 text-gold border border-gold/30">In Progress</span>
+                        <span className="px-2.5 py-1 text-xs font-bold rounded-full bg-gold/20 text-gold border border-gold/30">{t('rm.inProgress')}</span>
                       ) : (
                         <span className="px-2.5 py-1 text-xs font-bold rounded-full bg-dark-elevated text-beige-muted border border-dark-border">{phase.timeline}</span>
                       )}
@@ -200,10 +202,10 @@ export default function RoadmapPage() {
             <div className="absolute inset-0 bg-dot-pattern opacity-30" />
             <div className="relative">
               <h2 className="text-3xl font-bold text-white">
-                Be Part of the <span className="text-gold-gradient">Journey</span>
+                {t('rm.ctaTitle')} <span className="text-gold-gradient">{t('rm.ctaHighlight')}</span>
               </h2>
               <p className="mt-3 text-beige-muted max-w-xl mx-auto">
-                Join the presale today and become an early participant in the VyronX ecosystem.
+                {t('rm.ctaDesc')}
               </p>
               <Link
                 href="/presale"

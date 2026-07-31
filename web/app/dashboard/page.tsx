@@ -18,6 +18,7 @@ import { formatUnits, parseUnits } from 'viem';
 import { bscTestnet } from 'wagmi/chains';
 import toast from 'react-hot-toast';
 import ParticleField from '@/components/fx/ParticleField';
+import { useI18n } from '@/lib/i18n';
 
 const fadeUp = {
   hidden: { opacity: 0, y: 30 },
@@ -33,6 +34,7 @@ const ERC20_ABI = [
 ] as const;
 
 export default function DashboardPage() {
+  const { t } = useI18n();
   const { address, isConnected, chainId } = useAccount();
   const { writeContractAsync } = useWriteContract();
   const [copied, setCopied] = useState(false);
@@ -130,8 +132,8 @@ export default function DashboardPage() {
         <div className="absolute top-1/3 left-1/2 -translate-x-1/2 h-96 w-96 rounded-full bg-gold/10 blur-[120px]" />
         <motion.div variants={fadeUp} initial="hidden" animate="visible" className="relative text-center max-w-md mx-auto px-4">
           <Wallet className="h-16 w-16 text-gold mx-auto mb-6 float" />
-          <h1 className="text-3xl font-bold text-white mb-3">Connect Your Wallet</h1>
-          <p className="text-beige-muted mb-8">Connect your wallet to view your VyronX dashboard, stakes, earnings, and referral network.</p>
+          <h1 className="text-3xl font-bold text-white mb-3">{t('dash.connect')}</h1>
+          <p className="text-beige-muted mb-8">{t('dash.connectDesc')}</p>
           <p className="text-sm text-beige-muted">← Click <span className="text-gold font-bold">"Connect Wallet"</span> in the header</p>
         </motion.div>
       </div>
@@ -151,7 +153,7 @@ export default function DashboardPage() {
         <motion.div variants={stagger} initial="hidden" animate="visible" className="mb-12">
           <motion.div variants={fadeUp} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-2">
             <div>
-              <h1 className="text-3xl sm:text-4xl font-black text-white">My Dashboard</h1>
+              <h1 className="text-3xl sm:text-4xl font-black text-white">{t('dash.title')}</h1>
               <p className="text-beige-muted mt-1 flex items-center gap-2">
                 <span className={`h-2 w-2 rounded-full ${onCorrectChain ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} />
                 {address && `${address.slice(0, 6)}...${address.slice(-4)}`}
@@ -163,7 +165,7 @@ export default function DashboardPage() {
               className="flex items-center gap-2 px-4 py-2 text-sm rounded-lg border border-dark-border bg-dark-card text-beige hover:text-gold hover:border-gold/30 transition-colors"
             >
               {copied ? <Check className="h-4 w-4 text-green-400" /> : <Copy className="h-4 w-4" />}
-              {copied ? 'Copied!' : 'Copy Address'}
+              {copied ? t('dash.copied') : 'Copy Address'}
             </button>
           </motion.div>
         </motion.div>
@@ -189,7 +191,7 @@ export default function DashboardPage() {
           <motion.div variants={fadeUp} className="rounded-2xl glass-card p-6">
             <div className="flex items-center gap-2 mb-2">
               <Lock className="h-5 w-5 text-gold" />
-              <span className="text-xs text-beige-muted uppercase tracking-wider">Active Stakes</span>
+              <span className="text-xs text-beige-muted uppercase tracking-wider">{t('staking.active')}</span>
             </div>
             <div className="text-2xl font-black text-white">{stakeCount}</div>
           </motion.div>
@@ -197,7 +199,7 @@ export default function DashboardPage() {
           <motion.div variants={fadeUp} className="rounded-2xl glass-card p-6">
             <div className="flex items-center gap-2 mb-2">
               <Users className="h-5 w-5 text-gold" />
-              <span className="text-xs text-beige-muted uppercase tracking-wider">Referrals</span>
+              <span className="text-xs text-beige-muted uppercase tracking-wider">{t('staking.referrals')}</span>
             </div>
             <div className="text-2xl font-black text-white">{referralData ? String(referralData[1]) : '0'}</div>
           </motion.div>
@@ -216,11 +218,11 @@ export default function DashboardPage() {
                   <div className="text-lg font-bold text-white">${fmtNum(buyerInfo[0], 6, 0)}</div>
                 </div>
                 <div>
-                  <div className="text-xs text-beige-muted">Tokens Bought</div>
+                  <div className="text-xs text-beige-muted">{t('dash.tokensBought')}</div>
                   <div className="text-lg font-bold text-gold">{fmtNum(buyerInfo[1], 18, 0)} VYR</div>
                 </div>
                 <div>
-                  <div className="text-xs text-beige-muted">Total VYR</div>
+                  <div className="text-xs text-beige-muted">{t('dash.totalEarnings')}</div>
                   <div className="text-lg font-bold text-green-400">{fmtNum(buyerInfo[2], 18, 0)} VYR</div>
                 </div>
               </div>
@@ -231,7 +233,7 @@ export default function DashboardPage() {
         {/* Stakes */}
         <motion.div variants={stagger} initial="hidden" animate="visible" className="mb-12">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-bold text-white">My Stakes</h2>
+            <h2 className="text-xl font-bold text-white">{t('dash.myStakes')}</h2>
             <Link href="/staking" className="text-sm text-gold hover:text-gold-light flex items-center gap-1">
               New Stake <ArrowRight className="h-4 w-4" />
             </Link>
@@ -240,7 +242,7 @@ export default function DashboardPage() {
           {stakeCount === 0 ? (
             <div className="rounded-2xl border border-dark-border bg-dark-card p-12 text-center">
               <Lock className="h-12 w-12 text-beige-muted mx-auto mb-4" />
-              <p className="text-beige-muted mb-4">You have no active stakes yet</p>
+              <p className="text-beige-muted mb-4">{t('dash.noStakes')}</p>
               <Link href="/staking" className="inline-flex items-center gap-2 px-6 py-3 text-sm font-bold rounded-xl bg-gradient-to-r from-gold-light to-gold-dark text-dark hover:shadow-lg hover:shadow-gold/40 transition-all">
                 Start Staking <ArrowRight className="h-4 w-4" />
               </Link>
@@ -267,7 +269,7 @@ export default function DashboardPage() {
                       </div>
                       <div className="flex items-center gap-6">
                         <div className="text-center">
-                          <div className="text-xs text-beige-muted">Pending</div>
+                          <div className="text-xs text-beige-muted">{t('dash.pending')}</div>
                           <div className="text-sm font-bold text-green-400">{fmt(earnings.usdt)} USDT</div>
                           <div className="text-xs text-gold">≈ {fmt(earnings.vyr)} VYR</div>
                         </div>
@@ -298,15 +300,15 @@ export default function DashboardPage() {
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
               <div className="rounded-xl bg-dark-elevated border border-dark-border p-4">
-                <div className="text-xs text-beige-muted">Direct Referrals</div>
+                <div className="text-xs text-beige-muted">{t('staking.referrals')}</div>
                 <div className="text-2xl font-black text-gold-gradient">{referralData ? String(referralData[1]) : '0'}</div>
               </div>
               <div className="rounded-xl bg-dark-elevated border border-dark-border p-4">
-                <div className="text-xs text-beige-muted">Total Earnings</div>
+                <div className="text-xs text-beige-muted">{t('dash.totalEarnings')}</div>
                 <div className="text-2xl font-black text-gold">{referralData ? fmtNum(referralData[2], 18, 2) : '0'} <span className="text-sm">USDT</span></div>
               </div>
               <div className="rounded-xl bg-dark-elevated border border-dark-border p-4">
-                <div className="text-xs text-beige-muted">Your Referrer</div>
+                <div className="text-xs text-beige-muted">{t('dash.yourReferrer')}</div>
                 <div className="text-sm font-mono text-beige mt-1">
                   {referralData && referralData[0] !== '0x0000000000000000000000000000000000000000'
                     ? `${referralData[0].slice(0, 6)}...${referralData[0].slice(-4)}`
@@ -317,7 +319,7 @@ export default function DashboardPage() {
 
             {/* Referral link */}
             <div className="rounded-xl bg-dark-elevated border border-dark-border p-4">
-              <div className="text-xs text-beige-muted mb-2">Your Referral Link</div>
+              <div className="text-xs text-beige-muted mb-2">{t('dash.referralLink')}</div>
               <div className="flex items-center gap-2">
                 <code className="flex-1 text-xs text-gold truncate">
                   {address ? `${typeof window !== 'undefined' ? window.location.origin : 'https://vyronx.io'}/staking?ref=${address}` : 'Connect wallet'}
@@ -333,7 +335,7 @@ export default function DashboardPage() {
           </div>
         </motion.div>
 
-        {/* Quick Actions */}
+        {/* {t('dash.quickActions')} */}
         <motion.div variants={stagger} initial="hidden" animate="visible" className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           {[
             { icon: Coins, label: 'Buy VYR', href: '/presale', desc: 'Join presale' },

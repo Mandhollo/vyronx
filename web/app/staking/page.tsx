@@ -10,6 +10,7 @@ import {
   Zap, Users, ChevronDown, Info, ArrowRight, Clock, Loader2, AlertCircle
 } from 'lucide-react';
 import { STAKING_ADDRESS, USDT_ADDRESS, StakingABI } from '@/lib/contracts';
+import { useI18n } from '@/lib/i18n';
 import { publicClient } from '@/components/web3/Web3Provider';
 import { parseUnits, formatUnits } from 'viem';
 import { bscTestnet } from 'wagmi/chains';
@@ -61,6 +62,7 @@ export default function StakingPage() {
 }
 
 function StakingPageContent() {
+  const { t } = useI18n();
   const { address, isConnected, chainId } = useAccount();
   const [activePool, setActivePool] = useState<number | null>(null);
   const [stakeAmount, setStakeAmount] = useState('');
@@ -175,8 +177,8 @@ function StakingPageContent() {
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Hero */}
         <motion.div variants={stagger} initial="hidden" animate="visible" className="text-center mb-16">
-          <motion.span variants={fadeUp} className="inline-block px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-gold border border-gold/30 rounded-full bg-gold/5 mb-4 neon-pulse">Staking Pools</motion.span>
-          <motion.h1 variants={fadeUp} className="text-4xl sm:text-5xl lg:text-6xl font-black text-white">Stake USDT, Earn <span className="text-gold-gradient">$VYR</span></motion.h1>
+          <motion.span variants={fadeUp} className="inline-block px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-gold border border-gold/30 rounded-full bg-gold/5 mb-4 neon-pulse">{t('staking.title')}</motion.span>
+          <motion.h1 variants={fadeUp} className="text-4xl sm:text-5xl lg:text-6xl font-black text-white">{t('staking.title2').replace(/ ?VYR$/i, '').trim()} <span className="text-gold-gradient">$VYR</span></motion.h1>
           <motion.p variants={fadeUp} className="mt-4 text-lg text-beige-muted max-w-2xl mx-auto">Four staking tiers with up to 15% monthly returns. Enter with USDT, receive VYR at market price via Chainlink oracle upon withdrawal.</motion.p>
         </motion.div>
 
@@ -193,15 +195,15 @@ function StakingPageContent() {
           <div className="mb-12 mx-auto max-w-3xl grid grid-cols-2 sm:grid-cols-3 gap-4">
             <div className="rounded-xl border border-dark-border bg-dark-card p-4 text-center">
               <div className="text-xl font-black text-gold-gradient">{formatUnits(usdtBalance, 18)}</div>
-              <div className="text-xs text-beige-muted mt-1">Your USDT Balance</div>
+              <div className="text-xs text-beige-muted mt-1">{t('presale.usdtBal')}</div>
             </div>
             <div className="rounded-xl border border-dark-border bg-dark-card p-4 text-center">
               <div className="text-xl font-black text-gold-gradient">{stakeCount}</div>
-              <div className="text-xs text-beige-muted mt-1">Active Stakes</div>
+              <div className="text-xs text-beige-muted mt-1">{t('staking.active')}</div>
             </div>
             <div className="rounded-xl border border-dark-border bg-dark-card p-4 text-center">
               <div className="text-xl font-black text-gold-gradient">{referralData ? String(referralData[1]) : '0'}</div>
-              <div className="text-xs text-beige-muted mt-1">Direct Referrals</div>
+              <div className="text-xs text-beige-muted mt-1">{t('staking.referrals')}</div>
             </div>
           </div>
         )}
@@ -220,12 +222,12 @@ function StakingPageContent() {
               </div>
               <div className="my-6 text-center">
                 <div className="text-4xl font-black text-gold-gradient">{pool.monthly}</div>
-                <div className="text-xs text-beige-muted mt-1">Monthly Return</div>
+                <div className="text-xs text-beige-muted mt-1">{t('pool.monthly')}</div>
               </div>
               <div className="space-y-2 text-sm border-t border-dark-border pt-4">
-                <div className="flex justify-between"><span className="text-beige-muted">Daily Rate</span><span className="text-beige font-medium">{pool.daily}%</span></div>
-                <div className="flex justify-between"><span className="text-beige-muted">Lock Period</span><span className="text-beige font-medium">{pool.lock} days</span></div>
-                <div className="flex justify-between"><span className="text-beige-muted">Min. Stake</span><span className="text-beige font-medium">${pool.minStake} USDT</span></div>
+                <div className="flex justify-between"><span className="text-beige-muted">{t('pool.daily')}</span><span className="text-beige font-medium">{pool.daily}%</span></div>
+                <div className="flex justify-between"><span className="text-beige-muted">{t('pool.lock')}</span><span className="text-beige font-medium">{pool.lock} {t('pool.days')}</span></div>
+                <div className="flex justify-between"><span className="text-beige-muted">{t('staking.min')}</span><span className="text-beige font-medium">${pool.minStake} USDT</span></div>
               </div>
               {pool.features && (
                 <div className="mt-4 pt-4 border-t border-dark-border space-y-2">
@@ -239,7 +241,7 @@ function StakingPageContent() {
                 disabled={!isConnected || !onCorrectChain}
                 className={`mt-6 w-full py-3 text-sm font-bold rounded-xl transition-all disabled:opacity-50 ${pool.featured ? 'bg-gradient-to-r from-gold-light to-gold-dark text-dark hover:shadow-lg hover:shadow-gold/40' : 'border border-gold/30 bg-gold/5 text-gold hover:bg-gold/10'}`}
               >
-                {!isConnected ? 'Connect Wallet' : 'Stake Now'}
+                {!isConnected ? t('nav.connect') : t('staking.stake')}
               </button>
             </motion.div>
           ))}
@@ -258,7 +260,7 @@ function StakingPageContent() {
               </div>
 
               <div className="mb-6">
-                <label className="text-sm font-medium text-beige mb-2 block">Amount (USDT)</label>
+                <label className="text-sm font-medium text-beige mb-2 block">{t('staking.amount')}</label>
                 <div className="relative">
                   <input type="number" value={stakeAmount} onChange={(e) => setStakeAmount(e.target.value)} placeholder="0.00"
                     className="w-full bg-dark-elevated border border-dark-border rounded-xl px-4 py-4 text-2xl text-white placeholder:text-beige-muted/40 focus:outline-none focus:border-gold/50" />
@@ -269,15 +271,15 @@ function StakingPageContent() {
               {stakeAmount && (
                 <div className="rounded-xl bg-dark-elevated border border-dark-border p-5 space-y-3 mb-6">
                   <div className="flex justify-between">
-                    <span className="text-sm text-beige-muted">Total Earnings at Maturity</span>
+                    <span className="text-sm text-beige-muted">{t('staking.maturity')}</span>
                     <span className="text-sm font-bold text-green-400">+${calculateEarnings(parseFloat(stakeAmount), selectedPool.daily, selectedPool.lock)} USDT</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-sm text-beige-muted">Paid in VYR</span>
-                    <span className="text-sm font-bold text-gold">Via Oracle at Withdrawal</span>
+                    <span className="text-sm text-beige-muted">{t('staking.paidVyr')}</span>
+                    <span className="text-sm font-bold text-gold">{t('staking.oracle')}</span>
                   </div>
                   <div className="flex justify-between border-t border-dark-border pt-3">
-                    <span className="text-sm font-bold text-white">Total Return</span>
+                    <span className="text-sm font-bold text-white">{t('staking.totalReturn')}</span>
                     <span className="text-lg font-black text-gold-gradient">${(parseFloat(stakeAmount) + parseFloat(calculateEarnings(parseFloat(stakeAmount), selectedPool.daily, selectedPool.lock))).toFixed(2)}</span>
                   </div>
                 </div>
@@ -287,18 +289,18 @@ function StakingPageContent() {
                 <button onClick={handleApprove} disabled={txPending}
                   className="w-full py-4 text-base font-bold rounded-xl border border-gold/30 bg-gold/10 text-gold hover:bg-gold/20 transition-all disabled:opacity-50 flex items-center justify-center gap-2">
                   {txPending ? <Loader2 className="h-5 w-5 animate-spin" /> : <Lock className="h-5 w-5" />}
-                  {txPending ? 'Confirming...' : 'Approve USDT'}
+                  {txPending ? 'Confirming...' : t('staking.approve')}
                 </button>
               ) : (
                 <button onClick={handleStake} disabled={!stakeAmount || txPending}
                   className="w-full py-4 text-base font-bold rounded-xl bg-gradient-to-r from-gold-light to-gold-dark text-dark hover:shadow-lg hover:shadow-gold/40 transition-all disabled:opacity-40 flex items-center justify-center gap-2">
                   {txPending ? <Loader2 className="h-5 w-5 animate-spin" /> : null}
-                  {txPending ? 'Processing...' : `Stake ${stakeAmount || ''} USDT`}
+                  {txPending ? 'Processing...' : `${t('staking.stake')} ${stakeAmount || ''} USDT`}
                 </button>
               )}
 
               <p className="mt-4 text-xs text-beige-muted text-center flex items-center justify-center gap-1">
-                <Info className="h-3 w-3" /> Earnings paid in VYR tokens at market price via Chainlink oracle
+                <Info className="h-3 w-3" /> {t('staking.connect')}
               </p>
             </div>
           </motion.div>
@@ -325,14 +327,14 @@ function StakingPageContent() {
         <motion.div variants={stagger} initial="hidden" whileInView="visible" viewport={{ once: true }} className="mb-16">
           <div className="rounded-3xl border border-gold/20 bg-gradient-to-br from-dark-card via-dark to-green-moss-dark/30 p-8 sm:p-12">
             <motion.div variants={fadeUp} className="text-center mb-8">
-              <span className="inline-block px-3 py-1 text-xs font-bold uppercase tracking-widest text-gold border border-gold/30 rounded-full bg-gold/5 mb-4 neon-pulse">Exclusive: 360-Day Pool</span>
-              <h2 className="text-3xl font-bold text-white">The Accelerator</h2>
+              <span className="inline-block px-3 py-1 text-xs font-bold uppercase tracking-widest text-gold border border-gold/30 rounded-full bg-gold/5 mb-4 neon-pulse">{t('staking.accelDesc')}</span>
+              <h2 className="text-3xl font-bold text-white">{t('staking.accelerator')}</h2>
               <p className="mt-3 text-beige-muted max-w-2xl mx-auto">Refer investors to the 360-day pool and accelerate your withdrawal. Each referral adds 10% of their deposit to your accelerator. Reach 100% to unlock early withdrawal.</p>
             </motion.div>
 
             <motion.div variants={fadeUp} className="mx-auto max-w-2xl">
               <div className="rounded-2xl bg-dark-elevated border border-dark-border p-6">
-                <div className="text-sm font-bold text-gold mb-4">Example: You stake $100</div>
+                <div className="text-sm font-bold text-gold mb-4">{t('staking.example')}</div>
                 <div className="space-y-3">
                   {[
                     { referral: 'Referral #1', deposit: '$200', accel: '$20 (10%)', total: '20%', barWidth: '20%' },
@@ -373,10 +375,10 @@ function StakingPageContent() {
             <table className="w-full min-w-[600px]">
               <thead>
                 <tr className="border-b border-dark-border">
-                  <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-gold">Level</th>
+                  <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-gold">{t('staking.level')}</th>
                   <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-gold">Commission</th>
-                  <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-gold">Min. Stake</th>
-                  <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-gold">Direct Referrals</th>
+                  <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-gold">{t('staking.min')}</th>
+                  <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-gold">{t('staking.referrals')}</th>
                 </tr>
               </thead>
               <tbody>

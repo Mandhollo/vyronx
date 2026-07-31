@@ -8,6 +8,7 @@ import {
   Flame, Target, Rocket, Users, Clock, ArrowRight, Download
 } from 'lucide-react';
 import ParticleField from '@/components/fx/ParticleField';
+import { useI18n } from '@/lib/i18n';
 
 const fadeUp = {
   hidden: { opacity: 0, y: 30 },
@@ -33,6 +34,7 @@ const SECTIONS = [
 ];
 
 export default function WhitepaperPage() {
+  const { t } = useI18n();
   return (
     <div className="relative min-h-screen pt-24 pb-20">
       <div className="absolute inset-0 bg-grid-pattern" />
@@ -46,7 +48,7 @@ export default function WhitepaperPage() {
           {/* Sidebar TOC */}
           <aside className="lg:w-64 shrink-0 lg:sticky lg:top-24 lg:self-start">
             <div className="rounded-2xl border border-dark-border bg-dark-card p-5">
-              <h3 className="text-sm font-bold text-gold uppercase tracking-wider mb-4">Contents</h3>
+              <h3 className="text-sm font-bold text-gold uppercase tracking-wider mb-4">{t('wp.contents')}</h3>
               <nav className="space-y-1">
                 {SECTIONS.map((section) => (
                   <a
@@ -72,13 +74,13 @@ export default function WhitepaperPage() {
             >
               <motion.div variants={fadeUp} className="flex items-center gap-3 mb-4">
                 <FileText className="h-8 w-8 text-gold" />
-                <span className="text-xs font-bold uppercase tracking-widest text-gold border border-gold/30 rounded-full px-3 py-1 bg-gold/5">Whitepaper v1.0</span>
+                <span className="text-xs font-bold uppercase tracking-widest text-gold border border-gold/30 rounded-full px-3 py-1 bg-gold/5">{t('wp.badge')}</span>
               </motion.div>
               <motion.h1 variants={fadeUp} className="text-4xl sm:text-5xl font-black text-white">
                 <span className="text-white">Vyron</span><span className="text-gold-gradient">X</span> Whitepaper
               </motion.h1>
               <motion.p variants={fadeUp} className="mt-4 text-lg text-beige-muted">
-                A comprehensive technical document covering the architecture, tokenomics, and vision of the VyronX DeFi ecosystem.
+                {t('wp.subtitle')}
               </motion.p>
             </motion.div>
 
@@ -91,7 +93,7 @@ export default function WhitepaperPage() {
             >
               {/* Overview */}
               <motion.section variants={fadeUp} id="overview" className="scroll-mt-24">
-                <h2 className="text-2xl font-bold text-white mb-4">1. Overview</h2>
+                <h2 className="text-2xl font-bold text-white mb-4">{t('wp.overview')}</h2>
                 <p className="text-beige leading-relaxed mb-4">
                   <span className="text-gold font-bold">VyronX ($VYR)</span> is a DeFi ecosystem built on the BNB Smart Chain (BEP-20) that combines artificial intelligence, innovative staking mechanisms, and a transparent value-distribution model. The platform enables investors to participate in staking pools with differentiated returns, benefit from an 11-level affiliate system with residual commissions, and access a growing ecosystem of utilities including AI-powered arbitrage, strategic buybacks, predictive markets, and a launchpad for future governance tokens.
                 </p>
@@ -109,7 +111,7 @@ export default function WhitepaperPage() {
 
               {/* Token */}
               <motion.section variants={fadeUp} id="token" className="scroll-mt-24">
-                <h2 className="text-2xl font-bold text-white mb-4">2. Token Specifications</h2>
+                <h2 className="text-2xl font-bold text-white mb-4">{t('wp.token')}</h2>
                 <div className="rounded-2xl border border-dark-border bg-dark-card overflow-hidden">
                   <table className="w-full">
                     <tbody>
@@ -133,7 +135,7 @@ export default function WhitepaperPage() {
 
               {/* Tokenomics */}
               <motion.section variants={fadeUp} id="tokenomics" className="scroll-mt-24">
-                <h2 className="text-2xl font-bold text-white mb-4">3. Tokenomics</h2>
+                <h2 className="text-2xl font-bold text-white mb-4">{t('wp.tokenomics')}</h2>
                 <p className="text-beige leading-relaxed mb-6">
                   The total supply of 1 billion VYR is distributed across three key allocations:
                 </p>
@@ -160,7 +162,7 @@ export default function WhitepaperPage() {
 
               {/* Fees */}
               <motion.section variants={fadeUp} id="fees" className="scroll-mt-24">
-                <h2 className="text-2xl font-bold text-white mb-4">4. Fee Mechanism</h2>
+                <h2 className="text-2xl font-bold text-white mb-4">{t('wp.fees')}</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="rounded-2xl border border-green-moss/30 bg-green-moss-dark/20 p-6">
                     <h3 className="text-lg font-bold text-white mb-4">Buy Tax — 8%</h3>
@@ -185,7 +187,7 @@ export default function WhitepaperPage() {
 
               {/* Staking */}
               <motion.section variants={fadeUp} id="staking" className="scroll-mt-24">
-                <h2 className="text-2xl font-bold text-white mb-4">5. Staking Pools</h2>
+                <h2 className="text-2xl font-bold text-white mb-4">{t('wp.staking')}</h2>
                 <p className="text-beige leading-relaxed mb-6">
                   Four pools with escalating returns. Investors deposit <span className="text-gold font-bold">USDT</span> and receive <span className="text-gold font-bold">VYR</span> upon withdrawal at market price via Chainlink oracle.
                 </p>
@@ -220,7 +222,7 @@ export default function WhitepaperPage() {
 
               {/* Accelerator */}
               <motion.section variants={fadeUp} id="accelerator" className="scroll-mt-24">
-                <h2 className="text-2xl font-bold text-white mb-4">6. The Accelerator (360-Day Pool)</h2>
+                <h2 className="text-2xl font-bold text-white mb-4">{t('wp.accelerator')}</h2>
                 <p className="text-beige leading-relaxed mb-4">
                   Exclusive to the 360-day pool. Each referral&apos;s deposit adds <span className="text-gold font-bold">10% of their amount</span> to your accelerator. When accumulated referrals reach <span className="text-gold font-bold">100% of your stake</span>, you unlock early withdrawal of your earnings.
                 </p>
@@ -244,7 +246,7 @@ export default function WhitepaperPage() {
 
               {/* Affiliates */}
               <motion.section variants={fadeUp} id="affiliates" className="scroll-mt-24">
-                <h2 className="text-2xl font-bold text-white mb-4">7. Affiliate Program (11 Levels)</h2>
+                <h2 className="text-2xl font-bold text-white mb-4">{t('wp.affiliates')}</h2>
                 <p className="text-beige leading-relaxed mb-4">
                   Residual commissions on <span className="text-gold font-bold">profit</span> (never principal) from your 360-day pool network.
                 </p>
@@ -286,7 +288,7 @@ export default function WhitepaperPage() {
 
               {/* Presale */}
               <motion.section variants={fadeUp} id="presale" className="scroll-mt-24">
-                <h2 className="text-2xl font-bold text-white mb-4">8. Presale & Distribution</h2>
+                <h2 className="text-2xl font-bold text-white mb-4">{t('wp.presale')}</h2>
                 <p className="text-beige leading-relaxed mb-6">
                   Presale runs for 30 days across 2 phases (15 days each), with a launch price of $0.03 on DEX listing.
                 </p>
@@ -307,7 +309,7 @@ export default function WhitepaperPage() {
 
               {/* Ecosystem */}
               <motion.section variants={fadeUp} id="ecosystem" className="scroll-mt-24">
-                <h2 className="text-2xl font-bold text-white mb-4">9. Ecosystem & Utilities</h2>
+                <h2 className="text-2xl font-bold text-white mb-4">{t('wp.ecosystem')}</h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {[
                     { icon: Brain, title: 'AI Arbitrage Agents', desc: 'Real-time crypto arbitrage visible on-chain' },
@@ -331,7 +333,7 @@ export default function WhitepaperPage() {
 
               {/* Security */}
               <motion.section variants={fadeUp} id="security" className="scroll-mt-24">
-                <h2 className="text-2xl font-bold text-white mb-4">10. Security</h2>
+                <h2 className="text-2xl font-bold text-white mb-4">{t('wp.security')}</h2>
                 <ul className="space-y-3">
                   {[
                     'Smart contract audit before mainnet deployment',
@@ -351,7 +353,7 @@ export default function WhitepaperPage() {
               {/* Disclaimer */}
               <motion.section variants={fadeUp} id="disclaimer" className="scroll-mt-24">
                 <div className="rounded-2xl border border-dark-border bg-dark-card/50 p-6">
-                  <h2 className="text-xl font-bold text-white mb-3">Disclaimer</h2>
+                  <h2 className="text-xl font-bold text-white mb-3">{t('wp.disclaimer')}</h2>
                   <p className="text-sm text-beige-muted leading-relaxed">
                     This whitepaper is for informational purposes only and does not constitute financial, legal, or tax advice. Participation in DeFi projects involves inherent risks. Investors should conduct their own research (DYOR) before making any investment decisions. Fees, returns, and mechanisms described may be adjusted by the team as market conditions and ecosystem needs evolve. $VYR tokens do not represent equity, debt, or any form of ownership in the developer entity.
                   </p>
