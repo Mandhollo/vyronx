@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Mail, Shield, FileText, Send, MessageCircle } from 'lucide-react';
+import { Mail, Shield, FileText, Send, MessageCircle, Twitter, Instagram } from 'lucide-react';
 import { useI18n } from '@/lib/i18n';
 import Coin3D from '@/components/fx/Coin3D';
 
@@ -61,6 +61,16 @@ export default function Footer() {
               <li>
                 <a href="https://t.me/tokenvyron" target="_blank" rel="noreferrer" className="flex items-center gap-2 text-sm text-beige hover:text-gold transition-colors">
                   <Send className="h-4 w-4" /> Telegram Channel
+                </a>
+              </li>
+              <li>
+                <a href="https://x.com/vyronx_io" target="_blank" rel="noreferrer" className="flex items-center gap-2 text-sm text-beige hover:text-gold transition-colors">
+                  <Twitter className="h-4 w-4" /> X (Twitter)
+                </a>
+              </li>
+              <li>
+                <a href="https://www.instagram.com/vyronx.io/" target="_blank" rel="noreferrer" className="flex items-center gap-2 text-sm text-beige hover:text-gold transition-colors">
+                  <Instagram className="h-4 w-4" /> Instagram
                 </a>
               </li>
               <li>

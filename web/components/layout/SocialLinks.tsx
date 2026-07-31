@@ -1,6 +1,6 @@
 'use client';
 
-import { Send, MessageCircle } from 'lucide-react';
+import { Send, MessageCircle, Twitter, Instagram } from 'lucide-react';
 
 interface SocialLinksProps {
   size?: 'sm' | 'md';
@@ -35,6 +35,30 @@ export function SocialLinks({ size = 'md', className = '' }: SocialLinksProps) {
         aria-label="Telegram Channel"
       >
         <Send className={iconSize} />
+      </a>
+
+      {/* X (Twitter) */}
+      <a
+        href="https://x.com/vyronx_io"
+        target="_blank"
+        rel="noreferrer"
+        className={`${btnSize} flex items-center justify-center rounded-lg border border-dark-border bg-dark-card/50 text-beige hover:text-gold hover:border-gold/40 hover:bg-gold/5 transition-all magnetic-btn`}
+        title="X (Twitter)"
+        aria-label="X (Twitter)"
+      >
+        <Twitter className={iconSize} />
+      </a>
+
+      {/* Instagram */}
+      <a
+        href="https://www.instagram.com/vyronx.io/"
+        target="_blank"
+        rel="noreferrer"
+        className={`${btnSize} flex items-center justify-center rounded-lg border border-dark-border bg-dark-card/50 text-beige hover:text-gold hover:border-gold/40 hover:bg-gold/5 transition-all magnetic-btn`}
+        title="Instagram"
+        aria-label="Instagram"
+      >
+        <Instagram className={iconSize} />
       </a>
     </div>
   );
