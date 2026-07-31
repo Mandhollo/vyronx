@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import ParticleField from '@/components/fx/ParticleField';
+import { useI18n } from '@/lib/i18n';
 
 // ═══════════════════════════════════════════════════════════════
 // Animation variants
@@ -58,10 +59,10 @@ const ROADMAP = [
 ];
 
 const STATS = [
-  { value: '1B', label: 'Total Supply' },
-  { value: '15%', label: 'Max Monthly APY' },
-  { value: '4', label: 'Staking Pools' },
-  { value: '11', label: 'Affiliate Levels' },
+  { value: '1B', label: 'Total Supply', key: 'stats.supply' },
+  { value: '15%', label: 'Max Monthly APY', key: 'stats.apy' },
+  { value: '4', label: 'Staking Pools', key: 'stats.pools' },
+  { value: '11', label: 'Affiliate Levels', key: 'stats.levels' },
 ];
 
 // ═══════════════════════════════════════════════════════════════
@@ -127,6 +128,7 @@ function AnimatedCounter({ target, suffix = '' }: { target: number; suffix?: str
 // ═══════════════════════════════════════════════════════════════
 
 function Hero() {
+  const { t } = useI18n();
   return (
     <section className="relative min-h-screen flex items-center overflow-hidden pt-20 scanline-overlay">
       {/* Background effects */}
@@ -153,7 +155,7 @@ function Hero() {
           <motion.div variants={fadeUp} className="mb-8">
             <span className="inline-flex items-center gap-2 px-4 py-2 text-xs font-bold uppercase tracking-wider text-gold border border-gold/30 rounded-full bg-gold/5 neon-pulse">
               <span className="h-2 w-2 rounded-full bg-gold animate-pulse" />
-              Presale Live Soon
+              {t('hero.badge')}
             </span>
           </motion.div>
 
@@ -170,13 +172,13 @@ function Hero() {
 
           {/* Tagline */}
           <motion.p variants={fadeUp} className="mt-8 text-xl sm:text-2xl lg:text-3xl font-light text-beige max-w-3xl">
-            The Next-Generation{' '}
-            <span className="text-gold font-medium glitch">DeFi Ecosystem</span>{' '}
-            Powered by Artificial Intelligence
+            {t('hero.tagline')}{' '}
+            <span className="text-gold font-medium glitch">{t('hero.tagline2')}</span>{' '}
+            {t('hero.tagline3')}
           </motion.p>
 
           <motion.p variants={fadeUp} className="mt-4 text-sm sm:text-base text-beige-muted max-w-2xl">
-            AI arbitrage agents • Multi-tier staking pools • Buyback & burn • Predictive markets • Launchpad
+            {t('hero.subtitle')}
           </motion.p>
 
           {/* CTAs */}
@@ -185,14 +187,14 @@ function Hero() {
               href="/presale"
               className="magnetic-btn group inline-flex items-center justify-center gap-2 px-8 py-4 text-base font-bold rounded-xl bg-gradient-to-r from-gold-light to-gold-dark text-dark hover:shadow-2xl hover:shadow-gold/40 transition-all"
             >
-              Join Presale
+              {t('hero.cta1')}
               <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
             </Link>
             <Link
               href="/whitepaper"
               className="magnetic-btn inline-flex items-center justify-center gap-2 px-8 py-4 text-base font-bold rounded-xl border border-dark-border bg-dark-card/50 text-white hover:border-gold/50 hover:text-gold glow-border-hover transition-all"
             >
-              Read Whitepaper
+              {t('hero.cta2')}
             </Link>
           </motion.div>
 
@@ -201,7 +203,7 @@ function Hero() {
             {STATS.map((stat) => (
               <div key={stat.label} className="text-center">
                 <div className="text-3xl sm:text-4xl font-black text-gold-gradient">{stat.value}</div>
-                <div className="mt-1 text-xs sm:text-sm text-beige-muted uppercase tracking-wider">{stat.label}</div>
+                <div className="mt-1 text-xs sm:text-sm text-beige-muted uppercase tracking-wider">{t(stat.key)}</div>
               </div>
             ))}
           </motion.div>
@@ -520,7 +522,8 @@ function CTASection() {
 // ═════════════ page.tsx
 
 
-export default function HomePage() {
+export default function Home() {
+  const { t } = useI18n();
   return (
     <>
       <Hero />

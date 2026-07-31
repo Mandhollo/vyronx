@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Menu, X, ChevronDown } from 'lucide-react';
 import ConnectButton from '@/components/web3/ConnectButton';
+import LanguageSelector from '@/components/layout/LanguageSelector';
 
 const NAV_ITEMS = [
   { label: 'Home', href: '/' },
@@ -75,7 +76,8 @@ export default function Header() {
           </nav>
 
           {/* CTA Button — replaced with real Web3 ConnectButton */}
-          <div className="hidden lg:flex items-center gap-3">
+          <div className="hidden lg:flex items-center gap-2">
+            <LanguageSelector />
             <Link
               href="/presale"
               className="px-5 py-2.5 text-sm font-bold rounded-lg border border-gold/30 bg-gold/5 text-gold hover:bg-gold/10 transition-colors"
@@ -123,6 +125,7 @@ export default function Header() {
             >
               Buy $VYR
             </Link>
+            <div className="mt-4"><LanguageSelector /></div>
           </nav>
         </div>
       )}
