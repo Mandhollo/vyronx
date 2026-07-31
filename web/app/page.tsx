@@ -59,10 +59,10 @@ const ROADMAP = [
 ];
 
 const STATS = [
-  { value: '1B', label: 'Total Supply', key: 'stats.supply' },
-  { value: '15%', label: 'Max Monthly APY', key: 'stats.apy' },
-  { value: '4', label: 'Staking Pools', key: 'stats.pools' },
-  { value: '11', label: 'Affiliate Levels', key: 'stats.levels' },
+  { value: 1, suffix: 'B', label: 'Total Supply', key: 'stats.supply' },
+  { value: 15, suffix: '%', label: 'Max Monthly APY', key: 'stats.apy' },
+  { value: 4, suffix: '', label: 'Staking Pools', key: 'stats.pools' },
+  { value: 11, suffix: '', label: 'Affiliate Levels', key: 'stats.levels' },
 ];
 
 // ═══════════════════════════════════════════════════════════════
@@ -102,25 +102,37 @@ function SectionTitle({ eyebrow, title, subtitle }: { eyebrow: string; title: st
 
 // ═══════════════════════════════Animated Counter
 function AnimatedCounter({ target, suffix = '' }: { target: number; suffix?: string }) {
-  const [count, setCount] = useState(0);
+  const [display, setDisplay] = useState('0');
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true });
 
   useEffect(() => {
-    if (isInView) {
-      let start = 0;
-      const duration = 2000;
-      const step = (timestamp: number) => {
-        if (!start) start = timestamp;
-        const progress = Math.min((timestamp - start) / duration, 1);
-        setCount(Math.floor(progress * target));
-        if (progress < 1) requestAnimationFrame(step);
-      };
-      requestAnimationFrame(step);
-    }
+    if (!isInView) return;
+    let frame = 0;
+    const totalFrames = 60; // ~1s at 60fps
+    const tick = () => {
+      frame++;
+      if (frame < totalFrames) {
+        // Rapidly cycle random numbers (slot machine)
+        if (frame < totalFrames - 15) {
+          // Fast random spin
+          const random = Math.floor(Math.random() * Math.max(target * 1.5, 100));
+          setDisplay(String(random));
+        } else {
+          // Decelerate — interpolate to target
+          const progress = (frame - (totalFrames - 15)) / 15;
+          const eased = 1 - Math.pow(1 - progress, 3);
+          setDisplay(String(Math.floor(eased * target)));
+        }
+        requestAnimationFrame(tick);
+      } else {
+        setDisplay(String(target));
+      }
+    };
+    requestAnimationFrame(tick);
   }, [isInView, target]);
 
-  return <span ref={ref}>{count}{suffix}</span>;
+  return <span ref={ref}>{display}{suffix}</span>;
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -202,7 +214,9 @@ function Hero() {
           <motion.div variants={fadeUp} className="mt-16 grid grid-cols-2 sm:grid-cols-4 gap-6 sm:gap-12 w-full max-w-3xl">
             {STATS.map((stat) => (
               <div key={stat.label} className="text-center">
-                <div className="text-3xl sm:text-4xl font-black text-gold-gradient">{stat.value}</div>
+                <div className="text-3xl sm:text-4xl font-black text-gold-gradient">
+                  <AnimatedCounter target={stat.value} suffix={stat.suffix} />
+                </div>
                 <div className="mt-1 text-xs sm:text-sm text-beige-muted uppercase tracking-wider">{t(stat.key)}</div>
               </div>
             ))}
