@@ -7,6 +7,7 @@ import { Menu, X, ChevronDown } from 'lucide-react';
 import ConnectButton from '@/components/web3/ConnectButton';
 import LanguageSelector from '@/components/layout/LanguageSelector';
 import Coin3D from '@/components/fx/Coin3D';
+import { SocialLinks } from '@/components/layout/SocialLinks';
 
 const NAV_ITEMS = [
   { label: 'Home', href: '/' },
@@ -77,6 +78,7 @@ export default function Header() {
 
           {/* CTA Button — replaced with real Web3 ConnectButton */}
           <div className="hidden lg:flex items-center gap-2">
+            <SocialLinks size="sm" />
             <LanguageSelector />
             <Link
               href="/presale"
@@ -126,6 +128,7 @@ export default function Header() {
               Buy $VYR
             </Link>
             <div className="mt-4"><LanguageSelector /></div>
+            <div className="mt-3"><SocialLinks /></div>
           </nav>
         </div>
       )}

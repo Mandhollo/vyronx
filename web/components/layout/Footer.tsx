@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Mail, Shield, FileText } from 'lucide-react';
+import { Mail, Shield, FileText, Send, MessageCircle } from 'lucide-react';
 import { useI18n } from '@/lib/i18n';
 
 export default function Footer() {
@@ -53,6 +53,16 @@ export default function Footer() {
           <div>
             <h3 className="text-sm font-bold text-gold uppercase tracking-wider mb-4">{t('footer.contact')}</h3>
             <ul className="space-y-3">
+              <li>
+                <a href="https://t.me/vyrontoken" target="_blank" rel="noreferrer" className="flex items-center gap-2 text-sm text-beige hover:text-gold transition-colors">
+                  <MessageCircle className="h-4 w-4" /> Telegram Group
+                </a>
+              </li>
+              <li>
+                <a href="https://t.me/tokenvyron" target="_blank" rel="noreferrer" className="flex items-center gap-2 text-sm text-beige hover:text-gold transition-colors">
+                  <Send className="h-4 w-4" /> Telegram Channel
+                </a>
+              </li>
               <li>
                 <a href="mailto:contato@vyronx.io" className="flex items-center gap-2 text-sm text-beige hover:text-gold transition-colors">
                   <Mail className="h-4 w-4" /> contato@vyronx.io

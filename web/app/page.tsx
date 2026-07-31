@@ -10,6 +10,7 @@ import {
 import { useEffect, useState } from 'react';
 import ParticleField from '@/components/fx/ParticleField';
 import Coin3D from '@/components/fx/Coin3D';
+import { SocialLinks } from '@/components/layout/SocialLinks';
 import { useI18n } from '@/lib/i18n';
 
 // ═══════════════════════════════════════════════════════════════
@@ -539,6 +540,9 @@ function CTASection() {
             >
               {t('cta.contact')}
             </a>
+          </div>
+          <div className="mt-8 flex justify-center">
+            <SocialLinks />
           </div>
         </div>
       </motion.div>
