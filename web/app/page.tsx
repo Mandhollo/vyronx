@@ -169,12 +169,15 @@ function Hero() {
             </span>
           </motion.div>
 
-          {/* Logo */}
+          {/* Banner */}
           <motion.div variants={fadeUp} className="mb-8 relative">
             <div className="absolute inset-0 bg-gold/10 blur-[80px] rounded-full" />
-            <div style={{ perspective: '1000px' }}>
-              <Coin3D size={256} />
-            </div>
+            <img
+              src="/vyronx-banner.jpeg"
+              alt="VyronX — Vision • Innovation • Freedom • Purpose"
+              className="relative max-w-full sm:max-w-2xl lg:max-w-3xl mx-auto rounded-2xl glow-gold-strong float"
+              style={{ maxHeight: '50vh', width: 'auto' }}
+            />
           </motion.div>
 
           {/* Tagline */}
