@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { Mail, Shield, FileText, Send, MessageCircle } from 'lucide-react';
 import { useI18n } from '@/lib/i18n';
+import Coin3D from '@/components/fx/Coin3D';
 
 export default function Footer() {
   const { t } = useI18n();
@@ -13,9 +14,7 @@ export default function Footer() {
           {/* Brand */}
           <div className="md:col-span-1">
             <Link href="/" className="flex items-center gap-2 mb-4">
-              <div className="h-8 w-8 rounded-full bg-gradient-to-br from-gold-light via-gold to-gold-dark flex items-center justify-center">
-                <span className="text-dark font-black text-xs">V</span>
-              </div>
+              <Coin3D size={32} />
               <span className="text-lg font-bold">
                 <span className="text-white">Vyron</span>
                 <span className="text-gold">X</span>
