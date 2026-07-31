@@ -30,10 +30,9 @@ export default function Footer() {
             <h3 className="text-sm font-bold text-gold uppercase tracking-wider mb-4">{t('footer.platform')}</h3>
             <ul className="space-y-3">
               <li><Link href="/presale" className="text-sm text-beige hover:text-gold transition-colors">{t('nav.presale')}</Link></li>
-              <li><Link href="/staking" className="text-sm text-beige hover:text-gold transition-colors">{t('section.staking')}</Link></li>
+              <li><Link href="/staking" className="text-sm text-beige hover:text-gold transition-colors">{t('nav.staking')}</Link></li>
               <li><Link href="/dashboard" className="text-sm text-beige hover:text-gold transition-colors">{t('nav.dashboard')}</Link></li>
-              <li><Link href="/whitepaper" className="text-sm text-beige hover:text-gold transition-colors">{t('nav.whitepaper')}</Link></li>
-              <li><Link href="/roadmap" className="text-sm text-beige hover:text-gold transition-colors">{t('nav.roadmap')}</Link></li>
+              <li><Link href="/admin" className="text-sm text-beige hover:text-gold transition-colors">{t('nav.admin')}</Link></li>
             </ul>
           </div>
 
@@ -41,6 +40,8 @@ export default function Footer() {
           <div>
             <h3 className="text-sm font-bold text-gold uppercase tracking-wider mb-4">{t('footer.resources')}</h3>
             <ul className="space-y-3">
+              <li><Link href="/whitepaper" className="text-sm text-beige hover:text-gold transition-colors">{t('nav.whitepaper')}</Link></li>
+              <li><Link href="/roadmap" className="text-sm text-beige hover:text-gold transition-colors">{t('nav.roadmap')}</Link></li>
               <li><Link href="/whitepaper#tokenomics" className="text-sm text-beige hover:text-gold transition-colors">{t('section.tokenomics')}</Link></li>
               <li><Link href="/whitepaper#staking" className="text-sm text-beige hover:text-gold transition-colors">{t('section.staking')}</Link></li>
               <li><Link href="/whitepaper#affiliates" className="text-sm token-beige hover:text-gold transition-colors">{t('stats.levels')}</Link></li>
