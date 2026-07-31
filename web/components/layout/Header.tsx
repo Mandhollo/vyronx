@@ -8,18 +8,20 @@ import ConnectButton from '@/components/web3/ConnectButton';
 import LanguageSelector from '@/components/layout/LanguageSelector';
 import Coin3D from '@/components/fx/Coin3D';
 import { SocialLinks } from '@/components/layout/SocialLinks';
+import { useI18n } from '@/lib/i18n';
 
 const NAV_ITEMS = [
-  { label: 'Home', href: '/' },
-  { label: 'Presale', href: '/presale' },
-  { label: 'Staking', href: '/staking' },
-  { label: 'Dashboard', href: '/dashboard' },
-  { label: 'Admin', href: '/admin' },
-  { label: 'Whitepaper', href: '/whitepaper' },
-  { label: 'Roadmap', href: '/roadmap' },
+  { labelKey: 'nav.home', href: '/' },
+  { labelKey: 'nav.presale', href: '/presale' },
+  { labelKey: 'nav.staking', href: '/staking' },
+  { labelKey: 'nav.dashboard', href: '/dashboard' },
+  { labelKey: 'nav.admin', href: '/admin' },
+  { labelKey: 'nav.whitepaper', href: '/whitepaper' },
+  { labelKey: 'nav.roadmap', href: '/roadmap' },
 ];
 
 export default function Header() {
+  const { t } = useI18n();
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = usePathname();
@@ -70,7 +72,7 @@ export default function Header() {
                       : 'text-beige hover:text-gold hover:bg-white/5'
                   }`}
                 >
-                  {item.label}
+                  {t(item.labelKey)}
                 </Link>
               );
             })}
@@ -84,7 +86,7 @@ export default function Header() {
               href="/presale"
               className="px-5 py-2.5 text-sm font-bold rounded-lg border border-gold/30 bg-gold/5 text-gold hover:bg-gold/10 transition-colors"
             >
-              Buy $VYR
+              {t('nav.buy')}
             </Link>
             <ConnectButton />
           </div>
@@ -117,7 +119,7 @@ export default function Header() {
                       : 'text-beige hover:text-gold hover:bg-white/5'
                   }`}
                 >
-                  {item.label}
+                  {t(item.labelKey)}
                 </Link>
               );
             })}
@@ -125,7 +127,7 @@ export default function Header() {
               href="/presale"
               className="mt-4 px-5 py-3 text-center text-sm font-bold rounded-lg bg-gradient-to-r from-gold-light to-gold-dark text-dark"
             >
-              Buy $VYR
+              {t('nav.buy')}
             </Link>
             <div className="mt-4"><LanguageSelector /></div>
             <div className="mt-3"><SocialLinks /></div>

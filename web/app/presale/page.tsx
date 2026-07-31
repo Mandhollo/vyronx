@@ -206,11 +206,11 @@ export default function PresalePage() {
         >
           <motion.span variants={fadeUp} className="inline-block px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-gold border border-gold/30 rounded-full bg-gold/5 mb-4 neon-pulse">
             <span className="inline-flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full bg-gold animate-pulse" /> Presale Phase 1 — Live
+              <span className="h-2 w-2 rounded-full bg-gold animate-pulse" /> {t('presale.phaseLive')}
             </span>
           </motion.span>
           <motion.h1 variants={fadeUp} className="text-4xl sm:text-5xl lg:text-6xl font-black text-white">
-            Buy <span className="text-gold-gradient">$VYR</span> {t('presale.subtitle')}
+            {t('presale.title')} <span className="text-gold-gradient">$VYR</span> {t('presale.subtitle')}
           </motion.h1>
           <motion.p variants={fadeUp} className="mt-4 text-lg text-beige-muted max-w-2xl mx-auto">
             Join the presale — <span className="text-gold font-bold">{t('presale.phase1desc')}</span>
@@ -232,16 +232,16 @@ export default function PresalePage() {
                 <span className="text-sm font-medium text-beige">
                   {isConnected
                     ? `${address?.slice(0, 6)}...${address?.slice(-4)}`
-                    : 'Wallet not connected'}
+                    : t('presale.walletNotConnected')}
                 </span>
                 {isConnected && !onCorrectChain && (
                   <span className="ml-2 px-2 py-0.5 text-xs font-bold rounded-full bg-red-500/20 text-red-400 border border-red-500/30">
-                    Wrong Network
+                    {t('presale.wrongNetworkBadge')}
                   </span>
                 )}
               </div>
               {!isConnected ? (
-                <span className="text-sm text-beige-muted">← Click "Connect Wallet" above</span>
+                <span className="text-sm text-beige-muted">{t('presale.clickConnect')}</span>
               ) : null}
             </div>
 
@@ -252,7 +252,7 @@ export default function PresalePage() {
                   <AlertCircle className="h-5 w-5 text-red-400" />
                   <span className="text-sm text-red-400 font-bold">{t('presale.wrong')}</span>
                 </div>
-                <p className="text-xs text-beige-muted mt-1">Please switch to BSC Testnet in your wallet to continue.</p>
+                <p className="text-xs text-beige-muted mt-1">{t('presale.switchHelp')}</p>
               </div>
             )}
 
@@ -327,7 +327,7 @@ export default function PresalePage() {
                 className="w-full py-4 text-base font-bold rounded-xl border border-gold/30 bg-gold/10 text-gold hover:bg-gold/20 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {txPending ? <Loader2 className="h-5 w-5 animate-spin" /> : <Shield className="h-5 w-5" />}
-                {txPending ? t('presale.approving') : 'Approve USDT'}
+                {txPending ? t('presale.approving') : t('presale.approveUsdt')}
               </button>
             ) : (
               <button
@@ -357,13 +357,13 @@ export default function PresalePage() {
                 <div className="text-2xl font-black text-gold-gradient">
                   {info[3] ? formatUnits(info[3], 18) : '0'}
                 </div>
-                <div className="text-xs text-beige-muted mt-1">USDT Raised</div>
+                <div className="text-xs text-beige-muted mt-1">{t('presale.usdtRaised')}</div>
               </div>
               <div className="rounded-xl border border-dark-border bg-dark-card p-4 text-center">
                 <div className="text-2xl font-black text-gold-gradient">
                   {info[4] ? formatUnits(info[4], 18) : '0'}
                 </div>
-                <div className="text-xs text-beige-muted mt-1">VYR Sold</div>
+                <div className="text-xs text-beige-muted mt-1">{t('presale.vyrSold')}</div>
               </div>
               <div className="rounded-xl border border-dark-border bg-dark-card p-4 text-center">
                 <div className="text-2xl font-black text-gold-gradient">{String(info[5] || BigInt(0))}</div>
@@ -410,7 +410,7 @@ export default function PresalePage() {
                 <div className="flex items-center justify-between mb-3">
                   <span className="text-sm font-bold text-white">{phase.phase}</span>
                   {phase.status === 'active' && (
-                    <span className="px-2 py-0.5 text-xs font-bold rounded-full bg-gold/20 text-gold border border-gold/30">LIVE</span>
+                    <span className="px-2 py-0.5 text-xs font-bold rounded-full bg-gold/20 text-gold border border-gold/30">{t('presale.live')}</span>
                   )}
                 </div>
                 <div className="text-3xl font-black text-gold-gradient mb-1">{phase.price}</div>
@@ -449,8 +449,8 @@ export default function PresalePage() {
         <motion.div variants={stagger} initial="hidden" whileInView="visible" viewport={{ once: true }} className="grid grid-cols-1 sm:grid-cols-3 gap-6">
           {[
             { icon: Clock, title: t('presale.days30'), desc: t('presale.days30desc') },
-            { icon: Shield, title: 'Secure & Audited', desc: 'Smart contracts audited before launch. Chainlink oracle for accurate pricing.' },
-            { icon: Zap, title: 'Instant Receipt', desc: 'VYR tokens credited immediately upon presale confirmation. Claimable after presale ends.' },
+            { icon: Shield, title: t('presale.secureAudited'), desc: t('presale.secureAuditedDesc') },
+            { icon: Zap, title: t('presale.instantReceipt'), desc: t('presale.instantReceiptDesc') },
           ].map((card) => (
             <motion.div key={card.title} variants={fadeUp} className="rounded-2xl glass-card p-6">
               <card.icon className="h-8 w-8 text-gold mb-3" />
@@ -463,7 +463,7 @@ export default function PresalePage() {
         {''}
         <div className="mt-16 text-center">
           <Link href="/staking" className="magnetic-btn inline-flex items-center gap-2 px-6 py-3 text-sm font-bold rounded-xl border border-gold/30 bg-gold/5 text-gold hover:bg-gold/10 transition-colors">
-            Explore Staking Pools <ArrowRight className="h-4 w-4" />
+            {t('presale.exploreStaking')} <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
       </div>

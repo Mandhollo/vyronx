@@ -134,7 +134,7 @@ export default function DashboardPage() {
           <Wallet className="h-16 w-16 text-gold mx-auto mb-6 float" />
           <h1 className="text-3xl font-bold text-white mb-3">{t('dash.connect')}</h1>
           <p className="text-beige-muted mb-8">{t('dash.connectDesc')}</p>
-          <p className="text-sm text-beige-muted">← Click <span className="text-gold font-bold">"Connect Wallet"</span> in the header</p>
+          <p className="text-sm text-beige-muted">{t('dash.clickConnect')}</p>
         </motion.div>
       </div>
     );

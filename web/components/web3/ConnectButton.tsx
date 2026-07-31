@@ -4,8 +4,10 @@ import { useAccount, useConnect, useDisconnect } from 'wagmi';
 import { useState } from 'react';
 import { Wallet, Loader2, Check, ChevronDown, Copy, LogOut, ExternalLink } from 'lucide-react';
 import { bscTestnet } from 'wagmi/chains';
+import { useI18n } from '@/lib/i18n';
 
 export default function ConnectButton() {
+  const { t } = useI18n();
   const { address, isConnected, chain } = useAccount();
   const { connectors, connectAsync, isPending } = useConnect();
   const { disconnectAsync } = useDisconnect();
@@ -26,7 +28,7 @@ export default function ConnectButton() {
         className="hidden lg:inline-flex items-center gap-2 px-5 py-2.5 text-sm font-bold rounded-lg bg-gradient-to-r from-gold-light to-gold-dark text-dark hover:shadow-lg hover:shadow-gold/40 hover:scale-[1.03] transition-all disabled:opacity-60"
       >
         {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wallet className="h-4 w-4" />}
-        {isPending ? 'Connecting...' : 'Connect Wallet'}
+        {isPending ? t('common.connecting') : t('nav.connect')}
       </button>
     );
   }
@@ -48,20 +50,20 @@ export default function ConnectButton() {
           <div className="fixed inset-0 z-40" onClick={() => setDropdownOpen(false)} />
           <div className="absolute right-0 mt-2 w-64 rounded-xl border border-dark-border bg-dark-card shadow-xl z-50 p-2">
             <div className="px-3 py-2 border-b border-dark-border">
-              <div className="text-xs text-beige-muted">Connected to</div>
+              <div className="text-xs text-beige-muted">{t('common.connectedTo')}</div>
               <div className="text-sm font-mono text-white truncate">{address}</div>
             </div>
             {!onCorrectChain && (
               <div className="px-3 py-2 m-2 rounded-lg bg-red-500/10 border border-red-500/30">
-                <div className="text-xs text-red-400 font-bold">⚠ Wrong Network</div>
-                <div className="text-xs text-beige-muted mt-0.5">Switch to BSC Testnet</div>
+                <div className="text-xs text-red-400 font-bold">{t('common.wrongNetwork')}</div>
+                <div className="text-xs text-beige-muted mt-0.5">{t('common.switchBsc')}</div>
               </div>
             )}
             <button
               onClick={() => navigator.clipboard.writeText(address || '')}
               className="flex items-center gap-2 w-full px-3 py-2 text-sm text-beige hover:text-gold hover:bg-gold/5 rounded-lg transition-colors"
             >
-              <Copy className="h-4 w-4" /> Copy Address
+              <Copy className="h-4 w-4" /> {t('common.copy')}
             </button>
             <a
               href={`https://testnet.bscscan.com/address/${address}`}
@@ -69,13 +71,13 @@ export default function ConnectButton() {
               rel="noreferrer"
               className="flex items-center gap-2 w-full px-3 py-2 text-sm text-beige hover:text-gold hover:bg-gold/5 rounded-lg transition-colors"
             >
-              <ExternalLink className="h-4 w-4" /> View on BscScan
+              <ExternalLink className="h-4 w-4" /> {t('common.view')}
             </a>
             <button
               onClick={async () => { await disconnectAsync(); setDropdownOpen(false); }}
               className="flex items-center gap-2 w-full px-3 py-2 text-sm text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
             >
-              <LogOut className="h-4 w-4" /> Disconnect
+              <LogOut className="h-4 w-4" /> {t('common.disconnect')}
             </button>
           </div>
         </>
