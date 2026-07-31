@@ -283,17 +283,19 @@ function TokenomicsSection() {
         viewport={{ once: true }}
         className="mb-12"
       >
-        <div className="rounded-2xl border border-dark-border bg-dark-card p-8 glow-gold">
+        <div className="rounded-2xl border border-dark-border bg-dark-card p-8 neon-pulse">
           <div className="text-center mb-8">
-            <div className="text-5xl sm:text-6xl font-black text-gold-gradient">1,000,000,000</div>
-            <div className="mt-2 text-sm text-beige-muted uppercase tracking-widest">$VYR Total Supply</div>
+            <div className="text-5xl sm:text-6xl font-black text-gold-gradient">
+              <AnimatedCounter target={1000000000} suffix="" />
+            </div>
+            <div className="mt-2 text-sm text-beige-muted uppercase tracking-widest">$VYR {t('stats.supply')}</div>
           </div>
-          {/* Bar */}
-          <div className="flex h-4 rounded-full overflow-hidden">
+          {/* Bar with glow + sweep */}
+          <div className="relative flex h-5 rounded-full overflow-hidden sweep-light">
             {TOKENOMICS.map((item) => (
               <div
                 key={item.label}
-                className={`bg-gradient-to-r ${item.color}`}
+                className={`bg-gradient-to-r ${item.color} transition-all duration-1000`}
                 style={{ width: `${item.percentage}%` }}
                 title={`${item.label}: ${item.percentage}%`}
               />
@@ -323,13 +325,14 @@ function TokenomicsSection() {
           <motion.div
             key={item.label}
             variants={fadeUp}
-            className="rounded-2xl border border-dark-border bg-dark-card p-6 text-center hover:border-gold/30 transition-colors"
+            className="group relative rounded-2xl glass-card p-6 text-center overflow-hidden"
           >
-            <div className={`text-4xl font-black bg-gradient-to-r ${item.color} bg-clip-text text-transparent`}>
-              {item.percentage}%
+            <div className="absolute inset-0 bg-gradient-to-br from-gold/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className={`relative text-4xl font-black bg-gradient-to-r ${item.color} bg-clip-text text-transparent`}>
+              <AnimatedCounter target={item.percentage} suffix="%" />
             </div>
-            <div className="mt-2 text-lg font-bold text-white">{item.label}</div>
-            <div className="mt-1 text-sm text-beige-muted">{item.amount} $VYR</div>
+            <div className="relative mt-2 text-lg font-bold text-white">{item.label}</div>
+            <div className="relative mt-1 text-sm text-beige-muted">{item.amount} $VYR</div>
           </motion.div>
         ))}
       </motion.div>
