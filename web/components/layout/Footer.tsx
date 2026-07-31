@@ -1,7 +1,14 @@
 'use client';
 
 import Link from 'next/link';
-import { Mail, Shield, FileText, Send, MessageCircle, Twitter, Instagram } from 'lucide-react';
+import { Mail, Shield, FileText, Send, MessageCircle, Instagram } from 'lucide-react';
+
+// Custom X icon
+const XIcon = ({ className }: { className?: string }) => (
+  <svg viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden="true">
+    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+  </svg>
+);
 import { useI18n } from '@/lib/i18n';
 import Coin3D from '@/components/fx/Coin3D';
 
@@ -65,7 +72,7 @@ export default function Footer() {
               </li>
               <li>
                 <a href="https://x.com/vyronx_io" target="_blank" rel="noreferrer" className="flex items-center gap-2 text-sm text-beige hover:text-gold transition-colors">
-                  <Twitter className="h-4 w-4" /> X (Twitter)
+                  <XIcon className="h-4 w-4" /> X (Twitter)
                 </a>
               </li>
               <li>
