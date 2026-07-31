@@ -30,35 +30,36 @@ const stagger = {
 // Data
 // ═══════════════════════════════════════════════════════════════
 const FEATURES = [
-  { icon: Brain, title: 'AI Arbitrage Agents', description: 'AI-powered bots executing real-time cryptocurrency arbitrage, with all operations visible on-chain.' },
-  { icon: TrendingUp, title: 'Multi-Tier Staking', description: '4 staking pools from 30 to 360 days with up to 15% monthly returns. Stake USDT, earn VYR.' },
-  { icon: Flame, title: 'Buyback & Burn', description: 'Strategic token buybacks with a discount mechanism plus permanent burn to reduce supply.' },
-  { icon: Target, title: 'Predictive Markets', description: 'On-chain prediction markets where users can forecast outcomes and earn rewards.' },
-  { icon: Rocket, title: 'Launchpad', description: 'Launch platform for future governance tokens with community airdrop distribution.' },
-  { icon: Shield, title: 'Secure & Transparent', description: 'Chainlink oracle price feeds, AI-powered arbitrage, and fully on-chain transactions.' },
+  { icon: Brain, key: 'feat.ai', descKey: 'feat.ai.desc' },
+  { icon: TrendingUp, key: 'feat.staking', descKey: 'feat.staking.desc' },
+  { icon: Flame, key: 'feat.buyback', descKey: 'feat.buyback.desc' },
+  { icon: Target, key: 'feat.predictive', descKey: 'feat.predictive.desc' },
+  { icon: Rocket, key: 'feat.launchpad', descKey: 'feat.launchpad.desc' },
+  { icon: Shield, key: 'feat.secure', descKey: 'feat.secure.desc' },
 ];
 
 const TOKENOMICS = [
-  { label: 'Presale', percentage: 30, amount: '300M', color: 'from-gold-light to-gold' },
-  { label: 'Liquidity Pool', percentage: 20, amount: '200M', color: 'from-amber-400 to-amber-600' },
-  { label: 'Staking Pools', percentage: 50, amount: '500M', color: 'from-yellow-300 to-amber-500' },
+  { key: 'token.presale', percentage: 30, amount: '300M', color: 'from-gold-light to-gold' },
+  { key: 'token.lp', percentage: 20, amount: '200M', color: 'from-amber-400 to-amber-600' },
+  { key: 'token.staking', percentage: 50, amount: '500M', color: 'from-yellow-300 to-amber-500' },
 ];
 
 const STAKING_POOLS = [
-  { duration: '30 Days', daily: '0.11%', monthly: '~3.5%', lock: '30 days', tier: 'Starter' },
-  { duration: '60 Days', daily: '0.23%', monthly: '~7%', lock: '60 days', tier: 'Growth' },
-  { duration: '180 Days', daily: '0.33%', monthly: '~10%', lock: '180 days', tier: 'Pro' },
-  { duration: '360 Days', daily: '0.50%', monthly: '~15%', lock: '360 days', tier: 'Elite' },
+  { durationKey: 'pool.30d', daily: '0.11%', monthly: '~3.5%', lock: '30', tierKey: 'pool.starter', monthlyKey: 'pool.monthly', dailyKey: 'pool.daily', lockKey: 'pool.lock', daysKey: 'pool.days' },
+  { durationKey: 'pool.60d', daily: '0.23%', monthly: '~7%', lock: '60', tierKey: 'pool.growth', monthlyKey: 'pool.monthly', dailyKey: 'pool.daily', lockKey: 'pool.lock', daysKey: 'pool.days' },
+  { durationKey: 'pool.180d', daily: '0.33%', monthly: '~10%', lock: '180', tierKey: 'pool.pro', monthlyKey: 'pool.monthly', dailyKey: 'pool.daily', lockKey: 'pool.lock', daysKey: 'pool.days' },
+  { durationKey: 'pool.360d', daily: '0.50%', monthly: '~15%', lock: '360', tierKey: 'pool.elite', monthlyKey: 'pool.monthly', dailyKey: 'pool.daily', lockKey: 'pool.lock', daysKey: 'pool.days' },
 ];
 
 const ROADMAP = [
-  { phase: 'Phase 1', title: 'Foundation', status: 'active', items: ['VYR token deploy', 'Presale launch', 'DEX liquidity pool', 'Web platform'] },
-  { phase: 'Phase 2', title: 'Staking Ecosystem', status: 'upcoming', items: ['4 staking pools live', 'Admin panel', 'Accelerator (360d)', '11-level affiliate program'] },
-  { phase: 'Phase 3', title: 'AI & Arbitrage', status: 'upcoming', items: ['AI arbitrage agents', 'Real-time operations dashboard'] },
-  { phase: 'Phase 4', title: 'Buyback & Auction', status: 'upcoming', items: ['Buyback with discount', 'Penny auction system'] },
-  { phase: 'Phase 5', title: 'Fund & Predictive', status: 'upcoming', items: ['Investment fund', 'Predictive market platform'] },
-  { phase: 'Phase 6', title: 'Launchpad', status: 'upcoming', items: ['Governance token launchpad', 'Community airdrops'] },
+  { phaseKey: 'rm.phase1', titleKey: 'rm.title1', status: 'active' },
+  { phaseKey: 'rm.phase2', titleKey: 'rm.title2', status: 'upcoming' },
+  { phaseKey: 'rm.phase3', titleKey: 'rm.title3', status: 'upcoming' },
+  { phaseKey: 'rm.phase4', titleKey: 'rm.title4', status: 'upcoming' },
+  { phaseKey: 'rm.phase5', titleKey: 'rm.title5', status: 'upcoming' },
+  { phaseKey: 'rm.phase6', titleKey: 'rm.title6', status: 'upcoming' },
 ];
+
 
 const STATS = [
   { value: 1, suffix: 'B', label: 'Total Supply', key: 'stats.supply' },
@@ -245,7 +246,7 @@ function FeaturesSection() {
       >
         {FEATURES.map((feature) => (
           <motion.div
-            key={feature.title}
+            key={feature.key}
             variants={fadeUp}
             className="group relative rounded-2xl glass-card p-6"
           >
@@ -265,8 +266,8 @@ function FeaturesSection() {
               >
                 <feature.icon className="h-7 w-7 text-gold" />
               </div>
-              <h3 className="text-lg font-bold text-white mb-2">{feature.title}</h3>
-              <p className="text-sm text-beige-muted leading-relaxed">{feature.description}</p>
+              <h3 className="text-lg font-bold text-white mb-2">{t(feature.key)}</h3>
+              <p className="text-sm text-beige-muted leading-relaxed">{t(feature.descKey)}</p>
             </div>
           </motion.div>
         ))}
@@ -304,18 +305,18 @@ function TokenomicsSection() {
           <div className="relative flex h-5 rounded-full overflow-hidden sweep-light">
             {TOKENOMICS.map((item) => (
               <div
-                key={item.label}
+                key={item.key}
                 className={`bg-gradient-to-r ${item.color} transition-all duration-1000`}
                 style={{ width: `${item.percentage}%` }}
-                title={`${item.label}: ${item.percentage}%`}
+                title={`${t(item.key)}: ${item.percentage}%`}
               />
             ))}
           </div>
           <div className="mt-4 flex flex-wrap justify-between gap-2 text-xs">
             {TOKENOMICS.map((item) => (
-              <div key={item.label} className="flex items-center gap-2">
+              <div key={item.key} className="flex items-center gap-2">
                 <span className={`h-3 w-3 rounded bg-gradient-to-r ${item.color}`} />
-                <span className="text-beige">{item.label}</span>
+                <span className="text-beige">{t(item.key)}</span>
                 <span className="text-beige-muted">{item.percentage}%</span>
               </div>
             ))}
@@ -333,7 +334,7 @@ function TokenomicsSection() {
       >
         {TOKENOMICS.map((item) => (
           <motion.div
-            key={item.label}
+            key={item.key}
             variants={fadeUp}
             className="group relative rounded-2xl glass-card p-6 text-center overflow-hidden"
           >
@@ -341,7 +342,7 @@ function TokenomicsSection() {
             <div className={`relative text-4xl font-black bg-gradient-to-r ${item.color} bg-clip-text text-transparent`}>
               <AnimatedCounter target={item.percentage} suffix="%" />
             </div>
-            <div className="relative mt-2 text-lg font-bold text-white">{item.label}</div>
+            <div className="relative mt-2 text-lg font-bold text-white">{t(item.key)}</div>
             <div className="relative mt-1 text-sm text-beige-muted">{item.amount} $VYR</div>
           </motion.div>
         ))}
@@ -403,30 +404,30 @@ function StakingPreviewSection() {
       >
         {STAKING_POOLS.map((pool, idx) => (
           <motion.div
-            key={pool.duration}
+            key={pool.tierKey}
             variants={fadeUp}
             className={`relative rounded-2xl border p-6 hover:translate-y-[-4px] transition-all ${
-              pool.tier === 'Elite'
+              pool.tierKey === 'pool.elite'
                 ? 'border-gold/50 bg-gradient-to-b from-dark-card to-gold/5 glow-gold'
                 : 'border-dark-border bg-dark-card hover:border-gold/30'
             }`}
           >
-            {pool.tier === 'Elite' && (
+            {pool.tierKey === 'pool.elite' && (
               <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 text-xs font-bold rounded-full bg-gradient-to-r from-gold-light to-gold-dark text-dark">
                 ⭐ Best Rate
               </div>
             )}
             <div className="text-center">
-              <div className="text-xs uppercase tracking-widest text-beige-muted mb-1">{pool.tier}</div>
-              <div className="text-2xl font-bold text-white">{pool.duration}</div>
+              <div className="text-xs uppercase tracking-widest text-beige-muted mb-1">{t(pool.tierKey)}</div>
+              <div className="text-2xl font-bold text-white">{t(pool.durationKey)}</div>
             </div>
             <div className="my-6 text-center">
               <div className="text-4xl font-black text-gold-gradient">{pool.monthly}</div>
-              <div className="text-xs text-beige-muted mt-1">Monthly Return</div>
+              <div className="text-xs text-beige-muted mt-1">{t(pool.monthlyKey)}</div>
             </div>
             <div className="space-y-2 text-sm border-t border-dark-border pt-4">
-              <div className="flex justify-between"><span className="text-beige-muted">Daily Rate</span><span className="text-beige font-medium">{pool.daily}</span></div>
-              <div className="flex justify-between"><span className="text-beige-muted">Lock Period</span><span className="text-beige font-medium">{pool.lock}</span></div>
+              <div className="flex justify-between"><span className="text-beige-muted">{t(pool.dailyKey)}</span><span className="text-beige font-medium">{pool.daily}</span></div>
+              <div className="flex justify-between"><span className="text-beige-muted">{t(pool.lockKey)}</span><span className="text-beige font-medium">{pool.lock}</span></div>
             </div>
           </motion.div>
         ))}
@@ -464,7 +465,7 @@ function RoadmapSection() {
         >
           {ROADMAP.map((phase, idx) => (
             <motion.div
-              key={phase.phase}
+              key={phase.phaseKey}
               variants={fadeUp}
               className={`relative flex items-start gap-6 ${
                 idx % 2 === 0 ? 'sm:flex-row' : 'sm:flex-row-reverse'
@@ -483,19 +484,12 @@ function RoadmapSection() {
               <div className={`ml-12 sm:ml-0 sm:w-1/2 ${idx % 2 === 0 ? 'sm:pr-12' : 'sm:pl-12'}`}>
                 <div className="rounded-2xl border border-dark-border bg-dark-card p-5 hover:border-gold/30 transition-colors">
                   <div className="flex items-center justify-between mb-3">
-                    <span className="text-xs font-bold uppercase tracking-wider text-gold">{phase.phase}</span>
+                    <span className="text-xs font-bold uppercase tracking-wider text-gold">{t(phase.phaseKey)}</span>
                     {phase.status === 'active' && (
-                      <span className="px-2 py-0.5 text-xs font-bold rounded-full bg-gold/20 text-gold border border-gold/30">In Progress</span>
+                      <span className="px-2 py-0.5 text-xs font-bold rounded-full bg-gold/20 text-gold border border-gold/30">{t('rm.inProgress')}</span>
                     )}
                   </div>
-                  <h3 className="text-lg font-bold text-white mb-3">{phase.title}</h3>
-                  <ul className="space-y-1.5">
-                    {phase.items.map((item) => (
-                      <li key={item} className="text-sm text-beige-muted flex items-center gap-2">
-                        <Check className="h-3.5 w-3.5 text-gold/60 shrink-0" /> {item}
-                      </li>
-                    ))}
-                  </ul>
+                  <h3 className="text-lg font-bold text-white mb-3">{t(phase.titleKey)}</h3>
                 </div>
               </div>
             </motion.div>
