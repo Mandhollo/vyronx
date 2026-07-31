@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import ParticleField from '@/components/fx/ParticleField';
+import Coin3D from '@/components/fx/Coin3D';
 import { useI18n } from '@/lib/i18n';
 
 // ═══════════════════════════════════════════════════════════════
@@ -171,12 +172,9 @@ function Hero() {
           {/* Logo */}
           <motion.div variants={fadeUp} className="mb-8 relative">
             <div className="absolute inset-0 bg-gold/10 blur-[80px] rounded-full" />
-            <img
-              src="/vyronx-logo.png"
-              alt="VyronX Logo"
-              className="relative mx-auto w-40 h-40 sm:w-56 sm:h-56 lg:w-64 lg:h-64 object-contain spin-360"
-              style={{ perspective: '800px' }}
-            />
+            <div style={{ perspective: '1000px' }}>
+              <Coin3D size={256} />
+            </div>
           </motion.div>
 
           {/* Tagline */}

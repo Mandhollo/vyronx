@@ -144,6 +144,39 @@ body {
   transform-style: preserve-3d;
 }
 
+/* ════════════════════════════════════════════════════════════
+   COIN 3D — CSS-based coin with front/back faces
+   ════════════════════════════════════════════════════════════ */
+.coin3d {
+  position: relative;
+  animation: spin-360 4s linear infinite;
+}
+
+.coin3d-face {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  border-radius: 50%;
+  backface-visibility: visible;
+}
+
+.coin3d-front {
+  z-index: 2;
+}
+
+.coin3d-back {
+  z-index: 1;
+}
+
+.coin3d-edge {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: linear-gradient(45deg, #d4af37, #8a7028, #d4af37, #f4d03f, #8a7028);
+  z-index: 0;
+}
+
 /* 3D Perspective grid floor (Tron-style) */
 .grid-floor {
   position: absolute;

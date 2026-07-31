@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import { Menu, X, ChevronDown } from 'lucide-react';
 import ConnectButton from '@/components/web3/ConnectButton';
 import LanguageSelector from '@/components/layout/LanguageSelector';
+import Coin3D from '@/components/fx/Coin3D';
 
 const NAV_ITEMS = [
   { label: 'Home', href: '/' },
@@ -46,7 +47,7 @@ export default function Header() {
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2 group">
             <div className="relative flex items-center justify-center group-hover:scale-105 transition-transform">
-              <img src="/vyronx-logo.png" alt="VyronX" className="h-9 w-9 object-contain spin-360" style={{ perspective: '400px' }} />
+              <Coin3D size={36} />
             </div>
             <span className="text-xl font-bold tracking-tight">
               <span className="text-white">Vyron</span>
