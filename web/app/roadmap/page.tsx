@@ -21,82 +21,28 @@ const stagger = {
 
 const PHASES = [
   {
-    phase: 'Phase 1',
-    title: 'Foundation',
-    status: 'active',
-    timeline: 'Q1 2026',
-    icon: Rocket,
-    items: [
-      'VYR token deployment (BEP-20)',
-      'Presale launch (2 phases, 30 days)',
-      'DEX liquidity pool (PancakeSwap)',
-      'Web platform (Home + Presale)',
-      'Community channels setup',
-    ],
+    phaseKey: 'rm.phase1', titleKey: 'rm.title1', status: 'active', timeline: 'Q1 2026', icon: Rocket,
+    itemsKeys: ['rm.phase1.item1', 'rm.phase1.item2', 'rm.phase1.item3', 'rm.phase1.item4', 'rm.phase1.item5'],
   },
   {
-    phase: 'Phase 2',
-    title: 'Staking Ecosystem',
-    status: 'upcoming',
-    timeline: 'Q2 2026',
-    icon: TrendingUp,
-    items: [
-      '4 staking pools live (30/60/180/360 days)',
-      'Admin panel for rate management',
-      'Chainlink oracle integration (USDT→VYR)',
-      'Accelerator system (360-day pool)',
-      '11-level affiliate program',
-      'Investor dashboard',
-    ],
+    phaseKey: 'rm.phase2', titleKey: 'rm.title2', status: 'upcoming', timeline: 'Q2 2026', icon: TrendingUp,
+    itemsKeys: ['rm.phase2.item1', 'rm.phase2.item2', 'rm.phase2.item3', 'rm.phase2.item4', 'rm.phase2.item5', 'rm.phase2.item6'],
   },
   {
-    phase: 'Phase 3',
-    title: 'AI & Arbitrage',
-    status: 'upcoming',
-    timeline: 'Q3 2026',
-    icon: Brain,
-    items: [
-      'AI arbitrage agents deployment',
-      'Real-time operations dashboard',
-      'Performance metrics & analytics',
-      'Profit distribution to stakers',
-    ],
+    phaseKey: 'rm.phase3', titleKey: 'rm.title3', status: 'upcoming', timeline: 'Q3 2026', icon: Brain,
+    itemsKeys: ['rm.phase3.item1', 'rm.phase3.item2', 'rm.phase3.item3', 'rm.phase3.item4'],
   },
   {
-    phase: 'Phase 4',
-    title: 'Buyback & Auction',
-    status: 'upcoming',
-    timeline: 'Q4 2026',
-    icon: Flame,
-    items: [
-      'Strategic buyback with discount mechanism',
-      'Penny auction system',
-      'Supply reduction strategy',
-    ],
+    phaseKey: 'rm.phase4', titleKey: 'rm.title4', status: 'upcoming', timeline: 'Q4 2026', icon: Flame,
+    itemsKeys: ['rm.phase4.item1', 'rm.phase4.item2', 'rm.phase4.item3'],
   },
   {
-    phase: 'Phase 5',
-    title: 'Fund & Predictive Markets',
-    status: 'upcoming',
-    timeline: 'Q1 2027',
-    icon: Target,
-    items: [
-      'Investment fund launch',
-      'On-chain predictive market platform',
-      'Community prediction rewards',
-    ],
+    phaseKey: 'rm.phase5', titleKey: 'rm.title5', status: 'upcoming', timeline: 'Q1 2027', icon: Target,
+    itemsKeys: ['rm.phase5.item1', 'rm.phase5.item2', 'rm.phase5.item3'],
   },
   {
-    phase: 'Phase 6',
-    title: 'Launchpad',
-    status: 'upcoming',
-    timeline: 'Q2 2027',
-    icon: Coins,
-    items: [
-      'Governance token launchpad',
-      'Community airdrop distribution',
-      'Cross-project synergy integrations',
-    ],
+    phaseKey: 'rm.phase6', titleKey: 'rm.title6', status: 'upcoming', timeline: 'Q2 2027', icon: Coins,
+    itemsKeys: ['rm.phase6.item1', 'rm.phase6.item2', 'rm.phase6.item3'],
   },
 ];
 
@@ -143,7 +89,7 @@ export default function RoadmapPage() {
           <div className="space-y-12">
             {PHASES.map((phase, idx) => (
               <motion.div
-                key={phase.phase}
+                key={phase.phaseKey}
                 variants={fadeUp}
                 className={`relative flex items-start gap-6 sm:gap-8 ${
                   idx % 2 === 0 ? 'sm:flex-row' : 'sm:flex-row-reverse'
@@ -167,8 +113,8 @@ export default function RoadmapPage() {
                   }`}>
                     <div className="flex items-center justify-between mb-4">
                       <div>
-                        <div className="text-xs font-bold uppercase tracking-widest text-gold">{t(`rm.${phase.phase.toLowerCase().replace(' ', '')}`)}</div>
-                        <h3 className="text-xl font-bold text-white mt-1">{t(`rm.${phase.phase.toLowerCase().replace(' ', '')}Title`)}</h3>
+                        <div className="text-xs font-bold uppercase tracking-widest text-gold">{t(phase.phaseKey)}</div>
+                        <h3 className="text-xl font-bold text-white mt-1">{t(phase.titleKey)}</h3>
                       </div>
                       {phase.status === 'active' ? (
                         <span className="px-2.5 py-1 text-xs font-bold rounded-full bg-gold/20 text-gold border border-gold/30">{t('rm.inProgress')}</span>
@@ -177,9 +123,9 @@ export default function RoadmapPage() {
                       )}
                     </div>
                     <ul className="space-y-2">
-                      {phase.items.map((item) => (
-                        <li key={item} className="flex items-start gap-2 text-sm text-beige">
-                          <Check className="h-4 w-4 text-gold/60 shrink-0 mt-0.5" /> {item}
+                      {phase.itemsKeys.map((itemKey) => (
+                        <li key={itemKey} className="flex items-start gap-2 text-sm text-beige">
+                          <Check className="h-4 w-4 text-gold/60 shrink-0 mt-0.5" /> {t(itemKey)}
                         </li>
                       ))}
                     </ul>
@@ -211,7 +157,7 @@ export default function RoadmapPage() {
                 href="/presale"
                 className="mt-6 inline-flex items-center gap-2 px-8 py-4 text-base font-bold rounded-xl bg-gradient-to-r from-gold-light to-gold-dark text-dark hover:shadow-lg hover:shadow-gold/40 hover:scale-[1.02] transition-all"
               >
-                Join Presale <ArrowRight className="h-5 w-5" />
+                {t('hero.cta1')} <ArrowRight className="h-5 w-5" />
               </Link>
             </div>
           </div>
