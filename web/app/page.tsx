@@ -214,13 +214,14 @@ function Hero() {
 }
 
 function FeaturesSection() {
+  const { t } = useI18n();
   return (
     <SectionWrapper className="relative">
       <div className="absolute top-0 left-1/2 -translate-x-1/2 h-px w-1/2 bg-gradient-to-r from-transparent via-gold/30 to-transparent" />
       <SectionTitle
-        eyebrow="Ecosystem"
-        title="A Complete DeFi Powerhouse"
-        subtitle="Seven powerful utilities that create sustained demand and real value for the $VYR token."
+        eyebrow={t('section.ecosystem')}
+        title={t('section.ecosystem.title')}
+        subtitle={t('section.ecosystem.desc')}
       />
       <motion.div
         variants={stagger}
@@ -251,12 +252,13 @@ function FeaturesSection() {
 }
 
 function TokenomicsSection() {
+  const { t } = useI18n();
   return (
-    <SectionWrapper className="bg-dark-card/30">
+    <SectionWrapper className="relative">
       <SectionTitle
-        eyebrow="Tokenomics"
-        title="Built for Sustainability"
-        subtitle="1 billion fixed supply with a transparent, utility-driven allocation."
+        eyebrow={t('section.tokenomics')}
+        title={t('section.tokenomics.title')}
+        subtitle={t('section.tokenomics.desc')}
       />
 
       {/* Supply visual */}
@@ -356,12 +358,13 @@ function TokenomicsSection() {
 }
 
 function StakingPreviewSection() {
+  const { t } = useI18n();
   return (
-    <SectionWrapper>
+    <SectionWrapper className="relative">
       <SectionTitle
-        eyebrow="Staking"
-        title="Earn Up to 15% Monthly"
-        subtitle="Four staking tiers designed for every investor. Stake USDT, earn VYR at market price via Chainlink oracle."
+        eyebrow={t('section.staking')}
+        title={t('section.staking.title')}
+        subtitle={t('section.staking.desc')}
       />
 
       <motion.div
@@ -412,12 +415,13 @@ function StakingPreviewSection() {
 }
 
 function RoadmapSection() {
+  const { t } = useI18n();
   return (
-    <SectionWrapper className="bg-dark-card/30">
+    <SectionWrapper className="relative">
       <SectionTitle
-        eyebrow="Roadmap"
-        title="The Path Forward"
-        subtitle="A phased approach to building a comprehensive DeFi ecosystem."
+        eyebrow={t('section.roadmap')}
+        title={t('section.roadmap.title')}
+        subtitle={t('section.roadmap.desc')}
       />
 
       <div className="relative">
@@ -476,6 +480,7 @@ function RoadmapSection() {
 }
 
 function CTASection() {
+  const { t } = useI18n();
   return (
     <SectionWrapper>
       <motion.div
@@ -489,24 +494,24 @@ function CTASection() {
         <div className="absolute top-0 left-1/2 -translate-x-1/2 h-32 w-64 bg-gold/20 blur-[100px]" />
         <div className="relative">
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white">
-            Ready to Join <span className="text-gold-gradient">VyronX</span>?
+            {t('cta.title').split('VyronX')[0]}<span className="text-gold-gradient">VyronX</span>{t('cta.title').includes('?') ? '?' : ''}
           </h2>
           <p className="mt-4 text-lg text-beige-muted max-w-2xl mx-auto">
-            Don't miss the presale. Be among the first to experience AI-powered DeFi staking and earn up to 15% monthly returns.
+            {t('hero.subtitle')}
           </p>
           <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
             <Link
               href="/presale"
               className="inline-flex items-center justify-center gap-2 px-8 py-4 text-base font-bold rounded-xl bg-gradient-to-r from-gold-light to-gold-dark text-dark hover:shadow-2xl hover:shadow-gold/40 hover:scale-[1.02] transition-all"
             >
-              Join Presale
+              {t('hero.cta1')}
               <ArrowRight className="h-5 w-5" />
             </Link>
             <a
               href="mailto:contato@vyronx.io"
               className="inline-flex items-center justify-center gap-2 px-8 py-4 text-base font-bold rounded-xl border border-dark-border bg-dark-card/50 text-white hover:border-gold/50 hover:text-gold transition-all"
             >
-              Contact Us
+              {t('cta.contact')}
             </a>
           </div>
         </div>

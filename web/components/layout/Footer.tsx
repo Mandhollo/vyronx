@@ -1,7 +1,11 @@
+'use client';
+
 import Link from 'next/link';
 import { Mail, Shield, FileText } from 'lucide-react';
+import { useI18n } from '@/lib/i18n';
 
 export default function Footer() {
+  const { t } = useI18n();
   return (
     <footer className="border-t border-dark-border bg-dark-card mt-20">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
@@ -18,36 +22,36 @@ export default function Footer() {
               </span>
             </Link>
             <p className="text-sm text-beige-muted leading-relaxed">
-              AI-powered DeFi ecosystem on BNB Smart Chain. Stake, earn, and participate in the future of decentralized finance.
+              {t('footer.tagline')}
             </p>
           </div>
 
           {/* Platform */}
           <div>
-            <h3 className="text-sm font-bold text-gold uppercase tracking-wider mb-4">Platform</h3>
+            <h3 className="text-sm font-bold text-gold uppercase tracking-wider mb-4">{t('footer.platform')}</h3>
             <ul className="space-y-3">
-              <li><Link href="/presale" className="text-sm text-beige hover:text-gold transition-colors">Presale</Link></li>
-              <li><Link href="/staking" className="text-sm text-beige hover:text-gold transition-colors">Staking Pools</Link></li>
-              <li><Link href="/dashboard" className="text-sm text-beige hover:text-gold transition-colors">Dashboard</Link></li>
-              <li><Link href="/whitepaper" className="text-sm text-beige hover:text-gold transition-colors">Whitepaper</Link></li>
-              <li><Link href="/roadmap" className="text-sm text-beige hover:text-gold transition-colors">Roadmap</Link></li>
+              <li><Link href="/presale" className="text-sm text-beige hover:text-gold transition-colors">{t('nav.presale')}</Link></li>
+              <li><Link href="/staking" className="text-sm text-beige hover:text-gold transition-colors">{t('section.staking')}</Link></li>
+              <li><Link href="/dashboard" className="text-sm text-beige hover:text-gold transition-colors">{t('nav.dashboard')}</Link></li>
+              <li><Link href="/whitepaper" className="text-sm text-beige hover:text-gold transition-colors">{t('nav.whitepaper')}</Link></li>
+              <li><Link href="/roadmap" className="text-sm text-beige hover:text-gold transition-colors">{t('nav.roadmap')}</Link></li>
             </ul>
           </div>
 
           {/* Resources */}
           <div>
-            <h3 className="text-sm font-bold text-gold uppercase tracking-wider mb-4">Resources</h3>
+            <h3 className="text-sm font-bold text-gold uppercase tracking-wider mb-4">{t('footer.resources')}</h3>
             <ul className="space-y-3">
-              <li><Link href="/whitepaper#tokenomics" className="text-sm text-beige hover:text-gold transition-colors">Tokenomics</Link></li>
-              <li><Link href="/whitepaper#staking" className="text-sm text-beige hover:text-gold transition-colors">Staking</Link></li>
-              <li><Link href="/whitepaper#affiliates" className="text-sm token-beige hover:text-gold transition-colors">Affiliate Program</Link></li>
-              <li><Link href="/whitepaper#security" className="text-sm text-beige hover:text-gold transition-colors">Security</Link></li>
+              <li><Link href="/whitepaper#tokenomics" className="text-sm text-beige hover:text-gold transition-colors">{t('section.tokenomics')}</Link></li>
+              <li><Link href="/whitepaper#staking" className="text-sm text-beige hover:text-gold transition-colors">{t('section.staking')}</Link></li>
+              <li><Link href="/whitepaper#affiliates" className="text-sm token-beige hover:text-gold transition-colors">{t('stats.levels')}</Link></li>
+              <li><Link href="/whitepaper#security" className="text-sm text-beige hover:text-gold transition-colors">{t('feat.secure')}</Link></li>
             </ul>
           </div>
 
           {/* Contact */}
           <div>
-            <h3 className="text-sm font-bold text-gold uppercase tracking-wider mb-4">Contact</h3>
+            <h3 className="text-sm font-bold text-gold uppercase tracking-wider mb-4">{t('footer.contact')}</h3>
             <ul className="space-y-3">
               <li>
                 <a href="mailto:contato@vyronx.io" className="flex items-center gap-2 text-sm text-beige hover:text-gold transition-colors">
@@ -56,7 +60,7 @@ export default function Footer() {
               </li>
               <li>
                 <Link href="/whitepaper#disclaimer" className="flex items-center gap-2 text-sm text-beige hover:text-gold transition-colors">
-                  <Shield className="h-4 w-4" /> Disclaimer
+                  <Shield className="h-4 w-4" /> {t('footer.disclaimer')}
                 </Link>
               </li>
             </ul>
