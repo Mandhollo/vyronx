@@ -418,6 +418,44 @@ export default function AdminPage() {
               </div>
             </motion.div>
 
+            {/* Phase Control */}
+            <motion.div variants={fadeUp} className="rounded-2xl border border-gold/30 bg-gradient-to-b from-dark-card to-gold/5 p-6 glow-gold">
+              <h3 className="text-lg font-bold text-white mb-1">Phase Control</h3>
+              <p className="text-xs text-beige-muted mb-4">Switch between presale phases manually. Phase 0 = $0.01, Phase 1 = $0.02.</p>
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
+                <div className="rounded-xl bg-dark-elevated p-4 flex-1">
+                  <div className="text-xs text-beige-muted">Current Phase</div>
+                  <div className="text-xl font-bold text-gold">
+                    Phase {presaleInfo ? Number(presaleInfo[0]) + 1 : 1} — {presaleInfo ? `$${(Number(presaleInfo[1]) / 1e6).toFixed(2)}` : '$0.01'}
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <button onClick={async () => {
+                    const current = presaleInfo ? Number(presaleInfo[0]) : 0;
+                    if (current === 0) return toast.error('Already on Phase 1');
+                    if (!confirm('Switch back to Phase 1 ($0.01)?')) return;
+                    await exec('Set Phase 1', async () => {
+                      await writeContractAsync({ address: PRESALE_ADDRESS, abi: PresaleABI, functionName: 'setCurrentPhase', args: [BigInt(0)] });
+                    });
+                  }} disabled={pending === 'Set Phase 1' || (presaleInfo ? Number(presaleInfo[0]) === 0 : true)}
+                    className="px-4 py-2 text-xs font-bold rounded-lg bg-gold/10 text-gold border border-gold/30 hover:bg-gold/20 disabled:opacity-50 disabled:cursor-not-allowed">
+                    {pending === 'Set Phase 1' ? <Loader2 className="h-4 w-4 animate-spin" /> : '← Phase 1 ($0.01)'}
+                  </button>
+                  <button onClick={async () => {
+                    const current = presaleInfo ? Number(presaleInfo[0]) : 0;
+                    if (current === 1) return toast.error('Already on Phase 2');
+                    if (!confirm('Switch to Phase 2 ($0.02)?')) return;
+                    await exec('Set Phase 2', async () => {
+                      await writeContractAsync({ address: PRESALE_ADDRESS, abi: PresaleABI, functionName: 'setCurrentPhase', args: [BigInt(1)] });
+                    });
+                  }} disabled={pending === 'Set Phase 2' || (presaleInfo ? Number(presaleInfo[0]) === 1 : false)}
+                    className="px-4 py-2 text-xs font-bold rounded-lg bg-gold/10 text-gold border border-gold/30 hover:bg-gold/20 disabled:opacity-50 disabled:cursor-not-allowed">
+                    {pending === 'Set Phase 2' ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Phase 2 ($0.02) →'}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+
             {/* Presale Management */}
             <motion.div variants={fadeUp} className="rounded-2xl border border-red-500/20 bg-dark-card p-6">
               <h3 className="text-lg font-bold text-white mb-4">Presale Management</h3>
