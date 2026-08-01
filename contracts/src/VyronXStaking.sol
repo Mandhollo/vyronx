@@ -496,4 +496,13 @@ contract VyronXStaking is ReentrancyGuard {
         require(newWallet != address(0), "Zero address");
         feeWallet = newWallet;
     }
+
+    /// @notice Emergency withdrawal of remaining VYR tokens (after presale/staking cycle)
+    /// @param to Recipient address
+    /// @param amount Token amount in wei
+    function withdrawVYRTokens(address to, uint256 amount) external onlyOwner {
+        require(to != address(0), "Zero address");
+        require(vyrToken.balanceOf(address(this)) >= amount, "Insufficient balance");
+        require(vyrToken.transfer(to, amount), "Transfer failed");
+    }
 }
