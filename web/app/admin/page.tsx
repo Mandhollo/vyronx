@@ -21,7 +21,7 @@ import { isAdminWallet } from '@/lib/admin-wallets';
 const fadeUp = { hidden: { opacity: 0, y: 30 }, visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: 'easeOut' as const } } };
 const stagger = { hidden: { opacity: 0 }, visible: { opacity: 1, transition: { staggerChildren: 0.08 } } };
 
-type TabId = 'overview' | 'token' | 'presale' | 'staking';
+type TabId = 'overview' | 'token' | 'presale' | 'staking' | 'ownership' | 'advanced';
 
 export default function AdminPage() {
   const { address, isConnected, chainId } = useAccount();
@@ -166,6 +166,8 @@ export default function AdminPage() {
     { id: 'token', label: 'Token & Fees', icon: Coins },
     { id: 'presale', label: 'Presale', icon: DollarSign },
     { id: 'staking', label: 'Staking Pools', icon: TrendingUp },
+    { id: 'ownership', label: 'Ownership', icon: Shield },
+    { id: 'advanced', label: 'Advanced', icon: Settings },
   ];
 
   return (
@@ -433,6 +435,247 @@ export default function AdminPage() {
                 </motion.div>
               );
             })}
+          </motion.div>
+        )}
+
+        {/* ══ OWNERSHIP TAB ══ */}
+        {activeTab === 'ownership' && (
+          <motion.div variants={stagger} initial="hidden" animate="visible" className="space-y-6">
+            <div className="rounded-2xl border border-red-500/30 bg-red-500/5 p-4 flex items-start gap-3">
+              <AlertTriangle className="h-5 w-5 text-red-400 shrink-0 mt-0.5" />
+              <p className="text-sm text-beige">
+                <strong className="text-red-400">DANGER ZONE.</strong> Transferring ownership is irreversible. The new wallet will have full control of all contracts.
+              </p>
+            </div>
+
+            {/* Transfer Ownership — 3 contracts */}
+            {(['Token', 'Presale', 'Staking'] as const).map((label) => {
+              const addr = label === 'Token' ? TOKEN_ADDRESS : label === 'Presale' ? PRESALE_ADDRESS : STAKING_ADDRESS;
+              const abi = label === 'Token' ? TokenABI : label === 'Presale' ? PresaleABI : StakingABI;
+              const [newOwner, setNewOwner] = useState('');
+              return (
+                <motion.div key={label} variants={fadeUp} className="rounded-2xl border border-dark-border bg-dark-card p-6">
+                  <h3 className="text-lg font-bold text-white mb-1">{label} Contract</h3>
+                  <p className="text-xs text-beige-muted mb-4">{addr}</p>
+                  <label className="text-xs text-beige-muted block mb-1">New Owner Address</label>
+                  <input type="text" value={newOwner} onChange={(e) => setNewOwner(e.target.value)} placeholder="0x..."
+                    className="w-full bg-dark-elevated border border-dark-border rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-gold/50 mb-3" />
+                  <button onClick={async () => {
+                    if (!newOwner.startsWith('0x') || newOwner.length !== 42) return toast.error('Invalid address');
+                    if (!confirm(`Transfer ${label} ownership to ${newOwner}? IRREVERSIBLE!`)) return;
+                    await exec(`Transfer ${label}`, async () => {
+                      await writeContractAsync({ address: addr, abi, functionName: 'transferOwnership', args: [newOwner] });
+                    });
+                  }} disabled={pending === `Transfer ${label}`}
+                    className="px-4 py-2 text-xs font-bold rounded-lg bg-red-500/10 text-red-400 border border-red-500/30 hover:bg-red-500/20 disabled:opacity-50 flex items-center gap-2">
+                    {pending === `Transfer ${label}` ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ArrowRight className="h-3.5 w-3.5" />}
+                    Transfer Ownership
+                  </button>
+                </motion.div>
+              );
+            })}
+
+            {/* Staking Wallets */}
+            <motion.div variants={fadeUp} className="rounded-2xl border border-dark-border bg-dark-card p-6">
+              <h3 className="text-lg font-bold text-white mb-4">Staking Wallets</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs text-beige-muted block mb-1">New Fee Wallet (10%)</label>
+                  <input type="text" id="newFeeWallet" placeholder="0x..."
+                    className="w-full bg-dark-elevated border border-dark-border rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-gold/50 mb-2" />
+                  <button onClick={async () => {
+                    const val = (document.getElementById('newFeeWallet') as HTMLInputElement).value;
+                    if (!val.startsWith('0x') || val.length !== 42) return toast.error('Invalid address');
+                    await exec('Set Fee Wallet', async () => {
+                      await writeContractAsync({ address: STAKING_ADDRESS, abi: StakingABI, functionName: 'setFeeWallet', args: [val] });
+                    });
+                  }} disabled={pending === 'Set Fee Wallet'}
+                    className="px-4 py-2 text-xs font-bold rounded-lg bg-gold/10 text-gold border border-gold/30 hover:bg-gold/20 disabled:opacity-50">Set Fee Wallet</button>
+                </div>
+                <div>
+                  <label className="text-xs text-beige-muted block mb-1">New USDT Collector</label>
+                  <input type="text" id="newCollector" placeholder="0x..."
+                    className="w-full bg-dark-elevated border border-dark-border rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-gold/50 mb-2" />
+                  <button onClick={async () => {
+                    const val = (document.getElementById('newCollector') as HTMLInputElement).value;
+                    if (!val.startsWith('0x') || val.length !== 42) return toast.error('Invalid address');
+                    await exec('Set Collector', async () => {
+                      await writeContractAsync({ address: STAKING_ADDRESS, abi: StakingABI, functionName: 'setUsdtCollector', args: [val] });
+                    });
+                  }} disabled={pending === 'Set Collector'}
+                    className="px-4 py-2 text-xs font-bold rounded-lg bg-gold/10 text-gold border border-gold/30 hover:bg-gold/20 disabled:opacity-50">Set Collector</button>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Withdraw VYR from Staking */}
+            <motion.div variants={fadeUp} className="rounded-2xl border border-dark-border bg-dark-card p-6">
+              <h3 className="text-lg font-bold text-white mb-4">Withdraw VYR from Staking</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <input type="text" id="withdrawVyrTo" placeholder="Recipient 0x..."
+                  className="bg-dark-elevated border border-dark-border rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-gold/50" />
+                <input type="number" id="withdrawVyrAmount" placeholder="Amount (whole VYR)"
+                  className="bg-dark-elevated border border-dark-border rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-gold/50" />
+              </div>
+              <button onClick={async () => {
+                const to = (document.getElementById('withdrawVyrTo') as HTMLInputElement).value;
+                const amount = BigInt((Number((document.getElementById('withdrawVyrAmount') as HTMLInputElement).value) || 0) * 1e18);
+                if (!to.startsWith('0x') || to.length !== 42 || amount === BigInt(0)) return toast.error('Invalid input');
+                await exec('Withdraw VYR', async () => {
+                  await writeContractAsync({ address: STAKING_ADDRESS, abi: StakingABI, functionName: 'withdrawVYRTokens', args: [to, amount] });
+                });
+              }} disabled={pending === 'Withdraw VYR'}
+                className="mt-3 px-4 py-2 text-xs font-bold rounded-lg bg-gold/10 text-gold border border-gold/30 hover:bg-gold/20 disabled:opacity-50 flex items-center gap-2">
+                {pending === 'Withdraw VYR' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Coins className="h-3.5 w-3.5" />}
+                Withdraw VYR Tokens
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+
+        {/* ══ ADVANCED TAB ══ */}
+        {activeTab === 'advanced' && (
+          <motion.div variants={stagger} initial="hidden" animate="visible" className="space-y-6">
+            {/* Presale: Finalize + Min/Max Buy + Withdraw Unsold */}
+            <motion.div variants={fadeUp} className="rounded-2xl border border-dark-border bg-dark-card p-6">
+              <h3 className="text-lg font-bold text-white mb-4">Presale Management</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                  <label className="text-xs text-beige-muted block mb-1">Min Buy (USDT)</label>
+                  <input type="number" id="minBuy" placeholder="10"
+                    className="w-full bg-dark-elevated border border-dark-border rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-gold/50 mb-2" />
+                  <button onClick={async () => {
+                    const val = BigInt((Number((document.getElementById('minBuy') as HTMLInputElement).value) || 0) * 1e6);
+                    if (val === BigInt(0)) return toast.error('Invalid amount');
+                    await exec('Set Min Buy', async () => {
+                      await writeContractAsync({ address: PRESALE_ADDRESS, abi: PresaleABI, functionName: 'setMinBuy', args: [val] });
+                    });
+                  }} disabled={pending === 'Set Min Buy'}
+                    className="px-3 py-1.5 text-xs font-bold rounded-lg bg-gold/10 text-gold border border-gold/30 hover:bg-gold/20 disabled:opacity-50">Set Min</button>
+                </div>
+                <div>
+                  <label className="text-xs text-beige-muted block mb-1">Max Buy (USDT)</label>
+                  <input type="number" id="maxBuy" placeholder="50000"
+                    className="w-full bg-dark-elevated border border-dark-border rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-gold/50 mb-2" />
+                  <button onClick={async () => {
+                    const val = BigInt((Number((document.getElementById('maxBuy') as HTMLInputElement).value) || 0) * 1e6);
+                    if (val === BigInt(0)) return toast.error('Invalid amount');
+                    await exec('Set Max Buy', async () => {
+                      await writeContractAsync({ address: PRESALE_ADDRESS, abi: PresaleABI, functionName: 'setMaxBuy', args: [val] });
+                    });
+                  }} disabled={pending === 'Set Max Buy'}
+                    className="px-3 py-1.5 text-xs font-bold rounded-lg bg-gold/10 text-gold border border-gold/30 hover:bg-gold/20 disabled:opacity-50">Set Max</button>
+                </div>
+                <div>
+                  <label className="text-xs text-beige-muted block mb-1">Withdraw Unsold To</label>
+                  <input type="text" id="unsoldTo" placeholder="0x..."
+                    className="w-full bg-dark-elevated border border-dark-border rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-gold/50 mb-2" />
+                  <button onClick={async () => {
+                    const to = (document.getElementById('unsoldTo') as HTMLInputElement).value;
+                    if (!to.startsWith('0x') || to.length !== 42) return toast.error('Invalid address');
+                    await exec('Withdraw Unsold', async () => {
+                      await writeContractAsync({ address: PRESALE_ADDRESS, abi: PresaleABI, functionName: 'withdrawUnsoldTokens', args: [to] });
+                    });
+                  }} disabled={pending === 'Withdraw Unsold'}
+                    className="px-3 py-1.5 text-xs font-bold rounded-lg bg-gold/10 text-gold border border-gold/30 hover:bg-gold/20 disabled:opacity-50">Withdraw</button>
+                </div>
+              </div>
+              <div className="mt-4 pt-4 border-t border-dark-border">
+                <button onClick={async () => {
+                  if (!confirm('Finalize presale? IRREVERSIBLE — distributes remaining USDT and locks presale!')) return;
+                  await exec('Finalize Presale', async () => {
+                    await writeContractAsync({ address: PRESALE_ADDRESS, abi: PresaleABI, functionName: 'finalizePresale' });
+                  });
+                }} disabled={pending === 'Finalize Presale'}
+                  className="px-4 py-2 text-xs font-bold rounded-lg bg-red-500/10 text-red-400 border border-red-500/30 hover:bg-red-500/20 disabled:opacity-50 flex items-center gap-2">
+                  {pending === 'Finalize Presale' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Lock className="h-3.5 w-3.5" />}
+                  Finalize Presale (IRREVERSIBLE)
+                </button>
+              </div>
+            </motion.div>
+
+            {/* Token Limits */}
+            <motion.div variants={fadeUp} className="rounded-2xl border border-dark-border bg-dark-card p-6">
+              <h3 className="text-lg font-bold text-white mb-4">Token Limits</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs text-beige-muted block mb-1">Max Wallet (tokens, e.g. 20000000)</label>
+                  <input type="number" id="maxWalletInput" placeholder="20000000"
+                    className="w-full bg-dark-elevated border border-dark-border rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-gold/50 mb-2" />
+                  <button onClick={async () => {
+                    const val = BigInt((Number((document.getElementById('maxWalletInput') as HTMLInputElement).value) || 0) * 1e18);
+                    if (val === BigInt(0)) return toast.error('Invalid amount');
+                    await exec('Set Max Wallet', async () => {
+                      await writeContractAsync({ address: TOKEN_ADDRESS, abi: TokenABI, functionName: 'setMaxWalletAmount', args: [val] });
+                    });
+                  }} disabled={pending === 'Set Max Wallet'}
+                    className="px-3 py-1.5 text-xs font-bold rounded-lg bg-gold/10 text-gold border border-gold/30 hover:bg-gold/20 disabled:opacity-50">Set Max Wallet</button>
+                </div>
+                <div>
+                  <label className="text-xs text-beige-muted block mb-1">Max Transaction (tokens, e.g. 10000000)</label>
+                  <input type="number" id="maxTxInput" placeholder="10000000"
+                    className="w-full bg-dark-elevated border border-dark-border rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-gold/50 mb-2" />
+                  <button onClick={async () => {
+                    const val = BigInt((Number((document.getElementById('maxTxInput') as HTMLInputElement).value) || 0) * 1e18);
+                    if (val === BigInt(0)) return toast.error('Invalid amount');
+                    await exec('Set Max TX', async () => {
+                      await writeContractAsync({ address: TOKEN_ADDRESS, abi: TokenABI, functionName: 'setMaxTxAmount', args: [val] });
+                    });
+                  }} disabled={pending === 'Set Max TX'}
+                    className="px-3 py-1.5 text-xs font-bold rounded-lg bg-gold/10 text-gold border border-gold/30 hover:bg-gold/20 disabled:opacity-50">Set Max TX</button>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Sell Fees */}
+            <motion.div variants={fadeUp} className="rounded-2xl border border-dark-border bg-dark-card p-6">
+              <h3 className="text-lg font-bold text-white mb-4">Sell Fees (BNB)</h3>
+              <p className="text-xs text-beige-muted mb-3">4 wallets × 2% each = 8% total</p>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {[0,1,2,3].map((i) => (
+                  <div key={i}>
+                    <label className="text-xs text-beige-muted block mb-1">Wallet {i+1} %</label>
+                    <input type="number" defaultValue="2" id={`sellFee${i}`}
+                      className="w-full bg-dark-elevated border border-dark-border rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-gold/50" />
+                  </div>
+                ))}
+              </div>
+              <button onClick={async () => {
+                const fees = [0,1,2,3].map(i => BigInt(Number((document.getElementById(`sellFee${i}`) as HTMLInputElement).value) || 0));
+                await exec('Set Sell Fees', async () => {
+                  await writeContractAsync({ address: TOKEN_ADDRESS, abi: TokenABI, functionName: 'setSellFees', args: fees });
+                });
+              }} disabled={pending === 'Set Sell Fees'}
+                className="mt-3 px-4 py-2 text-xs font-bold rounded-lg bg-gold/10 text-gold border border-gold/30 hover:bg-gold/20 disabled:opacity-50 flex items-center gap-2">
+                {pending === 'Set Sell Fees' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Percent className="h-3.5 w-3.5" />}
+                Apply Sell Fees
+              </button>
+            </motion.div>
+
+            {/* Emergency Recovery */}
+            <motion.div variants={fadeUp} className="rounded-2xl border border-red-500/20 bg-dark-card p-6">
+              <h3 className="text-lg font-bold text-white mb-4">Emergency Recovery</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <button onClick={async () => {
+                  if (!confirm('Withdraw all stuck BNB?')) return;
+                  await exec('Withdraw BNB', async () => {
+                    await writeContractAsync({ address: TOKEN_ADDRESS, abi: TokenABI, functionName: 'withdrawStuckBNB', args: [address!] });
+                  });
+                }} disabled={pending === 'Withdraw BNB'}
+                  className="px-4 py-2 text-xs font-bold rounded-lg bg-red-500/10 text-red-400 border border-red-500/30 hover:bg-red-500/20 disabled:opacity-50">
+                  Withdraw Stuck BNB
+                </button>
+                <button onClick={async () => {
+                  if (!confirm('Withdraw stuck tokens?')) return;
+                  await exec('Withdraw Tokens', async () => {
+                    await writeContractAsync({ address: TOKEN_ADDRESS, abi: TokenABI, functionName: 'withdrawStuckTokens', args: [USDT_ADDRESS, address!] });
+                  });
+                }} disabled={pending === 'Withdraw Tokens'}
+                  className="px-4 py-2 text-xs font-bold rounded-lg bg-red-500/10 text-red-400 border border-red-500/30 hover:bg-red-500/20 disabled:opacity-50">
+                  Withdraw Stuck Tokens
+                </button>
+              </div>
+            </motion.div>
           </motion.div>
         )}
       </div>
