@@ -213,7 +213,7 @@ export default function AdminPage() {
           <motion.div variants={stagger} initial="hidden" animate="visible" className="space-y-8">
             {/* Global Stats */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              <StatCard icon={DollarSign} label="USDT Raised" value={`$${fmt(presaleInfo?.[3], 18, 0)}`} gold />
+              <StatCard icon={DollarSign} label="USDT Raised" value={`$${fmt(presaleInfo?.[3], 6, 0)}`} gold />
               <StatCard icon={Coins} label="VYR Sold" value={fmt(presaleInfo?.[4], 18, 0)} />
               <StatCard icon={Users} label="Total Buyers" value={String(presaleInfo?.[5] || BigInt(0))} />
               <StatCard icon={Banknote} label="Reward Pool" value={`${fmt(rewardPool, 18, 0)} VYR`} />
@@ -221,7 +221,7 @@ export default function AdminPage() {
 
             {/* Staking Stats */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              <StatCard icon={TrendingUp} label="Total Staked" value={`$${fmt(totalStaked, 18, 0)}`} />
+              <StatCard icon={TrendingUp} label="Total Staked" value={`$${fmt(totalStaked, 6, 0)}`} />
               <StatCard icon={Users} label="Total Stakers" value={String(totalStakers || BigInt(0))} />
               <StatCard icon={Percent} label="VYR Price" value={`$${vyrPrice ? (Number(vyrPrice) / 1e6).toFixed(4) : '--'}`} />
               <StatCard icon={Clock} label="Next Dist." value={distTime ? `${Math.floor(Number(distTime) / 3600)}h ${Math.floor((Number(distTime) % 3600) / 60)}m` : 'Due!'} highlight={distDue === true} />
@@ -323,11 +323,11 @@ export default function AdminPage() {
               <h3 className="text-lg font-bold text-white mb-4">Presale Status</h3>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
                 <InfoBox label="Current Phase" value={`Phase ${String(Number(presaleInfo?.[0] || BigInt(0)) + 1)}`} />
-                <InfoBox label="VYR Price" value={`$${presaleInfo ? (Number(presaleInfo[1]) / 1e6 * 100).toFixed(2) : '--'}`} />
+                <InfoBox label="VYR Price" value={`$${presaleInfo ? (Number(presaleInfo[1]) / 1e6).toFixed(4) : '--'}`} />
                 <InfoBox label="Status" value={presaleInfo?.[6] ? '🟢 Active' : '🔴 Paused'} />
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-6">
-                <InfoBox label="USDT Raised" value={`$${fmt(presaleInfo?.[3], 18, 0)}`} gold />
+                <InfoBox label="USDT Raised" value={`$${fmt(presaleInfo?.[3], 6, 0)}`} gold />
                 <InfoBox label="VYR Sold" value={fmt(presaleInfo?.[4], 18, 0)} />
                 <InfoBox label="Buyers" value={String(presaleInfo?.[5] || BigInt(0))} />
               </div>
@@ -449,31 +449,9 @@ export default function AdminPage() {
             </div>
 
             {/* Transfer Ownership — 3 contracts */}
-            {(['Token', 'Presale', 'Staking'] as const).map((label) => {
-              const addr = label === 'Token' ? TOKEN_ADDRESS : label === 'Presale' ? PRESALE_ADDRESS : STAKING_ADDRESS;
-              const abi = label === 'Token' ? TokenABI : label === 'Presale' ? PresaleABI : StakingABI;
-              const [newOwner, setNewOwner] = useState('');
-              return (
-                <motion.div key={label} variants={fadeUp} className="rounded-2xl border border-dark-border bg-dark-card p-6">
-                  <h3 className="text-lg font-bold text-white mb-1">{label} Contract</h3>
-                  <p className="text-xs text-beige-muted mb-4">{addr}</p>
-                  <label className="text-xs text-beige-muted block mb-1">New Owner Address</label>
-                  <input type="text" value={newOwner} onChange={(e) => setNewOwner(e.target.value)} placeholder="0x..."
-                    className="w-full bg-dark-elevated border border-dark-border rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-gold/50 mb-3" />
-                  <button onClick={async () => {
-                    if (!newOwner.startsWith('0x') || newOwner.length !== 42) return toast.error('Invalid address');
-                    if (!confirm(`Transfer ${label} ownership to ${newOwner}? IRREVERSIBLE!`)) return;
-                    await exec(`Transfer ${label}`, async () => {
-                      await writeContractAsync({ address: addr, abi, functionName: 'transferOwnership', args: [newOwner] });
-                    });
-                  }} disabled={pending === `Transfer ${label}`}
-                    className="px-4 py-2 text-xs font-bold rounded-lg bg-red-500/10 text-red-400 border border-red-500/30 hover:bg-red-500/20 disabled:opacity-50 flex items-center gap-2">
-                    {pending === `Transfer ${label}` ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ArrowRight className="h-3.5 w-3.5" />}
-                    Transfer Ownership
-                  </button>
-                </motion.div>
-              );
-            })}
+            <TransferOwnershipCard label="Token" addr={TOKEN_ADDRESS} abi={TokenABI} pending={pending} exec={exec} writeContractAsync={writeContractAsync} />
+            <TransferOwnershipCard label="Presale" addr={PRESALE_ADDRESS} abi={PresaleABI} pending={pending} exec={exec} writeContractAsync={writeContractAsync} />
+            <TransferOwnershipCard label="Staking" addr={STAKING_ADDRESS} abi={StakingABI} pending={pending} exec={exec} writeContractAsync={writeContractAsync} />
 
             {/* Staking Wallets */}
             <motion.div variants={fadeUp} className="rounded-2xl border border-dark-border bg-dark-card p-6">
@@ -777,5 +755,37 @@ function AddrRow({ label, addr }: { label: string; addr: string }) {
         {addr.slice(0, 10)}...{addr.slice(-6)} <ExternalLink className="h-3 w-3" />
       </a>
     </div>
+  );
+}
+
+function TransferOwnershipCard({ label, addr, abi, pending, exec, writeContractAsync }: {
+  label: string;
+  addr: `0x${string}`;
+  abi: readonly unknown[];
+  pending: string | null;
+  exec: (name: string, fn: () => Promise<unknown>) => Promise<void>;
+  writeContractAsync: (config: { address: `0x${string}`; abi: readonly unknown[]; functionName: string; args: readonly unknown[]; }) => Promise<unknown>;
+}) {
+  const [newOwner, setNewOwner] = useState('');
+  const fadeUpLocal = { hidden: { opacity: 0, y: 30 }, visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: 'easeOut' as const } } };
+  return (
+    <motion.div variants={fadeUpLocal} initial="hidden" animate="visible" className="rounded-2xl border border-dark-border bg-dark-card p-6">
+      <h3 className="text-lg font-bold text-white mb-1">{label} Contract</h3>
+      <p className="text-xs text-beige-muted mb-4">{addr}</p>
+      <label className="text-xs text-beige-muted block mb-1">New Owner Address</label>
+      <input type="text" value={newOwner} onChange={(e) => setNewOwner(e.target.value)} placeholder="0x..."
+        className="w-full bg-dark-elevated border border-dark-border rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-gold/50 mb-3" />
+      <button onClick={async () => {
+        if (!newOwner.startsWith('0x') || newOwner.length !== 42) return toast.error('Invalid address');
+        if (!confirm(`Transfer ${label} ownership to ${newOwner}? IRREVERSIBLE!`)) return;
+        await exec(`Transfer ${label}`, async () => {
+          await writeContractAsync({ address: addr, abi, functionName: 'transferOwnership', args: [newOwner] });
+        });
+      }} disabled={pending === `Transfer ${label}`}
+        className="px-4 py-2 text-xs font-bold rounded-lg bg-red-500/10 text-red-400 border border-red-500/30 hover:bg-red-500/20 disabled:opacity-50 flex items-center gap-2">
+        {pending === `Transfer ${label}` ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ArrowRight className="h-3.5 w-3.5" />}
+        Transfer Ownership
+      </button>
+    </motion.div>
   );
 }
