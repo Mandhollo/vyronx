@@ -313,31 +313,6 @@ export default function AdminPage() {
                 icon={Power} label={tradingEnabled ? 'Trading Active' : 'Enable Trading'} variant="gold" />
             </motion.div>
 
-            {/* Sell Fees */}
-            <motion.div variants={fadeUp} className="rounded-2xl glass-card p-6">
-              <h3 className="text-lg font-bold text-white mb-4">Sell Fees (BNB)</h3>
-              <p className="text-xs text-beige-muted mb-3">4 wallets × 2% each = 8% total</p>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                {[0,1,2,3].map((i) => (
-                  <div key={i}>
-                    <label className="text-xs text-beige-muted block mb-1">Wallet {i+1} %</label>
-                    <input type="number" defaultValue="2" id={`sellFee${i}`}
-                      className="w-full bg-dark-elevated border border-dark-border rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-gold/50" />
-                  </div>
-                ))}
-              </div>
-              <button onClick={async () => {
-                const fees = [0,1,2,3].map(i => BigInt(Number((document.getElementById(`sellFee${i}`) as HTMLInputElement).value) || 0));
-                await exec('Set Sell Fees', async () => {
-                  await writeContractAsync({ address: TOKEN_ADDRESS, abi: TokenABI, functionName: 'setSellFees', args: fees });
-                });
-              }} disabled={pending === 'Set Sell Fees'}
-                className="mt-3 px-4 py-2 text-xs font-bold rounded-lg bg-gold/10 text-gold border border-gold/30 hover:bg-gold/20 disabled:opacity-50 flex items-center gap-2">
-                {pending === 'Set Sell Fees' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Percent className="h-3.5 w-3.5" />}
-                Apply Sell Fees
-              </button>
-            </motion.div>
-
             {/* Editable Limits */}
             <motion.div variants={fadeUp} className="rounded-2xl glass-card p-6">
               <h3 className="text-lg font-bold text-white mb-4">Update Token Limits</h3>
