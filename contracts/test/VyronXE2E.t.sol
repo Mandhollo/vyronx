@@ -203,7 +203,7 @@ contract VyronXE2ETest is Test {
         assertGt(aliceVyrAfterAuto, aliceVyrBeforeAuto, "Alice should have received VYR from auto-liquidation");
 
         // Verify stake is marked as withdrawn
-        (address sStaker, uint256 sPool, uint256 sUsdt, uint256 sStart, uint256 sEnd, bool sWithdrawn, uint256 sEarn) = staking.userStakes(alice, 0);
+        (address sStaker, uint256 sPool, uint256 sUsdt, uint256 sStart, uint256 sEnd, bool sWithdrawn, uint256 sEarn, bool sVoucher) = staking.userStakes(alice, 0);
         assertTrue(sWithdrawn, "Alice's stake should be marked withdrawn after auto-liquidation");
 
         console.log("=== TEST 3: ACCELERATOR + USDT COMMISSION + AUTO-LIQUIDATE ===");
@@ -288,6 +288,58 @@ contract VyronXE2ETest is Test {
         console.log("Alice (referrer) VYR after:", aliceVyrAfter);
         console.log("Commission earned:", aliceVyrAfter - aliceVyrBefore);
         assertGt(aliceVyrAfter, aliceVyrBefore, "Alice should earn commission");
+        console.log("PASS!");
+
+        vm.stopPrank();
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // TEST 6: VOUCHER — Virtual stake earns yield, no principal on withdraw
+    // ═══════════════════════════════════════════════════════════════
+    function test_Voucher_System() public {
+        address promoter = makeAddr("promoter");
+
+        // Owner creates $100 voucher for promoter (Pool 0 = 30 days, expiry = 30 days from now)
+        vm.warp(block.timestamp + 1 days);
+        vm.startPrank(deployer);
+        staking.createVoucher(promoter, 100 * 1e18, 0, block.timestamp + 30 days);
+        vm.stopPrank();
+
+        // Check voucher exists
+        assertEq(staking.getVoucherCount(), 1, "Should have 1 voucher");
+
+        // Promoter redeems voucher
+        vm.startPrank(promoter);
+        staking.redeemVoucher(0);
+
+        // Check virtual stake was created
+        (address sStaker, uint256 sPool, uint256 sUsdt, , , bool sWithdrawn, , bool sVoucher) = staking.userStakes(promoter, 0);
+        assertEq(sStaker, promoter, "Stake belongs to promoter");
+        assertEq(sPool, 0, "Pool 0");
+        assertEq(sUsdt, 100 * 1e18, "$100 virtual stake");
+        assertFalse(sWithdrawn, "Not withdrawn yet");
+        assertTrue(sVoucher, "Should be marked as voucher");
+        vm.stopPrank();
+
+        // Fast forward 31 days
+        vm.warp(block.timestamp + 31 days);
+
+        // Promoter withdraws — should get ONLY earnings (not principal)
+        uint256 vyrBefore = token.balanceOf(promoter);
+        vm.startPrank(promoter);
+        staking.withdraw(0);
+        uint256 vyrAfter = token.balanceOf(promoter);
+
+        // Earnings = $100 * 0.11% * 31 days = $3.41
+        // No principal! Just $3.41 → 3.41 VYR (at $1/VYR)
+        // After 10% fee: 3.41 * 0.9 = 3.069 VYR
+        uint256 vyrEarned = vyrAfter - vyrBefore;
+        assertGt(vyrEarned, 0, "Should earn some VYR from voucher");
+        assertLt(vyrEarned, 10e18, "Should be SMALL amount (earnings only, no principal)");
+
+        console.log("=== TEST 6: VOUCHER ===");
+        console.log("Voucher: $100 (Pool 30, virtual)");
+        console.log("VYR received (earnings only):", vyrEarned);
         console.log("PASS!");
 
         vm.stopPrank();

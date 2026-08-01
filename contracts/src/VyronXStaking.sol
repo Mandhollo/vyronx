@@ -56,11 +56,29 @@ contract VyronXStaking is ReentrancyGuard {
         uint256 lockEndTime;
         bool withdrawn;
         uint256 accumulatedEarnings; // in USDT value
+        bool isVoucher; // true if this stake came from a voucher (no principal on withdraw)
     }
 
     mapping(address => Stake[]) public userStakes;
     uint256 public totalStakedUsdt;
     uint256 public totalStakers;
+
+    // ════════════════════════════════════════════════════════════
+    // Vouchers — Virtual stakes for promoters (earn yield, qualify for affiliate, NO principal)
+    // ════════════════════════════════════════════════════════════
+    struct Voucher {
+        address recipient;      // who can redeem
+        uint256 usdtValue;      // $100 or $1100 (in 1e18)
+        uint256 poolId;         // which pool to stake in
+        uint256 expiry;         // deadline to redeem (timestamp)
+        bool redeemed;          // has been activated?
+        bool cancelled;         // revoked by owner?
+    }
+
+    Voucher[] public vouchers;
+    mapping(address => uint256[]) public userVoucherIds; // user → voucher indices
+
+    uint256 public totalActiveVoucherValue; // total virtual USDT value active
 
     // ════════════════════════════════════════════════════════════
     // Accelerator (Pool 360 only)
@@ -194,7 +212,8 @@ contract VyronXStaking is ReentrancyGuard {
             startTime: block.timestamp,
             lockEndTime: lockEndTime,
             withdrawn: false,
-            accumulatedEarnings: 0
+            accumulatedEarnings: 0,
+            isVoucher: false
         }));
 
         totalStakedUsdt += usdtAmount;
@@ -263,8 +282,14 @@ contract VyronXStaking is ReentrancyGuard {
         Pool storage pool = pools[s.poolId];
         uint256 earningsUsdt = (s.usdtAmount * pool.dailyRateBps * elapsedDays) / 10000;
 
-        // TOTAL = principal + earnings
-        uint256 totalUsdt = s.usdtAmount + earningsUsdt;
+        // TOTAL = principal + earnings (or just earnings for vouchers)
+        uint256 totalUsdt;
+        if (s.isVoucher) {
+            // Voucher: pay ONLY earnings, no principal
+            totalUsdt = earningsUsdt;
+        } else {
+            totalUsdt = s.usdtAmount + earningsUsdt;
+        }
 
         // Convert to VYR via oracle price
         uint256 vyrToPay = (totalUsdt * 10 ** 18) / vyrPriceInUsdt;
@@ -379,8 +404,8 @@ contract VyronXStaking is ReentrancyGuard {
         uint256 elapsedDays = (block.timestamp - s.startTime) / 1 days;
         Pool storage pool = pools[s.poolId];
         earningsUsdt = (s.usdtAmount * pool.dailyRateBps * elapsedDays) / 10000;
-        // Total = principal + earnings (both in VYR)
-        uint256 totalUsdt = s.usdtAmount + earningsUsdt;
+        // Total = principal + earnings (or just earnings for vouchers)
+        uint256 totalUsdt = s.isVoucher ? earningsUsdt : (s.usdtAmount + earningsUsdt);
         vyrValue = (totalUsdt * 10 ** 18) / vyrPriceInUsdt;
     }
 
@@ -480,6 +505,135 @@ contract VyronXStaking is ReentrancyGuard {
     /// @notice Withdraw excess VYR (owner only, after all stakes mature)
     function withdrawExcessVyr(address to, uint256 amount) external onlyOwner {
         require(vyrToken.transfer(to, amount), "Transfer failed");
+    }
+
+    // ════════════════════════════════════════════════════════════
+    // VOUCHER SYSTEM
+    // ════════════════════════════════════════════════════════════
+
+    event VoucherCreated(uint256 indexed voucherId, address indexed recipient, uint256 usdtValue, uint256 poolId, uint256 expiry);
+    event VoucherRedeemed(uint256 indexed voucherId, address indexed recipient, uint256 stakeIndex);
+    event VoucherCancelled(uint256 indexed voucherId);
+
+    /// @notice Create a voucher for a promoter (only owner)
+    /// @param recipient Wallet that can redeem this voucher
+    /// @param usdtValue Virtual stake value (e.g. 100e18 for $100, 1100e18 for $1100)
+    /// @param poolId Which pool (0-3)
+    /// @param expiryTimestamp Deadline to redeem (0 = no expiry)
+    function createVoucher(address recipient, uint256 usdtValue, uint256 poolId, uint256 expiryTimestamp) external onlyOwner {
+        require(recipient != address(0), "Zero address");
+        require(usdtValue > 0, "Zero value");
+        require(poolId < POOL_COUNT, "Invalid pool");
+        require(expiryTimestamp == 0 || expiryTimestamp > block.timestamp, "Expiry in past");
+
+        uint256 voucherId = vouchers.length;
+        vouchers.push(Voucher({
+            recipient: recipient,
+            usdtValue: usdtValue,
+            poolId: poolId,
+            expiry: expiryTimestamp,
+            redeemed: false,
+            cancelled: false
+        }));
+        userVoucherIds[recipient].push(voucherId);
+
+        emit VoucherCreated(voucherId, recipient, usdtValue, poolId, expiryTimestamp);
+    }
+
+    /// @notice Create multiple vouchers at once (batch)
+    function createVouchersBatch(
+        address[] calldata recipients,
+        uint256 usdtValue,
+        uint256 poolId,
+        uint256 expiryTimestamp
+    ) external onlyOwner {
+        for (uint256 i = 0; i < recipients.length; i++) {
+            require(recipients[i] != address(0), "Zero address");
+            uint256 voucherId = vouchers.length;
+            vouchers.push(Voucher({
+                recipient: recipients[i],
+                usdtValue: usdtValue,
+                poolId: poolId,
+                expiry: expiryTimestamp,
+                redeemed: false,
+                cancelled: false
+            }));
+            userVoucherIds[recipients[i]].push(voucherId);
+            emit VoucherCreated(voucherId, recipients[i], usdtValue, poolId, expiryTimestamp);
+        }
+    }
+
+    /// @notice Redeem (activate) a voucher — creates a virtual stake
+    /// @param voucherId The voucher to redeem
+    function redeemVoucher(uint256 voucherId) external nonReentrant {
+        require(voucherId < vouchers.length, "Invalid voucher");
+        Voucher storage v = vouchers[voucherId];
+        require(v.recipient == msg.sender, "Not your voucher");
+        require(!v.redeemed, "Already redeemed");
+        require(!v.cancelled, "Voucher cancelled");
+        require(v.expiry == 0 || v.expiry > block.timestamp, "Voucher expired");
+
+        v.redeemed = true;
+
+        Pool storage pool = pools[v.poolId];
+        uint256 stakeIndex = userStakes[msg.sender].length;
+        userStakes[msg.sender].push(Stake({
+            staker: msg.sender,
+            poolId: v.poolId,
+            usdtAmount: v.usdtValue,
+            startTime: block.timestamp,
+            lockEndTime: block.timestamp + (pool.lockPeriodDays * 1 days),
+            withdrawn: false,
+            accumulatedEarnings: 0,
+            isVoucher: true
+        }));
+
+        totalActiveVoucherValue += v.usdtValue;
+
+        emit VoucherRedeemed(voucherId, msg.sender, stakeIndex);
+    }
+
+    /// @notice Cancel a voucher (only owner, before redemption)
+    function cancelVoucher(uint256 voucherId) external onlyOwner {
+        require(voucherId < vouchers.length, "Invalid voucher");
+        Voucher storage v = vouchers[voucherId];
+        require(!v.redeemed, "Already redeemed");
+        require(!v.cancelled, "Already cancelled");
+        v.cancelled = true;
+        emit VoucherCancelled(voucherId);
+    }
+
+    /// @notice Get all vouchers for a user
+    function getUserVouchers(address user) external view returns (
+        uint256[] memory ids,
+        uint256[] memory values,
+        uint256[] memory poolIds,
+        uint256[] memory expiries,
+        bool[] memory redeemed,
+        bool[] memory cancelled
+    ) {
+        uint256[] memory ids_ = userVoucherIds[user];
+        uint256 len = ids_.length;
+        ids = new uint256[](len);
+        values = new uint256[](len);
+        poolIds = new uint256[](len);
+        expiries = new uint256[](len);
+        redeemed = new bool[](len);
+        cancelled = new bool[](len);
+        for (uint256 i = 0; i < len; i++) {
+            Voucher storage v = vouchers[ids_[i]];
+            ids[i] = ids_[i];
+            values[i] = v.usdtValue;
+            poolIds[i] = v.poolId;
+            expiries[i] = v.expiry;
+            redeemed[i] = v.redeemed;
+            cancelled[i] = v.cancelled;
+        }
+    }
+
+    /// @notice Get total voucher count
+    function getVoucherCount() external view returns (uint256) {
+        return vouchers.length;
     }
 
     function transferOwnership(address newOwner) external onlyOwner {

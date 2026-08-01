@@ -21,7 +21,7 @@ import { isAdminWallet } from '@/lib/admin-wallets';
 const fadeUp = { hidden: { opacity: 0, y: 30 }, visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: 'easeOut' as const } } };
 const stagger = { hidden: { opacity: 0 }, visible: { opacity: 1, transition: { staggerChildren: 0.08 } } };
 
-type TabId = 'overview' | 'token' | 'presale' | 'staking' | 'ownership';
+type TabId = 'overview' | 'token' | 'presale' | 'staking' | 'vouchers' | 'ownership';
 
 export default function AdminPage() {
   const { address, isConnected, chainId } = useAccount();
@@ -77,6 +77,10 @@ export default function AdminPage() {
 
   const { data: totalStakers } = useReadContract({
     address: STAKING_ADDRESS, abi: StakingABI, functionName: 'totalStakers', chainId: bsc.id,
+  }) as { data: bigint | undefined };
+
+  const { data: totalActiveVoucher } = useReadContract({
+    address: STAKING_ADDRESS, abi: StakingABI, functionName: 'totalActiveVoucherValue', chainId: bsc.id,
   }) as { data: bigint | undefined };
 
   // === READS: POOLS (individual reads) ===
@@ -166,6 +170,7 @@ export default function AdminPage() {
     { id: 'token', label: 'Token & Fees', icon: Coins },
     { id: 'presale', label: 'Presale', icon: DollarSign },
     { id: 'staking', label: 'Staking Pools', icon: TrendingUp },
+    { id: 'vouchers', label: 'Vouchers', icon: Users },
     { id: 'ownership', label: 'Ownership', icon: Shield },
   ];
 
@@ -588,6 +593,96 @@ export default function AdminPage() {
                 </motion.div>
               );
             })}
+          </motion.div>
+        )}
+
+        {/* ══ VOUCHERS TAB ══ */}
+        {activeTab === 'vouchers' && (
+          <motion.div variants={stagger} initial="hidden" animate="visible" className="space-y-6">
+            {/* Create Voucher */}
+            <motion.div variants={fadeUp} className="rounded-2xl border border-gold/30 bg-gradient-to-b from-dark-card to-gold/5 p-6 glow-gold">
+              <h3 className="text-lg font-bold text-white mb-1">Create Voucher</h3>
+              <p className="text-xs text-beige-muted mb-4">Issue a virtual stake for promoters. They earn yield + qualify for affiliate system. No principal on withdraw.</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                <div>
+                  <label className="text-xs text-beige-muted block mb-1">Recipient Address</label>
+                  <input type="text" id="voucherRecipient" placeholder="0x..."
+                    className="w-full bg-dark-elevated border border-dark-border rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-gold/50" />
+                </div>
+                <div>
+                  <label className="text-xs text-beige-muted block mb-1">Value (USDT)</label>
+                  <div className="flex gap-2">
+                    <button onClick={() => { (document.getElementById('voucherValue') as HTMLInputElement).value = '100'; }}
+                      className="px-3 py-2 text-xs font-bold rounded-lg bg-gold/10 text-gold border border-gold/30 hover:bg-gold/20 whitespace-nowrap">$100</button>
+                    <button onClick={() => { (document.getElementById('voucherValue') as HTMLInputElement).value = '1100'; }}
+                      className="px-3 py-2 text-xs font-bold rounded-lg bg-gold/10 text-gold border border-gold/30 hover:bg-gold/20 whitespace-nowrap">$1,100</button>
+                    <input type="number" id="voucherValue" placeholder="100"
+                      className="flex-1 bg-dark-elevated border border-dark-border rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-gold/50" />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs text-beige-muted block mb-1">Pool</label>
+                  <select id="voucherPool" className="w-full bg-dark-elevated border border-dark-border rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-gold/50">
+                    <option value="0">Pool 0 — Starter (30d)</option>
+                    <option value="1">Pool 1 — Growth (60d)</option>
+                    <option value="2">Pool 2 — Pro (180d)</option>
+                    <option value="3">Pool 3 — Elite (360d)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs text-beige-muted block mb-1">Expiry (days from now, 0 = never)</label>
+                  <input type="number" id="voucherExpiry" placeholder="30"
+                    className="w-full bg-dark-elevated border border-dark-border rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-gold/50" />
+                </div>
+              </div>
+              <button onClick={async () => {
+                const recipient = (document.getElementById('voucherRecipient') as HTMLInputElement).value;
+                const value = BigInt((Number((document.getElementById('voucherValue') as HTMLInputElement).value) || 0) * 1e18);
+                const poolId = BigInt((document.getElementById('voucherPool') as HTMLSelectElement).value);
+                const expiryDays = Number((document.getElementById('voucherExpiry') as HTMLInputElement).value) || 0;
+                const expiry = expiryDays > 0 ? BigInt(Math.floor(Date.now() / 1000 + expiryDays * 86400)) : BigInt(0);
+                if (!recipient.startsWith('0x') || recipient.length !== 42) return toast.error('Invalid address');
+                if (value === BigInt(0)) return toast.error('Invalid value');
+                await exec('Create Voucher', async () => {
+                  await writeContractAsync({ address: STAKING_ADDRESS, abi: StakingABI, functionName: 'createVoucher', args: [recipient, value, poolId, expiry] });
+                });
+              }} disabled={pending === 'Create Voucher'}
+                className="px-4 py-2 text-xs font-bold rounded-lg bg-gold/10 text-gold border border-gold/30 hover:bg-gold/20 disabled:opacity-50 flex items-center gap-2">
+                {pending === 'Create Voucher' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Users className="h-3.5 w-3.5" />}
+                Create Voucher
+              </button>
+            </motion.div>
+
+            {/* Cancel Voucher */}
+            <motion.div variants={fadeUp} className="rounded-2xl border border-dark-border bg-dark-card p-6">
+              <h3 className="text-lg font-bold text-white mb-4">Cancel Voucher</h3>
+              <div className="flex gap-2">
+                <input type="number" id="cancelVoucherId" placeholder="Voucher ID"
+                  className="flex-1 bg-dark-elevated border border-dark-border rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-gold/50" />
+                <button onClick={async () => {
+                  const id = BigInt((document.getElementById('cancelVoucherId') as HTMLInputElement).value || '0');
+                  if (!confirm(`Cancel voucher #${id}?`)) return;
+                  await exec('Cancel Voucher', async () => {
+                    await writeContractAsync({ address: STAKING_ADDRESS, abi: StakingABI, functionName: 'cancelVoucher', args: [id] });
+                  });
+                }} disabled={pending === 'Cancel Voucher'}
+                  className="px-4 py-2 text-xs font-bold rounded-lg bg-red-500/10 text-red-400 border border-red-500/30 hover:bg-red-500/20 disabled:opacity-50">
+                  Cancel
+                </button>
+              </div>
+              <p className="text-xs text-beige-muted mt-2">Only works if voucher hasn't been redeemed yet.</p>
+            </motion.div>
+
+            {/* Voucher Stats */}
+            <motion.div variants={fadeUp} className="rounded-2xl glass-card p-6">
+              <h3 className="text-lg font-bold text-white mb-4">Voucher Stats</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="rounded-xl bg-dark-elevated p-4">
+                  <div className="text-xs text-beige-muted">Total Active Value</div>
+                  <div className="text-lg font-bold text-gold">${totalActiveVoucher ? (Number(totalActiveVoucher) / 1e18).toLocaleString() : '0'}</div>
+                </div>
+              </div>
+            </motion.div>
           </motion.div>
         )}
 
