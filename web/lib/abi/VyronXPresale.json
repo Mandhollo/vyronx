@@ -611,6 +611,62 @@
   },
   {
     "type": "function",
+    "name": "setDevWallets",
+    "inputs": [
+      {
+        "name": "_d1",
+        "type": "address",
+        "internalType": "address payable"
+      },
+      {
+        "name": "_d2",
+        "type": "address",
+        "internalType": "address payable"
+      },
+      {
+        "name": "_d3",
+        "type": "address",
+        "internalType": "address payable"
+      },
+      {
+        "name": "_d4",
+        "type": "address",
+        "internalType": "address payable"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "setDistributionWallets",
+    "inputs": [
+      {
+        "name": "_marketingWallet",
+        "type": "address",
+        "internalType": "address payable"
+      },
+      {
+        "name": "_lpWallet",
+        "type": "address",
+        "internalType": "address payable"
+      },
+      {
+        "name": "_buybackWallet",
+        "type": "address",
+        "internalType": "address payable"
+      },
+      {
+        "name": "_techWallet",
+        "type": "address",
+        "internalType": "address payable"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
     "name": "setMaxBuy",
     "inputs": [
       {

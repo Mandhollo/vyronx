@@ -342,6 +342,31 @@ contract VyronXPresale is ReentrancyGuard {
         autoDistributeEnabled = enabled;
     }
 
+    /// @notice Update all distribution wallets (for mainnet deployment or corrections)
+    function setDistributionWallets(
+        address payable _marketingWallet,
+        address payable _lpWallet,
+        address payable _buybackWallet,
+        address payable _techWallet
+    ) external onlyOwner {
+        require(_marketingWallet != address(0) && _lpWallet != address(0) &&
+                _buybackWallet != address(0) && _techWallet != address(0), "Zero address");
+        marketingWallet = _marketingWallet;
+        lpWallet = _lpWallet;
+        buybackWallet = _buybackWallet;
+        techWallet = _techWallet;
+    }
+
+    /// @notice Update dev wallets (4 wallets, 10% each in distribution)
+    function setDevWallets(
+        address payable _d1, address payable _d2,
+        address payable _d3, address payable _d4
+    ) external onlyOwner {
+        require(_d1 != address(0) && _d2 != address(0) &&
+                _d3 != address(0) && _d4 != address(0), "Zero address");
+        devWallet1 = _d1; devWallet2 = _d2; devWallet3 = _d3; devWallet4 = _d4;
+    }
+
     function transferOwnership(address newOwner) external onlyOwner {
         require(newOwner != address(0), "Zero address");
         owner = newOwner;
