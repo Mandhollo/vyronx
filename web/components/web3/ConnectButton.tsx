@@ -3,7 +3,7 @@
 import { useAccount, useConnect, useDisconnect } from 'wagmi';
 import { useState } from 'react';
 import { Wallet, Loader2, Check, ChevronDown, Copy, LogOut, ExternalLink } from 'lucide-react';
-import { bscTestnet } from 'wagmi/chains';
+import { bsc } from 'wagmi/chains';
 import { useI18n } from '@/lib/i18n';
 
 export default function ConnectButton() {
@@ -14,7 +14,7 @@ export default function ConnectButton() {
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
   const shortAddr = address ? `${address.slice(0, 6)}...${address.slice(-4)}` : '';
-  const onCorrectChain = chain?.id === bscTestnet.id;
+  const onCorrectChain = chain?.id === bsc.id;
 
   // Not connected
   if (!isConnected) {

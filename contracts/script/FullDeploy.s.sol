@@ -17,7 +17,7 @@ interface IToken {
 
 /// @title Full Fresh Deploy — All contracts from scratch
 contract FullDeploy is Script {
-    address constant PCS_TESTNET_ROUTER = 0xD99D1c33F9fC3444f8101754aBC46c52416550D1;
+    address constant PCS_MAINNET_ROUTER = 0x10ED43C718714eb63d5aA57B78B54704E256024E; // PancakeSwap mainnet
 
     function run() external {
         uint256 pk = vm.envUint("PRIVATE_KEY");
@@ -27,16 +27,17 @@ contract FullDeploy is Script {
         console.log("=== VYRONX FULL DEPLOY ===");
 
         // 1. Deploy Token
-        VyronXToken token = new VyronXToken(PCS_TESTNET_ROUTER);
+        VyronXToken token = new VyronXToken(PCS_MAINNET_ROUTER);
         console.log("TOKEN:", address(token));
 
-        // 2. Deploy MockUSDT
-        MockUSDT usdt = new MockUSDT();
-        console.log("USDT:", address(usdt));
+        // 2. Use REAL USDT on mainnet (0x55d398326f99059fF775485246999027B3197955)
+        //    OR deploy MockUSDT for testnet
+        address usdtAddress = 0x55d398326f99059fF775485246999027B3197955; // BSC Mainnet USDT
+        console.log("USDT:", usdtAddress);
 
         // 3. Deploy Presale
         VyronXPresale presale = new VyronXPresale(
-            address(token), address(usdt),
+            address(token), usdtAddress,
             payable(deployer), payable(deployer), payable(deployer),
             payable(deployer), payable(deployer), payable(deployer),
             payable(deployer), payable(deployer)
@@ -44,7 +45,7 @@ contract FullDeploy is Script {
         console.log("PRESALE:", address(presale));
 
         // 4. Deploy Staking
-        VyronXStaking staking = new VyronXStaking(address(usdt), address(token), payable(deployer));
+        VyronXStaking staking = new VyronXStaking(usdtAddress, address(token), payable(deployer));
         console.log("STAKING:", address(staking));
 
         // 5. Configure
@@ -95,8 +96,8 @@ contract FullDeploy is Script {
         staking.setPoolActive(2, true);
         staking.setPoolActive(3, true);
 
-        // 11. Mint test USDT
-        usdt.mint(deployer, 1_000_000 * 10**6);
+        // 11. No mint needed on mainnet — USDT already exists
+        // usdt.mint(deployer, 1_000_000 * 10**18); // testnet only
 
         console.log("=== DEPLOY COMPLETE ===");
 

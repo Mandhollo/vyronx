@@ -1,7 +1,7 @@
 'use client';
 
 import { useAccount, useConnect, useDisconnect, useSwitchChain } from 'wagmi';
-import { bscTestnet, bsc } from 'wagmi/chains';
+import { bsc } from 'wagmi/chains';
 import { useEffect, useState } from 'react';
 
 // ════════════════════════════════════════════════════════════
@@ -25,7 +25,7 @@ export function useWallet() {
   }, [address]);
 
   // Check if on correct chain (BSC Testnet = 97)
-  const isCorrectChain = chainId === bscTestnet.id || chainId === bsc.id;
+  const isCorrectChain = chainId === bsc.id || chainId === bsc.id;
 
   const connect = async () => {
     try {
@@ -50,7 +50,7 @@ export function useWallet() {
 
   const switchToBsc = async () => {
     try {
-      await switchChainAsync({ chainId: bscTestnet.id });
+      await switchChainAsync({ chainId: bsc.id });
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to switch network');
     }

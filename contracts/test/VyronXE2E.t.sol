@@ -60,10 +60,10 @@ contract VyronXE2ETest is Test {
         staking.setPoolActive(3, true);
 
         // Mint USDT to test users
-        usdt.mint(alice, 100_000 * 1e6);
-        usdt.mint(bob, 100_000 * 1e6);
-        usdt.mint(charlie, 100_000 * 1e6);
-        usdt.mint(dave, 100_000 * 1e6);
+        usdt.mint(alice, 100_000 * 1e18);
+        usdt.mint(bob, 100_000 * 1e18);
+        usdt.mint(charlie, 100_000 * 1e18);
+        usdt.mint(dave, 100_000 * 1e18);
 
         vm.stopPrank();
     }
@@ -75,14 +75,14 @@ contract VyronXE2ETest is Test {
         vm.startPrank(alice);
 
         // Approve USDT
-        usdt.approve(address(presale), 10_000 * 1e6);
+        usdt.approve(address(presale), 10_000 * 1e18);
 
         // Check balance before
         uint256 usdtBefore = usdt.balanceOf(alice);
         uint256 vyrBefore = token.balanceOf(alice);
 
         // Buy with $10,000
-        presale.buyWithUsdt(10_000 * 1e6);
+        presale.buyWithUsdt(10_000 * 1e18);
 
         uint256 usdtAfter = usdt.balanceOf(alice);
         uint256 vyrAfter = token.balanceOf(alice);
@@ -90,7 +90,7 @@ contract VyronXE2ETest is Test {
         vm.stopPrank();
 
         // Assertions
-        assertEq(usdtBefore - usdtAfter, 10_000 * 1e6, "USDT spent");
+        assertEq(usdtBefore - usdtAfter, 10_000 * 1e18, "USDT spent");
         // $10,000 / $0.01 = 1,000,000 VYR + 20% bonus = 1,200,000 VYR
         assertEq(vyrAfter - vyrBefore, 1_200_000 ether, "VYR received with bonus");
 
@@ -106,8 +106,8 @@ contract VyronXE2ETest is Test {
     function test_Staking_Pool30() public {
         vm.startPrank(bob);
 
-        usdt.approve(address(staking), 10_000 * 1e6);
-        staking.stake(0, 10_000 * 1e6); // Pool 0 = 30 days
+        usdt.approve(address(staking), 10_000 * 1e18);
+        staking.stake(0, 10_000 * 1e18); // Pool 0 = 30 days
 
         uint256 stakeCount = staking.getUserStakeCount(bob);
         assertEq(stakeCount, 1, "Should have 1 stake");
@@ -137,8 +137,8 @@ contract VyronXE2ETest is Test {
     function test_Accelerator_And_Affiliate() public {
         // Alice stakes $100 in Pool 360
         vm.startPrank(alice);
-        usdt.approve(address(staking), 100 * 1e6);
-        staking.stake(3, 100 * 1e6); // Pool 3 = 360 days
+        usdt.approve(address(staking), 100 * 1e18);
+        staking.stake(3, 100 * 1e18); // Pool 3 = 360 days
         vm.stopPrank();
 
         // Bob registers Alice as referrer
@@ -154,13 +154,13 @@ contract VyronXE2ETest is Test {
 
         // Bob stakes $200 in Pool 360
         vm.startPrank(bob);
-        usdt.approve(address(staking), 200 * 1e6);
-        staking.stake(3, 200 * 1e6);
+        usdt.approve(address(staking), 200 * 1e18);
+        staking.stake(3, 200 * 1e18);
         vm.stopPrank();
 
         // Alice should have received 10% of $200 = $20 USDT commission immediately
         uint256 aliceUsdtAfterBob = usdt.balanceOf(alice);
-        assertEq(aliceUsdtAfterBob - aliceUsdtBefore, 20 * 1e6, "Alice should get $20 USDT commission from Bob");
+        assertEq(aliceUsdtAfterBob - aliceUsdtBefore, 20 * 1e18, "Alice should get $20 USDT commission from Bob");
 
         // Check accelerator — Alice should be at 20% ($20/$100)
         (uint256 accPercent1, bool unlocked1, uint256 totalRef1) = staking.getAcceleratorStatus(alice, 0);
@@ -172,13 +172,13 @@ contract VyronXE2ETest is Test {
 
         // Charlie stakes $500 in Pool 360
         vm.startPrank(charlie);
-        usdt.approve(address(staking), 500 * 1e6);
-        staking.stake(3, 500 * 1e6);
+        usdt.approve(address(staking), 500 * 1e18);
+        staking.stake(3, 500 * 1e18);
         vm.stopPrank();
 
         // Alice should have received 10% of $500 = $50 USDT commission immediately
         uint256 aliceUsdtAfterCharlie = usdt.balanceOf(alice);
-        assertEq(aliceUsdtAfterCharlie - aliceUsdtBeforeCharlie, 50 * 1e6, "Alice should get $50 USDT commission from Charlie");
+        assertEq(aliceUsdtAfterCharlie - aliceUsdtBeforeCharlie, 50 * 1e18, "Alice should get $50 USDT commission from Charlie");
 
         // Check accelerator — Alice should be at 70% ($70/$100)
         (uint256 accPercent2, bool unlocked2, uint256 totalRef2) = staking.getAcceleratorStatus(alice, 0);
@@ -193,8 +193,8 @@ contract VyronXE2ETest is Test {
         uint256 aliceVyrBeforeAuto = token.balanceOf(alice);
 
         vm.startPrank(dave);
-        usdt.approve(address(staking), 300 * 1e6);
-        staking.stake(3, 300 * 1e6);
+        usdt.approve(address(staking), 300 * 1e18);
+        staking.stake(3, 300 * 1e18);
         vm.stopPrank();
 
         // Alice's stake should be AUTO-LIQUIDATED
@@ -223,8 +223,8 @@ contract VyronXE2ETest is Test {
     function test_Withdraw_After_Maturity() public {
         // Bob stakes $1,000 in Pool 30
         vm.startPrank(bob);
-        usdt.approve(address(staking), 1_000 * 1e6);
-        staking.stake(0, 1_000 * 1e6);
+        usdt.approve(address(staking), 1_000 * 1e18);
+        staking.stake(0, 1_000 * 1e18);
 
         uint256 vyrBefore = token.balanceOf(bob);
 
@@ -260,8 +260,8 @@ contract VyronXE2ETest is Test {
     function test_Affiliate_Commission() public {
         // Alice stakes $100 in Pool 360 (qualifies for Level 1)
         vm.startPrank(alice);
-        usdt.approve(address(staking), 100 * 1e6);
-        staking.stake(3, 100 * 1e6);
+        usdt.approve(address(staking), 100 * 1e18);
+        staking.stake(3, 100 * 1e18);
         vm.stopPrank();
 
         // Bob registers Alice as referrer
@@ -270,8 +270,8 @@ contract VyronXE2ETest is Test {
 
         // Bob stakes $1,000 in Pool 360
         vm.startPrank(bob);
-        usdt.approve(address(staking), 1000 * 1e6);
-        staking.stake(3, 1000 * 1e6);
+        usdt.approve(address(staking), 1000 * 1e18);
+        staking.stake(3, 1000 * 1e18);
 
         uint256 aliceVyrBefore = token.balanceOf(alice);
 

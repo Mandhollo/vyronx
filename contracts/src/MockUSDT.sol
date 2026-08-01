@@ -6,7 +6,7 @@ pragma solidity 0.8.24;
 contract MockUSDT {
     string public constant name = "Tether USD (Mock)";
     string public constant symbol = "USDT";
-    uint8 public constant decimals = 6;
+    uint8 public constant decimals = 18;
     uint256 public totalSupply;
 
     mapping(address => uint256) public balanceOf;

@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 import { PRESALE_ADDRESS, USDT_ADDRESS, PresaleABI } from '@/lib/contracts';
 import { parseUnits, formatUnits } from 'viem';
-import { bscTestnet } from 'wagmi/chains';
+import { bsc } from 'wagmi/chains';
 import toast from 'react-hot-toast';
 import ParticleField from '@/components/fx/ParticleField';
 import { useI18n } from '@/lib/i18n';
@@ -78,14 +78,14 @@ export default function PresalePage() {
   const [txPending, setTxPending] = useState(false);
   const { writeContractAsync } = useWriteContract();
 
-  const onCorrectChain = chainId === bscTestnet.id;
+  const onCorrectChain = chainId === bsc.id;
 
   // Read presale info
   const { data: presaleInfo } = useReadContract({
     address: PRESALE_ADDRESS,
     abi: PresaleABI,
     functionName: 'getPresaleInfo',
-    chainId: bscTestnet.id,
+    chainId: bsc.id,
   });
 
   // Read buyer info
@@ -94,7 +94,7 @@ export default function PresalePage() {
     abi: PresaleABI,
     functionName: 'getBuyerInfo',
     args: [address || '0x0'],
-    chainId: bscTestnet.id,
+    chainId: bsc.id,
   });
 
   // Read token preview
@@ -102,8 +102,8 @@ export default function PresalePage() {
     address: PRESALE_ADDRESS,
     abi: PresaleABI,
     functionName: 'getTokensForUsdt',
-    args: [amount ? parseUnits(amount, 6) : BigInt(0)],
-    chainId: bscTestnet.id,
+    args: [amount ? parseUnits(amount, 18) : BigInt(0)],
+    chainId: bsc.id,
   }) as { data: readonly [bigint, bigint] | undefined };
 
   // Read USDT allowance
@@ -112,7 +112,7 @@ export default function PresalePage() {
     abi: ERC20_ABI,
     functionName: 'allowance',
     args: [address || '0x0', PRESALE_ADDRESS],
-    chainId: bscTestnet.id,
+    chainId: bsc.id,
   });
   const allowance = allowanceData ?? BigInt(0);
 
@@ -122,11 +122,11 @@ export default function PresalePage() {
     abi: ERC20_ABI,
     functionName: 'balanceOf',
     args: [address || '0x0'],
-    chainId: bscTestnet.id,
+    chainId: bsc.id,
   });
   const usdtBalance = balanceData ?? BigInt(0);
 
-  const usdtAmountBigInt = amount ? parseUnits(amount, 6) : BigInt(0);
+  const usdtAmountBigInt = amount ? parseUnits(amount, 18) : BigInt(0);
   const needsApproval = allowance < usdtAmountBigInt;
   const vyrTokens = tokenPreview ? formatUnits(tokenPreview[0], 18) : '0';
   const vyrBonus = tokenPreview ? formatUnits(tokenPreview[1], 18) : '0';
@@ -150,8 +150,8 @@ export default function PresalePage() {
         address: USDT_ADDRESS,
         abi: ERC20_ABI,
         functionName: 'approve',
-        args: [PRESALE_ADDRESS, parseUnits(amount, 6)],
-        chainId: bscTestnet.id,
+        args: [PRESALE_ADDRESS, parseUnits(amount, 18)],
+        chainId: bsc.id,
       });
       toast.success('USDT approved! Now you can buy VYR.', { id: toastId });
     } catch (e) {
@@ -171,8 +171,8 @@ export default function PresalePage() {
         address: PRESALE_ADDRESS,
         abi: PresaleABI,
         functionName: 'buyWithUsdt',
-        args: [parseUnits(amount, 6)],
-        chainId: bscTestnet.id,
+        args: [parseUnits(amount, 18)],
+        chainId: bsc.id,
       });
       toast.success(`Successfully bought ${fmtNum(totalVyr)} VYR! 🎉`, { id: toastId });
       setAmount('');
@@ -385,7 +385,7 @@ export default function PresalePage() {
               <div className="grid grid-cols-3 gap-4">
                 <div>
                   <div className="text-xs text-beige-muted">{t('presale.spent')}</div>
-                  <div className="text-lg font-bold text-white">${formatUnits(bi[0], 6)}</div>
+                  <div className="text-lg font-bold text-white">${formatUnits(bi[0], 18)}</div>
                 </div>
                 <div>
                   <div className="text-xs text-beige-muted">{t('presale.tokens')}</div>

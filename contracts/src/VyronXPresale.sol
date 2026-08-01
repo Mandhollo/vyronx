@@ -38,7 +38,7 @@ contract VyronXPresale is ReentrancyGuard {
     // Presale Phases
     // ════════════════════════════════════════════════════════════
     struct Phase {
-        uint256 pricePerToken; // in USDT (1e6 decimals, per whole token 1e18)
+        uint256 pricePerToken; // in USDT (1e18 decimals, per whole token 1e18)
         uint256 bonusPercent; // e.g., 20 = 20% bonus tokens
         uint256 allocation; // max tokens for this phase
         uint256 tokensSold; // running counter
@@ -99,8 +99,8 @@ contract VyronXPresale is ReentrancyGuard {
     // ════════════════════════════════════════════════════════════
     bool public presaleActive = false;
     bool public presaleFinalized = false;
-    uint256 public minBuy = 10 * 1e6; // $10 USDT min
-    uint256 public maxBuy = 50_000 * 1e6; // $50,000 USDT max per wallet
+    uint256 public minBuy = 10 * 1e18; // $10 USDT min
+    uint256 public maxBuy = 50_000 * 1e18; // $50,000 USDT max per wallet
 
     // ════════════════════════════════════════════════════════════
     // Events
@@ -160,12 +160,10 @@ contract VyronXPresale is ReentrancyGuard {
         require(phaseId < MAX_PHASES, "Invalid phase");
         require(!presaleFinalized, "Presale finalized");
 
-        // Convert cents to USDT-wei: price_per_token_in_usdt_1e6
-        // $0.01 per token → 1 cent → 10000 (in USDT 1e6 decimals, per 1e18 token)
-        uint256 pricePerTokenUsdWei = (_pricePerTokenInCents * 1e6) / 100;
-        // Scale: pricePerTokenUsdWei is USDT per 1 WHOLE token
-        // For 1e18 token units: pricePerTokenUsdWei * 1e18... but that overflows
-        // We store pricePerToken as: USDT (1e6) per 1e18 tokens
+        // Convert cents to USDT-wei (18 decimals)
+        // $0.01 per token → 1 cent → 10000000000000000 (1e16 in USDT 1e18 decimals)
+        uint256 pricePerTokenUsdWei = (_pricePerTokenInCents * 1e18) / 100;
+        // We store pricePerToken as: USDT (1e18) per 1e18 tokens
         // tokens = usdtAmount * 1e18 / pricePerTokenUsdWei
 
         phases[phaseId] = Phase({
@@ -189,7 +187,7 @@ contract VyronXPresale is ReentrancyGuard {
     // Buy with USDT
     // ════════════════════════════════════════════════════════════
     /// @notice Buy VYR tokens with USDT
-    /// @param usdtAmount Amount of USDT to spend (in 1e6 decimals)
+    /// @param usdtAmount Amount of USDT to spend (in 1e18 decimals)
     function buyWithUsdt(uint256 usdtAmount) external nonReentrant {
         require(presaleActive, "Presale not active");
         require(!presaleFinalized, "Presale finalized");

@@ -13,7 +13,7 @@ import { STAKING_ADDRESS, USDT_ADDRESS, StakingABI } from '@/lib/contracts';
 import { useI18n } from '@/lib/i18n';
 import { publicClient } from '@/components/web3/Web3Provider';
 import { parseUnits, formatUnits } from 'viem';
-import { bscTestnet } from 'wagmi/chains';
+import { bsc } from 'wagmi/chains';
 import toast from 'react-hot-toast';
 import ParticleField from '@/components/fx/ParticleField';
 
@@ -69,29 +69,29 @@ function StakingPageContent() {
   const [txPending, setTxPending] = useState(false);
   const { writeContractAsync } = useWriteContract();
 
-  const onCorrectChain = chainId === bscTestnet.id;
+  const onCorrectChain = chainId === bsc.id;
 
   // Read USDT balance
   const { data: usdtBalanceData } = useReadContract({
-    address: USDT_ADDRESS, abi: ERC20_ABI, functionName: 'balanceOf', args: [address || '0x0'], chainId: bscTestnet.id,
+    address: USDT_ADDRESS, abi: ERC20_ABI, functionName: 'balanceOf', args: [address || '0x0'], chainId: bsc.id,
   });
   const usdtBalance = usdtBalanceData ?? BigInt(0);
 
   // Read USDT allowance for staking
   const { data: allowanceData } = useReadContract({
-    address: USDT_ADDRESS, abi: ERC20_ABI, functionName: 'allowance', args: [address || '0x0', STAKING_ADDRESS], chainId: bscTestnet.id,
+    address: USDT_ADDRESS, abi: ERC20_ABI, functionName: 'allowance', args: [address || '0x0', STAKING_ADDRESS], chainId: bsc.id,
   });
   const allowance = allowanceData ?? BigInt(0);
 
   // Read user stake count
   const { data: stakeCountData } = useReadContract({
-    address: STAKING_ADDRESS, abi: StakingABI, functionName: 'getUserStakeCount', args: [address || '0x0'], chainId: bscTestnet.id,
+    address: STAKING_ADDRESS, abi: StakingABI, functionName: 'getUserStakeCount', args: [address || '0x0'], chainId: bsc.id,
   });
   const stakeCount = stakeCountData ? Number(stakeCountData) : 0;
 
   // Read referral info
   const { data: referralData } = useReadContract({
-    address: STAKING_ADDRESS, abi: StakingABI, functionName: 'getReferralInfo', args: [address || '0x0'], chainId: bscTestnet.id,
+    address: STAKING_ADDRESS, abi: StakingABI, functionName: 'getReferralInfo', args: [address || '0x0'], chainId: bsc.id,
   }) as { data: readonly [`0x${string}`, bigint, bigint] | undefined };
 
   const calculateEarnings = (amount: number, daily: number, days: number) => {
@@ -104,7 +104,7 @@ function StakingPageContent() {
     return n.toLocaleString('en-US', { maximumFractionDigits: 2 });
   };
 
-  const usdtAmountBigInt = stakeAmount ? parseUnits(stakeAmount, 6) : BigInt(0);
+  const usdtAmountBigInt = stakeAmount ? parseUnits(stakeAmount, 18) : BigInt(0);
   const needsApproval = allowance < usdtAmountBigInt;
   const selectedPool = activePool !== null ? POOLS[activePool] : null;
 
@@ -126,7 +126,7 @@ function StakingPageContent() {
               writeContractAsync({
                 address: STAKING_ADDRESS as `0x${string}`, abi: StakingABI,
                 functionName: 'setReferrer', args: [refAddress as `0x${string}`],
-                chainId: bscTestnet.id,
+                chainId: bsc.id,
               }),
               { loading: 'Registering referrer...', success: 'Referrer registered!', error: 'Failed to register' }
             );
@@ -142,7 +142,7 @@ function StakingPageContent() {
     const toastId = toast.loading('Approving USDT for staking...');
     try {
       await writeContractAsync({
-        address: USDT_ADDRESS, abi: ERC20_ABI, functionName: 'approve', args: [STAKING_ADDRESS, parseUnits(stakeAmount, 6)], chainId: bscTestnet.id,
+        address: USDT_ADDRESS, abi: ERC20_ABI, functionName: 'approve', args: [STAKING_ADDRESS, parseUnits(stakeAmount, 18)], chainId: bsc.id,
       });
       toast.success('USDT approved for staking!', { id: toastId });
     } catch (e) {
@@ -156,7 +156,7 @@ function StakingPageContent() {
     const toastId = toast.loading(`Staking ${stakeAmount} USDT in ${selectedPool?.tier} pool...`);
     try {
       await writeContractAsync({
-        address: STAKING_ADDRESS, abi: StakingABI, functionName: 'stake', args: [BigInt(activePool), parseUnits(stakeAmount, 6)], chainId: bscTestnet.id,
+        address: STAKING_ADDRESS, abi: StakingABI, functionName: 'stake', args: [BigInt(activePool), parseUnits(stakeAmount, 18)], chainId: bsc.id,
       });
       toast.success(`Successfully staked ${stakeAmount} USDT! 🎉`, { id: toastId });
       setStakeAmount('');

@@ -79,7 +79,7 @@ contract VyronXStaking is ReentrancyGuard {
     // ════════════════════════════════════════════════════════════
     struct AffiliateLevel {
         uint256 commissionBps; // basis points (700 = 7%)
-        uint256 minStakeUsdt; // in USDT 1e6
+        uint256 minStakeUsdt; // in USDT 1e18
         uint256 minDirectReferrals;
     }
 
@@ -93,9 +93,9 @@ contract VyronXStaking is ReentrancyGuard {
     // ════════════════════════════════════════════════════════════
     // Oracle — VYR price in USDT
     // ════════════════════════════════════════════════════════════
-    // Price of 1 VYR token (1e18) in USDT (1e6)
+    // Price of 1 VYR token (1e18) in USDT (1e18)
     // Updated by owner (or Chainlink automation) — represents VYR/USDT market price
-    uint256 public vyrPriceInUsdt = 1_000_000; // default: 1 VYR = $1.00 (in 1e6 USDT per 1e18 token)
+    uint256 public vyrPriceInUsdt = 1e18; // default: 1 VYR = $1.00 (1 USDT = 1e18)
     // This means: tokensToPay = earningsUsdt * 1e18 / vyrPriceInUsdt
 
     // ════════════════════════════════════════════════════════════
@@ -126,18 +126,18 @@ contract VyronXStaking is ReentrancyGuard {
         pools[2] = Pool({lockPeriodDays: 180, dailyRateBps: 33, active: false, tierName: "Pro"});
         pools[3] = Pool({lockPeriodDays: 360, dailyRateBps: 50, active: false, tierName: "Elite"});
 
-        // Initialize 11 affiliate levels
-        affiliateLevels[0] = AffiliateLevel(700, 100e6, 0); // L1: 7%, $100, 0 directs
-        affiliateLevels[1] = AffiliateLevel(600, 200e6, 2); // L2: 6%, $200, 2 directs
-        affiliateLevels[2] = AffiliateLevel(500, 300e6, 3);
-        affiliateLevels[3] = AffiliateLevel(400, 400e6, 4);
-        affiliateLevels[4] = AffiliateLevel(300, 500e6, 5);
-        affiliateLevels[5] = AffiliateLevel(200, 600e6, 6);
-        affiliateLevels[6] = AffiliateLevel(200, 700e6, 7);
-        affiliateLevels[7] = AffiliateLevel(200, 800e6, 8);
-        affiliateLevels[8] = AffiliateLevel(200, 900e6, 9);
-        affiliateLevels[9] = AffiliateLevel(200, 1000e6, 10);
-        affiliateLevels[10] = AffiliateLevel(700, 1100e6, 11); // L11: 7%, $1100, 11 directs
+        // Initialize 11 affiliate levels (USDT amounts in 1e18)
+        affiliateLevels[0] = AffiliateLevel(700, 100e18, 0); // L1: 7%, $100, 0 directs
+        affiliateLevels[1] = AffiliateLevel(600, 200e18, 2); // L2: 6%, $200, 2 directs
+        affiliateLevels[2] = AffiliateLevel(500, 300e18, 3);
+        affiliateLevels[3] = AffiliateLevel(400, 400e18, 4);
+        affiliateLevels[4] = AffiliateLevel(300, 500e18, 5);
+        affiliateLevels[5] = AffiliateLevel(200, 600e18, 6);
+        affiliateLevels[6] = AffiliateLevel(200, 700e18, 7);
+        affiliateLevels[7] = AffiliateLevel(200, 800e18, 8);
+        affiliateLevels[8] = AffiliateLevel(200, 900e18, 9);
+        affiliateLevels[9] = AffiliateLevel(200, 1000e18, 10);
+        affiliateLevels[10] = AffiliateLevel(700, 1100e18, 11); // L11: 7%, $1100, 11 directs
     }
 
     // ════════════════════════════════════════════════════════════
@@ -160,7 +160,7 @@ contract VyronXStaking is ReentrancyGuard {
     // ════════════════════════════════════════════════════════════
     /// @notice Stake USDT in a pool
     /// @param poolId 0-3 (30/60/180/360 days)
-    /// @param usdtAmount Amount in USDT 1e6
+    /// @param usdtAmount Amount in USDT 1e18
     function stake(uint256 poolId, uint256 usdtAmount) external nonReentrant {
         require(poolId < POOL_COUNT, "Invalid pool");
         Pool storage pool = pools[poolId];
@@ -455,9 +455,9 @@ contract VyronXStaking is ReentrancyGuard {
     }
 
     /// @notice Update VYR price (oracle integration — for production, replace with Chainlink)
-    function setVyrPrice(uint256 _pricePerTokenInUsdt1e6) external onlyOwner {
-        vyrPriceInUsdt = _pricePerTokenInUsdt1e6;
-        emit VyrPriceUpdated(_pricePerTokenInUsdt1e6);
+    function setVyrPrice(uint256 _pricePerTokenInUsdt1e18) external onlyOwner {
+        vyrPriceInUsdt = _pricePerTokenInUsdt1e18;
+        emit VyrPriceUpdated(_pricePerTokenInUsdt1e18);
     }
 
     function setUsdtCollector(address _collector) external onlyOwner {

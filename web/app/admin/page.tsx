@@ -13,7 +13,7 @@ import {
   PRESALE_ADDRESS, PresaleABI, StakingABI, TokenABI, STAKING_POOLS
 } from '@/lib/contracts';
 import { formatUnits } from 'viem';
-import { bscTestnet } from 'wagmi/chains';
+import { bsc } from 'wagmi/chains';
 import toast from 'react-hot-toast';
 import ParticleField from '@/components/fx/ParticleField';
 import { isAdminWallet } from '@/lib/admin-wallets';
@@ -29,61 +29,61 @@ export default function AdminPage() {
   const [activeTab, setActiveTab] = useState<TabId>('overview');
   const [pending, setPending] = useState<string | null>(null);
 
-  const onCorrectChain = chainId === bscTestnet.id;
+  const onCorrectChain = chainId === bsc.id;
   const isOwner = isAdminWallet(address);
 
   // === READS: TOKEN ===
   const { data: tradingEnabled } = useReadContract({
-    address: TOKEN_ADDRESS, abi: TokenABI, functionName: 'tradingEnabled', chainId: bscTestnet.id,
+    address: TOKEN_ADDRESS, abi: TokenABI, functionName: 'tradingEnabled', chainId: bsc.id,
   }) as { data: boolean | undefined };
 
   const { data: buyFeeData } = useReadContract({
-    address: TOKEN_ADDRESS, abi: TokenABI, functionName: 'buyFee', chainId: bscTestnet.id,
+    address: TOKEN_ADDRESS, abi: TokenABI, functionName: 'buyFee', chainId: bsc.id,
   }) as { data: readonly [bigint, bigint, bigint] | undefined };
 
   const { data: maxWallet } = useReadContract({
-    address: TOKEN_ADDRESS, abi: TokenABI, functionName: 'maxWalletAmount', chainId: bscTestnet.id,
+    address: TOKEN_ADDRESS, abi: TokenABI, functionName: 'maxWalletAmount', chainId: bsc.id,
   }) as { data: bigint | undefined };
 
   const { data: maxTx } = useReadContract({
-    address: TOKEN_ADDRESS, abi: TokenABI, functionName: 'maxTxAmount', chainId: bscTestnet.id,
+    address: TOKEN_ADDRESS, abi: TokenABI, functionName: 'maxTxAmount', chainId: bsc.id,
   }) as { data: bigint | undefined };
 
   // === READS: PRESALE ===
   const { data: presaleInfo } = useReadContract({
-    address: PRESALE_ADDRESS, abi: PresaleABI, functionName: 'getPresaleInfo', chainId: bscTestnet.id,
+    address: PRESALE_ADDRESS, abi: PresaleABI, functionName: 'getPresaleInfo', chainId: bsc.id,
   }) as { data: readonly [bigint, bigint, bigint, bigint, bigint, bigint, boolean, boolean] | undefined };
 
   const { data: distDue } = useReadContract({
-    address: PRESALE_ADDRESS, abi: PresaleABI, functionName: 'isDistributionDue', chainId: bscTestnet.id,
+    address: PRESALE_ADDRESS, abi: PresaleABI, functionName: 'isDistributionDue', chainId: bsc.id,
   }) as { data: boolean | undefined };
 
   const { data: distTime } = useReadContract({
-    address: PRESALE_ADDRESS, abi: PresaleABI, functionName: 'timeUntilNextDistribution', chainId: bscTestnet.id,
+    address: PRESALE_ADDRESS, abi: PresaleABI, functionName: 'timeUntilNextDistribution', chainId: bsc.id,
   }) as { data: bigint | undefined };
 
   // === READS: STAKING ===
   const { data: vyrPrice } = useReadContract({
-    address: STAKING_ADDRESS, abi: StakingABI, functionName: 'vyrPriceInUsdt', chainId: bscTestnet.id,
+    address: STAKING_ADDRESS, abi: StakingABI, functionName: 'vyrPriceInUsdt', chainId: bsc.id,
   }) as { data: bigint | undefined };
 
   const { data: rewardPool } = useReadContract({
-    address: TOKEN_ADDRESS, abi: TokenABI, functionName: 'balanceOf', args: [STAKING_ADDRESS], chainId: bscTestnet.id,
+    address: TOKEN_ADDRESS, abi: TokenABI, functionName: 'balanceOf', args: [STAKING_ADDRESS], chainId: bsc.id,
   }) as { data: bigint | undefined };
 
   const { data: totalStaked } = useReadContract({
-    address: STAKING_ADDRESS, abi: StakingABI, functionName: 'totalStakedUsdt', chainId: bscTestnet.id,
+    address: STAKING_ADDRESS, abi: StakingABI, functionName: 'totalStakedUsdt', chainId: bsc.id,
   }) as { data: bigint | undefined };
 
   const { data: totalStakers } = useReadContract({
-    address: STAKING_ADDRESS, abi: StakingABI, functionName: 'totalStakers', chainId: bscTestnet.id,
+    address: STAKING_ADDRESS, abi: StakingABI, functionName: 'totalStakers', chainId: bsc.id,
   }) as { data: bigint | undefined };
 
   // === READS: POOLS (individual reads) ===
-  const { data: pool0 } = useReadContract({ address: STAKING_ADDRESS, abi: StakingABI, functionName: 'pools', args: [BigInt(0)], chainId: bscTestnet.id }) as { data: readonly [bigint, bigint, boolean, string] | undefined };
-  const { data: pool1 } = useReadContract({ address: STAKING_ADDRESS, abi: StakingABI, functionName: 'pools', args: [BigInt(1)], chainId: bscTestnet.id }) as { data: readonly [bigint, bigint, boolean, string] | undefined };
-  const { data: pool2 } = useReadContract({ address: STAKING_ADDRESS, abi: StakingABI, functionName: 'pools', args: [BigInt(2)], chainId: bscTestnet.id }) as { data: readonly [bigint, bigint, boolean, string] | undefined };
-  const { data: pool3 } = useReadContract({ address: STAKING_ADDRESS, abi: StakingABI, functionName: 'pools', args: [BigInt(3)], chainId: bscTestnet.id }) as { data: readonly [bigint, bigint, boolean, string] | undefined };
+  const { data: pool0 } = useReadContract({ address: STAKING_ADDRESS, abi: StakingABI, functionName: 'pools', args: [BigInt(0)], chainId: bsc.id }) as { data: readonly [bigint, bigint, boolean, string] | undefined };
+  const { data: pool1 } = useReadContract({ address: STAKING_ADDRESS, abi: StakingABI, functionName: 'pools', args: [BigInt(1)], chainId: bsc.id }) as { data: readonly [bigint, bigint, boolean, string] | undefined };
+  const { data: pool2 } = useReadContract({ address: STAKING_ADDRESS, abi: StakingABI, functionName: 'pools', args: [BigInt(2)], chainId: bsc.id }) as { data: readonly [bigint, bigint, boolean, string] | undefined };
+  const { data: pool3 } = useReadContract({ address: STAKING_ADDRESS, abi: StakingABI, functionName: 'pools', args: [BigInt(3)], chainId: bsc.id }) as { data: readonly [bigint, bigint, boolean, string] | undefined };
   const allPools = [pool0, pool1, pool2, pool3];
 
   // === LOCAL STATE for forms ===
@@ -111,28 +111,28 @@ export default function AdminPage() {
   // === HANDLERS ===
   const handleSetBuyFees = () => exec('Update Buy Fees', () =>
     writeContractAsync({ address: TOKEN_ADDRESS, abi: TokenABI, functionName: 'setBuyFees',
-      args: [BigInt(buyRewards), BigInt(buyLiq), BigInt(buyBurn)], chainId: bscTestnet.id })
+      args: [BigInt(buyRewards), BigInt(buyLiq), BigInt(buyBurn)], chainId: bsc.id })
   );
 
   const handleEnableTrading = () => exec('Enable Trading', () =>
-    writeContractAsync({ address: TOKEN_ADDRESS, abi: TokenABI, functionName: 'enableTrading', chainId: bscTestnet.id })
+    writeContractAsync({ address: TOKEN_ADDRESS, abi: TokenABI, functionName: 'enableTrading', chainId: bsc.id })
   );
 
   const handleStartPresale = () => exec('Start Presale', () =>
-    writeContractAsync({ address: PRESALE_ADDRESS, abi: PresaleABI, functionName: 'startPresale', chainId: bscTestnet.id })
+    writeContractAsync({ address: PRESALE_ADDRESS, abi: PresaleABI, functionName: 'startPresale', chainId: bsc.id })
   );
 
   const handlePausePresale = () => exec('Pause Presale', () =>
-    writeContractAsync({ address: PRESALE_ADDRESS, abi: PresaleABI, functionName: 'pausePresale', chainId: bscTestnet.id })
+    writeContractAsync({ address: PRESALE_ADDRESS, abi: PresaleABI, functionName: 'pausePresale', chainId: bsc.id })
   );
 
   const handleDistribute = () => exec('Distribute Funds', () =>
-    writeContractAsync({ address: PRESALE_ADDRESS, abi: PresaleABI, functionName: 'distributeFunds', chainId: bscTestnet.id })
+    writeContractAsync({ address: PRESALE_ADDRESS, abi: PresaleABI, functionName: 'distributeFunds', chainId: bsc.id })
   );
 
   const handleTogglePool = (poolId: number, active: boolean) => exec(`${active ? 'Open' : 'Close'} Pool ${poolId}`, () =>
     writeContractAsync({ address: STAKING_ADDRESS, abi: StakingABI, functionName: 'setPoolActive',
-      args: [BigInt(poolId), active], chainId: bscTestnet.id })
+      args: [BigInt(poolId), active], chainId: bsc.id })
   );
 
   const handleSetPoolConfig = (poolId: number) => exec(`Update Pool ${poolId}`, () => {
@@ -142,14 +142,14 @@ export default function AdminPage() {
     const active = pool ? pool[2] : true;
     const name = pool ? pool[3] : '';
     return writeContractAsync({ address: STAKING_ADDRESS, abi: StakingABI, functionName: 'setPoolConfig',
-      args: [BigInt(poolId), rate, lock, active, name], chainId: bscTestnet.id });
+      args: [BigInt(poolId), rate, lock, active, name], chainId: bsc.id });
   });
 
   const handleSetPrice = () => {
     if (!priceInput) return;
-    const priceWei = BigInt(Math.floor(parseFloat(priceInput) * 1e6));
+    const priceWei = BigInt(Math.floor(parseFloat(priceInput) * 1e18));
     exec('Update VYR Price', () =>
-      writeContractAsync({ address: STAKING_ADDRESS, abi: StakingABI, functionName: 'setVyrPrice', args: [priceWei], chainId: bscTestnet.id })
+      writeContractAsync({ address: STAKING_ADDRESS, abi: StakingABI, functionName: 'setVyrPrice', args: [priceWei], chainId: bsc.id })
     );
   };
 
@@ -222,7 +222,7 @@ export default function AdminPage() {
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               <StatCard icon={TrendingUp} label="Total Staked" value={`$${fmt(totalStaked, 6, 0)}`} />
               <StatCard icon={Users} label="Total Stakers" value={String(totalStakers || BigInt(0))} />
-              <StatCard icon={Percent} label="VYR Price" value={`$${vyrPrice ? (Number(vyrPrice) / 1e6).toFixed(4) : '--'}`} />
+              <StatCard icon={Percent} label="VYR Price" value={`$${vyrPrice ? (Number(vyrPrice) / 1e18).toFixed(4) : '--'}`} />
               <StatCard icon={Clock} label="Next Dist." value={distTime ? `${Math.floor(Number(distTime) / 3600)}h ${Math.floor((Number(distTime) % 3600) / 60)}m` : 'Due!'} highlight={distDue === true} />
             </div>
 
@@ -380,7 +380,7 @@ export default function AdminPage() {
               <h3 className="text-lg font-bold text-white mb-4">Presale Status</h3>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
                 <InfoBox label="Current Phase" value={`Phase ${String(Number(presaleInfo?.[0] || BigInt(0)) + 1)}`} />
-                <InfoBox label="VYR Price" value={`$${presaleInfo ? (Number(presaleInfo[1]) / 1e6).toFixed(4) : '--'}`} />
+                <InfoBox label="VYR Price" value={`$${presaleInfo ? (Number(presaleInfo[1]) / 1e18).toFixed(4) : '--'}`} />
                 <InfoBox label="Status" value={presaleInfo?.[6] ? '🟢 Active' : '🔴 Paused'} />
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-6">
@@ -426,7 +426,7 @@ export default function AdminPage() {
                 <div className="rounded-xl bg-dark-elevated p-4 flex-1">
                   <div className="text-xs text-beige-muted">Current Phase</div>
                   <div className="text-xl font-bold text-gold">
-                    Phase {presaleInfo ? Number(presaleInfo[0]) + 1 : 1} — {presaleInfo ? `$${(Number(presaleInfo[1]) / 1e6).toFixed(2)}` : '$0.01'}
+                    Phase {presaleInfo ? Number(presaleInfo[0]) + 1 : 1} — {presaleInfo ? `$${(Number(presaleInfo[1]) / 1e18).toFixed(2)}` : '$0.01'}
                   </div>
                 </div>
                 <div className="flex gap-2">
@@ -465,7 +465,7 @@ export default function AdminPage() {
                   <input type="number" id="minBuy" placeholder="10"
                     className="w-full bg-dark-elevated border border-dark-border rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-gold/50 mb-2" />
                   <button onClick={async () => {
-                    const val = BigInt((Number((document.getElementById('minBuy') as HTMLInputElement).value) || 0) * 1e6);
+                    const val = BigInt((Number((document.getElementById('minBuy') as HTMLInputElement).value) || 0) * 1e18);
                     if (val === BigInt(0)) return toast.error('Invalid amount');
                     await exec('Set Min Buy', async () => {
                       await writeContractAsync({ address: PRESALE_ADDRESS, abi: PresaleABI, functionName: 'setMinBuy', args: [val] });
@@ -478,7 +478,7 @@ export default function AdminPage() {
                   <input type="number" id="maxBuy" placeholder="50000"
                     className="w-full bg-dark-elevated border border-dark-border rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-gold/50 mb-2" />
                   <button onClick={async () => {
-                    const val = BigInt((Number((document.getElementById('maxBuy') as HTMLInputElement).value) || 0) * 1e6);
+                    const val = BigInt((Number((document.getElementById('maxBuy') as HTMLInputElement).value) || 0) * 1e18);
                     if (val === BigInt(0)) return toast.error('Invalid amount');
                     await exec('Set Max Buy', async () => {
                       await writeContractAsync({ address: PRESALE_ADDRESS, abi: PresaleABI, functionName: 'setMaxBuy', args: [val] });
@@ -525,7 +525,7 @@ export default function AdminPage() {
               <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
                 <div className="rounded-xl bg-dark-elevated p-4 flex-1 w-full">
                   <div className="text-xs text-beige-muted">Current Price</div>
-                  <div className="text-xl font-bold text-gold">${vyrPrice ? (Number(vyrPrice) / 1e6).toFixed(4) : '--'}</div>
+                  <div className="text-xl font-bold text-gold">${vyrPrice ? (Number(vyrPrice) / 1e18).toFixed(4) : '--'}</div>
                 </div>
                 <div className="flex gap-2 w-full sm:w-auto">
                   <input type="number" value={priceInput} onChange={(e) => setPriceInput(e.target.value)}

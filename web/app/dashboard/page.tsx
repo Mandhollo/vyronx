@@ -15,7 +15,7 @@ import {
   PresaleABI, StakingABI, TokenABI, STAKING_POOLS
 } from '@/lib/contracts';
 import { formatUnits, parseUnits } from 'viem';
-import { bscTestnet } from 'wagmi/chains';
+import { bsc } from 'wagmi/chains';
 import toast from 'react-hot-toast';
 import ParticleField from '@/components/fx/ParticleField';
 import { useI18n } from '@/lib/i18n';
@@ -40,33 +40,33 @@ export default function DashboardPage() {
   const [copied, setCopied] = useState(false);
   const [withdrawing, setWithdrawing] = useState<number | null>(null);
 
-  const onCorrectChain = chainId === bscTestnet.id;
+  const onCorrectChain = chainId === bsc.id;
 
   // Read VYR balance
   const { data: vyrBalanceData } = useReadContract({
-    address: TOKEN_ADDRESS, abi: TokenABI, functionName: 'balanceOf', args: [address || '0x0'], chainId: bscTestnet.id,
+    address: TOKEN_ADDRESS, abi: TokenABI, functionName: 'balanceOf', args: [address || '0x0'], chainId: bsc.id,
   }) as { data: bigint | undefined };
 
   // Read USDT balance
   const { data: usdtBalanceData } = useReadContract({
-    address: USDT_ADDRESS, abi: ERC20_ABI, functionName: 'balanceOf', args: [address || '0x0'], chainId: bscTestnet.id,
+    address: USDT_ADDRESS, abi: ERC20_ABI, functionName: 'balanceOf', args: [address || '0x0'], chainId: bsc.id,
   }) as { data: bigint | undefined };
 
   // Read presale buyer info
   const { data: buyerInfo } = useReadContract({
     address: process.env.NEXT_PUBLIC_PRESALE_ADDRESS as `0x${string}`, abi: PresaleABI,
-    functionName: 'getBuyerInfo', args: [address || '0x0'], chainId: bscTestnet.id,
+    functionName: 'getBuyerInfo', args: [address || '0x0'], chainId: bsc.id,
   }) as { data: readonly [bigint, bigint, bigint] | undefined };
 
   // Read staking info
   const { data: stakeCountData } = useReadContract({
-    address: STAKING_ADDRESS, abi: StakingABI, functionName: 'getUserStakeCount', args: [address || '0x0'], chainId: bscTestnet.id,
+    address: STAKING_ADDRESS, abi: StakingABI, functionName: 'getUserStakeCount', args: [address || '0x0'], chainId: bsc.id,
   });
   const stakeCount = stakeCountData ? Number(stakeCountData) : 0;
 
   // Read referral info
   const { data: referralData } = useReadContract({
-    address: STAKING_ADDRESS, abi: StakingABI, functionName: 'getReferralInfo', args: [address || '0x0'], chainId: bscTestnet.id,
+    address: STAKING_ADDRESS, abi: StakingABI, functionName: 'getReferralInfo', args: [address || '0x0'], chainId: bsc.id,
   }) as { data: readonly [`0x${string}`, bigint, bigint] | undefined };
 
   // Read pending earnings for each stake
@@ -100,7 +100,7 @@ export default function DashboardPage() {
     try {
       await writeContractAsync({
         address: STAKING_ADDRESS, abi: StakingABI, functionName: 'withdraw',
-        args: [BigInt(stakeIndex)], chainId: bscTestnet.id,
+        args: [BigInt(stakeIndex)], chainId: bsc.id,
       });
       toast.success('Withdrawal successful! VYR tokens received. 🎉', { id: toastId });
     } catch (e) {
