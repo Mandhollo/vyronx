@@ -522,99 +522,158 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            {/* 11-Level Affiliate Breakdown — Real Network Data */}
+            {/* 11-Level Affiliate Breakdown — Gamer Cards */}
             <div className="mt-6">
-              <div className="flex items-center justify-between mb-3">
-                <div className="text-xs text-beige-muted uppercase tracking-wider">Affiliate Network (11 Levels — Live)</div>
-                {networkLoading && <Loader2 className="h-3 w-3 animate-spin text-gold" />}
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <Zap className="h-4 w-4 text-gold" />
+                  <span className="text-sm font-bold text-white">Affiliate Network</span>
+                  <span className="text-xs text-beige-muted">11 Levels Live</span>
+                </div>
+                {networkLoading && <Loader2 className="h-4 w-4 animate-spin text-gold" />}
               </div>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-dark-border">
-                      <th className="px-3 py-2 text-left text-xs text-beige-muted">Level</th>
-                      <th className="px-3 py-2 text-right text-xs text-beige-muted">Commission</th>
-                      <th className="px-3 py-2 text-right text-xs text-beige-muted">Min Stake</th>
-                      <th className="px-3 py-2 text-right text-xs text-beige-muted">Connections</th>
-                      <th className="px-3 py-2 text-right text-xs text-beige-muted">Volume</th>
-                      <th className="px-3 py-2 text-right text-xs text-beige-muted">Est. Earnings</th>
-                      <th className="px-3 py-2 text-left text-xs text-beige-muted">Progress</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {[
-                      { level: 1, pct: 7, min: '$100', directs: 0 },
-                      { level: 2, pct: 6, min: '$200', directs: 2 },
-                      { level: 3, pct: 5, min: '$300', directs: 3 },
-                      { level: 4, pct: 4, min: '$400', directs: 4 },
-                      { level: 5, pct: 3, min: '$500', directs: 5 },
-                      { level: 6, pct: 2, min: '$600', directs: 6 },
-                      { level: 7, pct: 2, min: '$700', directs: 7 },
-                      { level: 8, pct: 2, min: '$800', directs: 8 },
-                      { level: 9, pct: 2, min: '$900', directs: 9 },
-                      { level: 10, pct: 2, min: '$1,000', directs: 10 },
-                      { level: 11, pct: 7, min: '$1,100', directs: 11 },
-                    ].map((row) => {
-                      const ld = levelData[row.level - 1] || { count: 0, volume: 0 };
-                      const directCount = referralData ? Number(referralData[1]) : 0;
-                      const qualified = directCount >= row.directs;
-                      // Earnings = commission % on the profit portion of volume
-                      const estEarnings = ld.volume > 0 ? (ld.volume * row.pct / 100) : 0;
 
-                      // Progress bar: based on 2 requirements (stake + directs)
-                      // Requirement 1: user's total staked value >= min stake for this level
-                      const minStakeNum = row.level * 100; // L1=$100, L2=$200...L11=$1100
-                      const userStakeTotal = Object.values(stakesData).reduce((sum, s) => sum + (parseFloat(s.usdtAmount) || 0), 0);
-                      const stakeProgress = Math.min(100, (userStakeTotal / minStakeNum) * 100);
-                      // Requirement 2: direct referrals count
-                      const directsProgress = row.directs === 0 ? 100 : Math.min(100, (directCount / row.directs) * 100);
-                      // Overall = average of both
-                      const overallProgress = Math.round((stakeProgress + directsProgress) / 2);
-                      const completed = qualified && stakeProgress >= 100;
+              {/* Level Cards */}
+              <div className="space-y-2.5">
+                {[
+                      { level: 1, pct: 7, min: 100, directs: 0 },
+                      { level: 2, pct: 6, min: 200, directs: 2 },
+                      { level: 3, pct: 5, min: 300, directs: 3 },
+                      { level: 4, pct: 4, min: 400, directs: 4 },
+                      { level: 5, pct: 3, min: 500, directs: 5 },
+                      { level: 6, pct: 2, min: 600, directs: 6 },
+                      { level: 7, pct: 2, min: 700, directs: 7 },
+                      { level: 8, pct: 2, min: 800, directs: 8 },
+                      { level: 9, pct: 2, min: 900, directs: 9 },
+                      { level: 10, pct: 2, min: 1000, directs: 10 },
+                      { level: 11, pct: 7, min: 1100, directs: 11 },
+                ].map((row, idx) => {
+                  const ld = levelData[row.level - 1] || { count: 0, volume: 0 };
+                  const directCount = referralData ? Number(referralData[1]) : 0;
+                  const userStakeTotal = Object.values(stakesData).reduce((sum, s) => sum + (parseFloat(s.usdtAmount) || 0), 0);
+                  const stakeProgress = Math.min(100, (userStakeTotal / row.min) * 100);
+                  const directsProgress = row.directs === 0 ? 100 : Math.min(100, (directCount / row.directs) * 100);
+                  const overallProgress = Math.round((stakeProgress + directsProgress) / 2);
+                  const completed = overallProgress >= 100;
+                  const estEarnings = ld.volume > 0 ? (ld.volume * row.pct / 100) : 0;
+                  const isElite = row.level === 11;
+                  const isTop3 = row.level <= 3;
 
-                      return (
-                        <tr key={row.level} className={`border-b border-dark-border/50 ${qualified ? 'bg-green-500/5' : ''}`}>
-                          <td className="px-3 py-2 font-bold text-white">
-                            <span className="flex items-center gap-2">
-                              L{row.level}
-                              {completed && <Check className="h-3 w-3 text-green-400" />}
-                            </span>
-                          </td>
-                          <td className="px-3 py-2 text-right text-gold font-bold">{row.pct}%</td>
-                          <td className="px-3 py-2 text-right text-beige-muted">{row.min}</td>
-                          <td className={`px-3 py-2 text-right font-bold ${ld.count > 0 ? 'text-white' : 'text-beige-muted'}`}>{ld.count}</td>
-                          <td className={`px-3 py-2 text-right ${ld.volume > 0 ? 'text-gold' : 'text-beige-muted'}`}>${ld.volume.toLocaleString('en-US', { maximumFractionDigits: 0 })}</td>
-                          <td className={`px-3 py-2 text-right ${estEarnings > 0 ? 'text-green-400 font-bold' : 'text-beige-muted'}`}>${estEarnings > 0 ? estEarnings.toLocaleString('en-US', { maximumFractionDigits: 2 }) : '—'}</td>
-                          <td className="px-3 py-2 min-w-[120px]">
-                            <div className="flex items-center gap-2">
-                              <div className="flex-1 h-2 rounded-full bg-dark-elevated overflow-hidden">
-                                <div
-                                  className={`h-full rounded-full transition-all ${completed ? 'bg-green-500' : 'bg-gradient-to-r from-gold-light to-gold-dark'}`}
-                                  style={{ width: `${overallProgress}%` }}
-                                />
-                              </div>
-                              <span className={`text-xs font-bold w-9 text-right ${completed ? 'text-green-400' : 'text-beige-muted'}`}>{completed ? '✓' : `${overallProgress}%`}</span>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                    {/* Totals row */}
-                    <tr className="border-t-2 border-gold/30 bg-gold/5">
-                      <td className="px-3 py-3 font-bold text-gold" colSpan={3}>TOTAL</td>
-                      <td className="px-3 py-3 text-right font-bold text-gold">{levelData.reduce((a, b) => a + b.count, 0)}</td>
-                      <td className="px-3 py-3 text-right font-bold text-gold">${levelData.reduce((a, b) => a + b.volume, 0).toLocaleString('en-US', { maximumFractionDigits: 0 })}</td>
-                      <td className="px-3 py-3 text-right font-bold text-green-400">
-                        ${levelData.reduce((a, b, i) => a + (b.volume > 0 ? (b.volume * [7,6,5,4,3,2,2,2,2,2,7][i] / 100) : 0), 0).toLocaleString('en-US', { maximumFractionDigits: 2 })}
-                      </td>
-                      <td></td>
-                    </tr>
-                  </tbody>
-                </table>
+                  return (
+                    <motion.div
+                      key={row.level}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: idx * 0.04 }}
+                      className={`relative overflow-hidden rounded-xl border p-3 transition-all ${
+                        completed
+                          ? 'border-green-500/40 bg-green-500/5'
+                          : isElite
+                          ? 'border-purple-500/30 bg-gradient-to-r from-purple-500/10 to-transparent'
+                          : isTop3
+                          ? 'border-gold/30 bg-gradient-to-r from-gold/5 to-transparent'
+                          : 'border-dark-border bg-dark-card'
+                      }`}
+                    >
+                      {/* Top row: Level + Commission */}
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <div className={`flex items-center justify-center h-7 w-7 rounded-lg text-xs font-black ${
+                            completed ? 'bg-green-500 text-dark'
+                            : isElite ? 'bg-purple-500 text-white'
+                            : isTop3 ? 'bg-gold text-dark'
+                            : 'bg-dark-elevated text-beige'
+                          }`}>
+                            {completed ? '✓' : row.level}
+                          </div>
+                          <span className="text-sm font-bold text-white">
+                            {isElite ? 'ELITE' : isTop3 ? 'TIER ' + row.level : 'Level ' + row.level}
+                          </span>
+                          {isElite && <span className="text-xs">👑</span>}
+                          {isTop3 && <span className="text-xs">⭐</span>}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-beige-muted">Commission</span>
+                          <span className={`text-sm font-black ${completed ? 'text-green-400' : 'text-gold'}`}>{row.pct}%</span>
+                        </div>
+                      </div>
+
+                      {/* Stats row */}
+                      <div className="flex items-center gap-3 mb-2 text-xs">
+                        <div className="flex items-center gap-1">
+                          <Users className="h-3 w-3 text-beige-muted" />
+                          <span className={`font-bold ${ld.count > 0 ? 'text-white' : 'text-beige-muted'}`}>{ld.count}</span>
+                          <span className="text-beige-muted">conn</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <span className="text-beige-muted">$</span>
+                          <span className={`font-bold ${ld.volume > 0 ? 'text-gold' : 'text-beige-muted'}`}>{ld.volume > 0 ? ld.volume.toLocaleString('en-US', { maximumFractionDigits: 0 }) : '0'}</span>
+                          <span className="text-beige-muted">vol</span>
+                        </div>
+                        {estEarnings > 0 && (
+                          <div className="flex items-center gap-1">
+                            <span className="text-green-400">→</span>
+                            <span className="font-bold text-green-400">${estEarnings.toLocaleString('en-US', { maximumFractionDigits: 0 })}</span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Progress bar */}
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 h-2.5 rounded-full bg-dark-elevated overflow-hidden relative">
+                          <motion.div
+                            initial={{ width: 0 }}
+                            animate={{ width: `${overallProgress}%` }}
+                            transition={{ delay: idx * 0.04 + 0.2, duration: 0.6, ease: 'easeOut' }}
+                            className={`h-full rounded-full relative ${
+                              completed
+                                ? 'bg-gradient-to-r from-green-500 to-green-400'
+                                : isElite
+                                ? 'bg-gradient-to-r from-purple-500 to-purple-400'
+                                : 'bg-gradient-to-r from-gold-dark to-gold-light'
+                            }`}
+                          >
+                            {!completed && overallProgress > 5 && (
+                              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-pulse" />
+                            )}
+                          </motion.div>
+                        </div>
+                        <span className={`text-xs font-bold w-10 text-right ${completed ? 'text-green-400' : overallProgress > 0 ? 'text-gold' : 'text-beige-muted'}`}>
+                          {completed ? 'MAX' : `${overallProgress}%`}
+                        </span>
+                      </div>
+                    </motion.div>
+                  );
+                })}
               </div>
-              <p className="text-xs text-beige-muted mt-2">
-                Data fetched in real-time from BNB Smart Chain. Volume = total USDT staked by your downline.
-                Earnings are paid in VYR on referral withdrawal profits (Pool 360 only).
+
+              {/* Summary footer */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.5 }}
+                className="mt-3 rounded-xl border border-gold/30 bg-gold/5 p-3 flex items-center justify-around"
+              >
+                <div className="text-center">
+                  <div className="text-lg font-black text-gold">{levelData.reduce((a, b) => a + b.count, 0)}</div>
+                  <div className="text-xs text-beige-muted">Total Network</div>
+                </div>
+                <div className="h-8 w-px bg-dark-border" />
+                <div className="text-center">
+                  <div className="text-lg font-black text-gold">${levelData.reduce((a, b) => a + b.volume, 0).toLocaleString('en-US', { maximumFractionDigits: 0 })}</div>
+                  <div className="text-xs text-beige-muted">Total Volume</div>
+                </div>
+                <div className="h-8 w-px bg-dark-border" />
+                <div className="text-center">
+                  <div className="text-lg font-black text-green-400">
+                    ${levelData.reduce((a, b, i) => a + (b.volume > 0 ? (b.volume * [7,6,5,4,3,2,2,2,2,2,7][i] / 100) : 0), 0).toLocaleString('en-US', { maximumFractionDigits: 0 })}
+                  </div>
+                  <div className="text-xs text-beige-muted">Est. Earnings</div>
+                </div>
+              </motion.div>
+
+              <p className="text-xs text-beige-muted mt-2 text-center">
+                Real-time data from BNB Chain • Earnings paid in VYR (Pool 360)
               </p>
             </div>
           </div>
