@@ -243,7 +243,7 @@ export default function PresalePage() {
                     ? `${address?.slice(0, 6)}...${address?.slice(-4)}`
                     : t('presale.walletNotConnected')}
                 </span>
-                {isConnected && !onCorrectChain && (
+                {isConnected && chainId && chainId !== bsc.id && (
                   <span className="ml-2 px-2 py-0.5 text-xs font-bold rounded-full bg-red-500/20 text-red-400 border border-red-500/30">
                     {t('presale.wrongNetworkBadge')}
                   </span>
@@ -255,7 +255,7 @@ export default function PresalePage() {
             </div>
 
             {''}
-            {isConnected && !onCorrectChain && (
+            {isConnected && chainId && chainId !== bsc.id && (
               <div className="mb-6 rounded-xl bg-red-500/10 border border-red-500/30 p-4">
                 <div className="flex items-center gap-2">
                   <AlertCircle className="h-5 w-5 text-red-400" />
@@ -325,7 +325,7 @@ export default function PresalePage() {
               <div className="text-center py-4">
                 <p className="text-sm text-beige-muted mb-3">{t('presale.connect1')}</p>
               </div>
-            ) : !onCorrectChain ? (
+            ) : (chainId && chainId !== bsc.id) ? (
               <div className="text-center py-4">
                 <p className="text-sm text-red-400">{t('presale.switch')}</p>
               </div>

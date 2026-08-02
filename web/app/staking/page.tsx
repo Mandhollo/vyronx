@@ -4,7 +4,7 @@ import { useState, useEffect, Suspense } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { useAccount, useReadContract, useWriteContract } from 'wagmi';
+import { useAccount, useReadContract, useWriteContract, useSwitchChain } from 'wagmi';
 import {
   Lock, Unlock, TrendingUp, Wallet, Award,
   Zap, Users, ChevronDown, Info, ArrowRight, Clock, Loader2, AlertCircle
@@ -64,6 +64,7 @@ export default function StakingPage() {
 function StakingPageContent() {
   const { t } = useI18n();
   const { address, isConnected, chainId } = useAccount();
+  const { switchChainAsync } = useSwitchChain();
   const [activePool, setActivePool] = useState<number | null>(null);
   const [stakeAmount, setStakeAmount] = useState('');
   const [txPending, setTxPending] = useState(false);
@@ -112,7 +113,7 @@ function StakingPageContent() {
   const searchParams = useSearchParams();
 
   useEffect(() => {
-    if (!isConnected || !onCorrectChain) return;
+    if (!isConnected) return;
     const refAddress = searchParams.get('ref');
     if (refAddress && refAddress.match(/^0x[a-fA-F0-9]{40}$/) && refAddress.toLowerCase() !== address?.toLowerCase()) {
       (async () => {
@@ -141,9 +142,8 @@ function StakingPageContent() {
     setTxPending(true);
     const toastId = toast.loading('Approving USDT for staking...');
     try {
-      await writeContractAsync({
-        address: USDT_ADDRESS, abi: ERC20_ABI, functionName: 'approve', args: [STAKING_ADDRESS, parseUnits(stakeAmount, 18)], chainId: bsc.id,
-      });
+      if (chainId !== bsc.id) { toast.loading('Switching to BSC Mainnet...', { id: toastId }); await switchChainAsync({ chainId: bsc.id }); toast.loading('Approving USDT for staking...', { id: toastId }); }
+      await writeContractAsync({ address: USDT_ADDRESS, abi: ERC20_ABI, functionName: 'approve', args: [STAKING_ADDRESS, parseUnits(stakeAmount, 18)] });
       toast.success('USDT approved for staking!', { id: toastId });
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Approval failed', { id: toastId });
@@ -155,9 +155,8 @@ function StakingPageContent() {
     setTxPending(true);
     const toastId = toast.loading(`Staking ${stakeAmount} USDT in ${selectedPool?.tier} pool...`);
     try {
-      await writeContractAsync({
-        address: STAKING_ADDRESS, abi: StakingABI, functionName: 'stake', args: [BigInt(activePool), parseUnits(stakeAmount, 18)], chainId: bsc.id,
-      });
+      if (chainId !== bsc.id) { toast.loading('Switching to BSC Mainnet...', { id: toastId }); await switchChainAsync({ chainId: bsc.id }); toast.loading(`Staking ${stakeAmount} USDT in ${selectedPool?.tier} pool...`, { id: toastId }); }
+      await writeContractAsync({ address: STAKING_ADDRESS, abi: StakingABI, functionName: 'stake', args: [BigInt(activePool), parseUnits(stakeAmount, 18)] });
       toast.success(`Successfully staked ${stakeAmount} USDT! 🎉`, { id: toastId });
       setStakeAmount('');
       setActivePool(null);
@@ -183,7 +182,7 @@ function StakingPageContent() {
         </motion.div>
 
         {/* Wrong network */}
-        {isConnected && !onCorrectChain && (
+        {isConnected && chainId && chainId !== bsc.id && (
           <div className="mb-8 mx-auto max-w-2xl rounded-xl bg-red-500/10 border border-red-500/30 p-4 flex items-center gap-3">
             <AlertCircle className="h-5 w-5 text-red-400" />
             <span className="text-sm text-red-400 font-bold">{t('staking.wrongNetwork')}</span>
@@ -238,7 +237,7 @@ function StakingPageContent() {
               )}
               <button
                 onClick={() => setActivePool(pool.id)}
-                disabled={!isConnected || !onCorrectChain}
+                disabled={!isConnected}
                 className={`mt-6 w-full py-3 text-sm font-bold rounded-xl transition-all disabled:opacity-50 ${pool.featured ? 'bg-gradient-to-r from-gold-light to-gold-dark text-dark hover:shadow-lg hover:shadow-gold/40' : 'border border-gold/30 bg-gold/5 text-gold hover:bg-gold/10'}`}
               >
                 {!isConnected ? t('nav.connect') : t('staking.stake')}

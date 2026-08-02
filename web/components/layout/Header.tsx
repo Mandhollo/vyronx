@@ -78,13 +78,15 @@ export default function Header() {
             })}
           </nav>
 
-          {/* CTA Button — replaced with real Web3 ConnectButton */}
-          <div className="hidden lg:flex items-center gap-2">
-            <SocialLinks size="sm" />
-            <LanguageSelector />
+          {/* CTA Button — Web3 ConnectButton + Buy */}
+          <div className="flex items-center gap-2">
+            <div className="hidden sm:flex items-center gap-2">
+              <SocialLinks size="sm" />
+              <LanguageSelector />
+            </div>
             <Link
               href="/presale"
-              className="px-5 py-2.5 text-sm font-bold rounded-lg border border-gold/30 bg-gold/5 text-gold hover:bg-gold/10 transition-colors"
+              className="hidden sm:inline-flex px-5 py-2.5 text-sm font-bold rounded-lg border border-gold/30 bg-gold/5 text-gold hover:bg-gold/10 transition-colors"
             >
               {t('nav.buy')}
             </Link>
@@ -129,6 +131,7 @@ export default function Header() {
             >
               {t('nav.buy')}
             </Link>
+            <div className="mt-4"><ConnectButton /></div>
             <div className="mt-4"><LanguageSelector /></div>
             <div className="mt-3"><SocialLinks /></div>
           </nav>

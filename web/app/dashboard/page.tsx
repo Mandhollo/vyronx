@@ -84,7 +84,7 @@ export default function DashboardPage() {
             address: STAKING_ADDRESS as `0x${string}`, abi: StakingABI,
             functionName: 'getPendingEarnings', args: [address, BigInt(i)],
           }) as [bigint, bigint];
-          map[i] = { usdt: formatUnits(res[0], 6), vyr: formatUnits(res[1], 18) };
+          map[i] = { usdt: formatUnits(res[0], 18), vyr: formatUnits(res[1], 18) };
         } catch { map[i] = { usdt: '0', vyr: '0' }; }
       }
       if (active) setEarningsMap(map);

@@ -889,7 +889,7 @@ function AddrRow({ label, addr }: { label: string; addr: string }) {
   return (
     <div className="flex items-center justify-between rounded-lg bg-dark-elevated p-3">
       <span className="text-sm text-beige-muted">{label}</span>
-      <a href={`https://testnet.bscscan.com/address/${addr}`} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-gold hover:text-gold-light text-xs font-mono">
+      <a href={`https://bscscan.com/address/${addr}`} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-gold hover:text-gold-light text-xs font-mono">
         {addr.slice(0, 10)}...{addr.slice(-6)} <ExternalLink className="h-3 w-3" />
       </a>
     </div>
