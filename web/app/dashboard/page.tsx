@@ -507,9 +507,13 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            {/* Referral link */}
-            <div className="rounded-xl bg-dark-elevated border border-dark-border p-4">
-              <div className="text-xs text-beige-muted mb-2">{t('dash.referralLink')}</div>
+            {/* Referral link — ONLY for active stakers */}
+            {stakeCount > 0 ? (
+            <div className="rounded-xl bg-dark-elevated border border-gold/30 p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Gift className="h-4 w-4 text-gold" />
+                <span className="text-xs text-gold font-bold uppercase tracking-wider">{t('dash.referralLink')}</span>
+              </div>
                 <div className="flex items-center gap-2 bg-dark-elevated border border-dark-border rounded-lg px-3 py-2">
                   <code className="text-sm text-gold flex-1 truncate">
                     {address ? `${typeof window !== 'undefined' ? window.location.origin : 'https://vyronx.io'}/staking?ref=${encodeReferralCode(address)}` : 'Connect wallet'}
@@ -522,8 +526,18 @@ export default function DashboardPage() {
                 </button>
               </div>
             </div>
+            ) : (
+              <div className="rounded-xl border border-dark-border bg-dark-card p-6 text-center">
+                <Lock className="h-8 w-8 text-beige-muted mx-auto mb-2" />
+                <p className="text-sm text-beige-muted mb-1">Referral program unlocks after your first stake.</p>
+                <Link href="/staking" className="inline-flex items-center gap-1 text-sm text-gold hover:text-gold-light">
+                  Start Staking to Unlock <ArrowRight className="h-3 w-3" />
+                </Link>
+              </div>
+            )}
 
-            {/* 11-Level Affiliate Breakdown — Gamer Cards */}
+            {/* 11-Level Affiliate Breakdown — Only for stakers */}
+            {stakeCount > 0 && (
             <div className="mt-6">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
@@ -677,6 +691,7 @@ export default function DashboardPage() {
                 Real-time data from BNB Chain • Earnings paid in VYR (Pool 360)
               </p>
             </div>
+            )}
           </div>
         </motion.div>
 
