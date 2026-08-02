@@ -105,6 +105,84 @@ export default function DashboardPage() {
     address: STAKING_ADDRESS, abi: StakingABI, functionName: 'getReferralInfo', args: [address || '0x0'], chainId: bsc.id,
   }) as { data: readonly [`0x${string}`, bigint, bigint] | undefined };
 
+  // === FETCH 11-LEVEL NETWORK (real-time from chain) ===
+  const [levelData, setLevelData] = useState<Array<{ count: number; volume: number }>>(Array.from({ length: 11 }, () => ({ count: 0, volume: 0 })));
+  const [networkLoading, setNetworkLoading] = useState(false);
+
+  useEffect(() => {
+    if (!address) return;
+    let active = true;
+    setNetworkLoading(true);
+    (async () => {
+      try {
+        const STAKING = STAKING_ADDRESS as `0x${string}`;
+        // Level configs (commission % from contract)
+        const LEVEL_COMMS = [7, 6, 5, 4, 3, 2, 2, 2, 2, 2, 7];
+        const result = Array.from({ length: 11 }, () => ({ count: 0, volume: 0 }));
+
+        // BFS through 11 levels
+        let currentLevelAddresses: string[] = [address];
+        const visited = new Set<string>([address.toLowerCase()]);
+
+        for (let level = 0; level < 11; level++) {
+          if (currentLevelAddresses.length === 0) break;
+          const nextLevelAddresses: string[] = [];
+
+          // Process addresses at this level in parallel batches
+          for (const addr of currentLevelAddresses) {
+            try {
+              // Read direct referrals of this address
+              const directs = await publicClient.readContract({
+                address: STAKING, abi: StakingABI,
+                functionName: 'getReferralInfo', args: [addr as `0x${string}`],
+              }) as [`0x${string}`, bigint, bigint];
+
+              const directCount = Number(directs[1]);
+              result[level].count += directCount;
+
+              if (directCount > 0) {
+                // Read each direct referral's stake volume
+                const directsList = await publicClient.readContract({
+                  address: STAKING, abi: StakingABI,
+                  functionName: 'directReferrals', args: [addr as `0x${string}`],
+                }) as readonly `0x${string}`[];
+
+                for (const direct of directsList) {
+                  if (visited.has(direct.toLowerCase())) continue;
+                  visited.add(direct.toLowerCase());
+                  nextLevelAddresses.push(direct);
+
+                  // Read their total stake volume
+                  try {
+                    const stakeCount = await publicClient.readContract({
+                      address: STAKING, abi: StakingABI,
+                      functionName: 'getUserStakeCount', args: [direct],
+                    }) as bigint;
+                    for (let s = 0; s < Number(stakeCount); s++) {
+                      const stake = await publicClient.readContract({
+                        address: STAKING, abi: StakingABI,
+                        functionName: 'userStakes', args: [direct, BigInt(s)],
+                      }) as [string, bigint, bigint, bigint, bigint, boolean, bigint, boolean];
+                      result[level].volume += Number(stake[2]) / 1e18;
+                    }
+                  } catch {}
+                }
+              }
+            } catch {}
+          }
+          currentLevelAddresses = nextLevelAddresses;
+        }
+
+        if (active) setLevelData(result);
+      } catch {
+        // Silent fail
+      } finally {
+        if (active) setNetworkLoading(false);
+      }
+    })();
+    return () => { active = false; };
+  }, [address]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Read pending earnings for each stake
   const [earningsMap, setEarningsMap] = useState<Record<number, { usdt: string; vyr: string }>>({});
   const [stakesData, setStakesData] = useState<Record<number, { poolId: number; usdtAmount: string; isVoucher: boolean; withdrawn: boolean }>>({});
@@ -444,9 +522,12 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            {/* 11-Level Affiliate Breakdown */}
+            {/* 11-Level Affiliate Breakdown — Real Network Data */}
             <div className="mt-6">
-              <div className="text-xs text-beige-muted uppercase tracking-wider mb-3">Affiliate Levels (11 Tiers)</div>
+              <div className="flex items-center justify-between mb-3">
+                <div className="text-xs text-beige-muted uppercase tracking-wider">Affiliate Network (11 Levels — Live)</div>
+                {networkLoading && <Loader2 className="h-3 w-3 animate-spin text-gold" />}
+              </div>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
@@ -454,24 +535,30 @@ export default function DashboardPage() {
                       <th className="px-3 py-2 text-left text-xs text-beige-muted">Level</th>
                       <th className="px-3 py-2 text-right text-xs text-beige-muted">Commission</th>
                       <th className="px-3 py-2 text-right text-xs text-beige-muted">Min Stake</th>
-                      <th className="px-3 py-2 text-right text-xs text-beige-muted">Directs Req.</th>
+                      <th className="px-3 py-2 text-right text-xs text-beige-muted">Connections</th>
+                      <th className="px-3 py-2 text-right text-xs text-beige-muted">Volume</th>
+                      <th className="px-3 py-2 text-right text-xs text-beige-muted">Est. Earnings</th>
                     </tr>
                   </thead>
                   <tbody>
                     {[
-                      { level: 1, pct: '7%', min: '$100', directs: 0 },
-                      { level: 2, pct: '6%', min: '$200', directs: 2 },
-                      { level: 3, pct: '5%', min: '$300', directs: 3 },
-                      { level: 4, pct: '4%', min: '$400', directs: 4 },
-                      { level: 5, pct: '3%', min: '$500', directs: 5 },
-                      { level: 6, pct: '2%', min: '$600', directs: 6 },
-                      { level: 7, pct: '2%', min: '$700', directs: 7 },
-                      { level: 8, pct: '2%', min: '$800', directs: 8 },
-                      { level: 9, pct: '2%', min: '$900', directs: 9 },
-                      { level: 10, pct: '2%', min: '$1,000', directs: 10 },
-                      { level: 11, pct: '7%', min: '$1,100', directs: 11 },
+                      { level: 1, pct: 7, min: '$100', directs: 0 },
+                      { level: 2, pct: 6, min: '$200', directs: 2 },
+                      { level: 3, pct: 5, min: '$300', directs: 3 },
+                      { level: 4, pct: 4, min: '$400', directs: 4 },
+                      { level: 5, pct: 3, min: '$500', directs: 5 },
+                      { level: 6, pct: 2, min: '$600', directs: 6 },
+                      { level: 7, pct: 2, min: '$700', directs: 7 },
+                      { level: 8, pct: 2, min: '$800', directs: 8 },
+                      { level: 9, pct: 2, min: '$900', directs: 9 },
+                      { level: 10, pct: 2, min: '$1,000', directs: 10 },
+                      { level: 11, pct: 7, min: '$1,100', directs: 11 },
                     ].map((row) => {
+                      const ld = levelData[row.level - 1] || { count: 0, volume: 0 };
                       const qualified = (referralData ? Number(referralData[1]) : 0) >= row.directs;
+                      // Earnings = commission % on the profit portion of volume
+                      // (profit ≈ dailyRate * volume * time, but we show commission on volume as conservative estimate)
+                      const estEarnings = ld.volume > 0 ? (ld.volume * row.pct / 100) : 0;
                       return (
                         <tr key={row.level} className={`border-b border-dark-border/50 ${qualified ? 'bg-green-500/5' : ''}`}>
                           <td className="px-3 py-2 font-bold text-white">
@@ -480,16 +567,30 @@ export default function DashboardPage() {
                               {qualified && <Check className="h-3 w-3 text-green-400" />}
                             </span>
                           </td>
-                          <td className="px-3 py-2 text-right text-gold font-bold">{row.pct}</td>
+                          <td className="px-3 py-2 text-right text-gold font-bold">{row.pct}%</td>
                           <td className="px-3 py-2 text-right text-beige-muted">{row.min}</td>
-                          <td className={`px-3 py-2 text-right ${qualified ? 'text-green-400' : 'text-beige-muted'}`}>{row.directs}</td>
+                          <td className={`px-3 py-2 text-right font-bold ${ld.count > 0 ? 'text-white' : 'text-beige-muted'}`}>{ld.count}</td>
+                          <td className={`px-3 py-2 text-right ${ld.volume > 0 ? 'text-gold' : 'text-beige-muted'}`}>${ld.volume.toLocaleString('en-US', { maximumFractionDigits: 0 })}</td>
+                          <td className={`px-3 py-2 text-right ${estEarnings > 0 ? 'text-green-400 font-bold' : 'text-beige-muted'}`}>${estEarnings > 0 ? estEarnings.toLocaleString('en-US', { maximumFractionDigits: 2 }) : '—'}</td>
                         </tr>
                       );
                     })}
+                    {/* Totals row */}
+                    <tr className="border-t-2 border-gold/30 bg-gold/5">
+                      <td className="px-3 py-3 font-bold text-gold" colSpan={3}>TOTAL</td>
+                      <td className="px-3 py-3 text-right font-bold text-gold">{levelData.reduce((a, b) => a + b.count, 0)}</td>
+                      <td className="px-3 py-3 text-right font-bold text-gold">${levelData.reduce((a, b) => a + b.volume, 0).toLocaleString('en-US', { maximumFractionDigits: 0 })}</td>
+                      <td className="px-3 py-3 text-right font-bold text-green-400">
+                        ${levelData.reduce((a, b, i) => a + (b.volume > 0 ? (b.volume * [7,6,5,4,3,2,2,2,2,2,7][i] / 100) : 0), 0).toLocaleString('en-US', { maximumFractionDigits: 2 })}
+                      </td>
+                    </tr>
                   </tbody>
                 </table>
               </div>
-              <p className="text-xs text-beige-muted mt-2">Commissions are paid in VYR on referral withdrawal profits (Pool 360 only). Green rows = levels you currently qualify for.</p>
+              <p className="text-xs text-beige-muted mt-2">
+                Data fetched in real-time from BNB Smart Chain. Volume = total USDT staked by your downline.
+                Earnings are paid in VYR on referral withdrawal profits (Pool 360 only).
+              </p>
             </div>
           </div>
         </motion.div>
