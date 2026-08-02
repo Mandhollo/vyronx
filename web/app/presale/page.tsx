@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import { useAccount, useReadContract, useWriteContract, useSimulateContract } from 'wagmi';
+import { useAccount, useReadContract, useWriteContract, useSimulateContract, useSwitchChain } from 'wagmi';
 import {
   Wallet, Clock, TrendingUp, Check, AlertCircle,
   ArrowRight, Shield, Zap, Loader2, ExternalLink
@@ -74,9 +74,10 @@ const DISTRIBUTION = [
 export default function PresalePage() {
   const { t } = useI18n();
   const { address, isConnected, chainId } = useAccount();
+  const { switchChainAsync } = useSwitchChain();
+  const { writeContractAsync } = useWriteContract();
   const [amount, setAmount] = useState('');
   const [txPending, setTxPending] = useState(false);
-  const { writeContractAsync } = useWriteContract();
 
   const onCorrectChain = chainId === bsc.id;
 
@@ -146,12 +147,16 @@ export default function PresalePage() {
     setTxPending(true);
     const toastId = toast.loading('Approving USDT spending...');
     try {
+      if (chainId !== bsc.id) {
+        toast.loading('Switching to BSC Mainnet...', { id: toastId });
+        await switchChainAsync({ chainId: bsc.id });
+        toast.loading('Approving USDT spending...', { id: toastId });
+      }
       await writeContractAsync({
         address: USDT_ADDRESS,
         abi: ERC20_ABI,
         functionName: 'approve',
         args: [PRESALE_ADDRESS, parseUnits(amount, 18)],
-        chainId: bsc.id,
       });
       toast.success('USDT approved! Now you can buy VYR.', { id: toastId });
     } catch (e) {
@@ -167,12 +172,16 @@ export default function PresalePage() {
     setTxPending(true);
     const toastId = toast.loading('Buying VYR tokens...');
     try {
+      if (chainId !== bsc.id) {
+        toast.loading('Switching to BSC Mainnet...', { id: toastId });
+        await switchChainAsync({ chainId: bsc.id });
+        toast.loading('Buying VYR tokens...', { id: toastId });
+      }
       await writeContractAsync({
         address: PRESALE_ADDRESS,
         abi: PresaleABI,
         functionName: 'buyWithUsdt',
         args: [parseUnits(amount, 18)],
-        chainId: bsc.id,
       });
       toast.success(`Successfully bought ${fmtNum(totalVyr)} VYR! 🎉`, { id: toastId });
       setAmount('');
@@ -275,7 +284,7 @@ export default function PresalePage() {
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
                   placeholder="0.00"
-                  disabled={!isConnected || !onCorrectChain}
+                  disabled={!isConnected}
                   className="w-full bg-dark-elevated border border-dark-border rounded-xl px-4 py-4 text-2xl text-white placeholder:text-beige-muted/40 focus:outline-none focus:border-gold/50 transition-colors disabled:opacity-50"
                 />
                 <span className="absolute right-4 top-1/2 -translate-y-1/2 text-lg font-bold text-gold">USDT</span>
@@ -286,7 +295,7 @@ export default function PresalePage() {
                   <button
                     key={val}
                     onClick={() => setAmount(String(val))}
-                    disabled={!isConnected || !onCorrectChain}
+                    disabled={!isConnected}
                     className="flex-1 py-2 text-xs font-bold rounded-lg border border-dark-border bg-dark-elevated text-beige hover:border-gold/30 hover:text-gold transition-colors disabled:opacity-50"
                   >
                     ${val.toLocaleString()}
