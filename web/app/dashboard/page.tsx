@@ -538,6 +538,7 @@ export default function DashboardPage() {
                       <th className="px-3 py-2 text-right text-xs text-beige-muted">Connections</th>
                       <th className="px-3 py-2 text-right text-xs text-beige-muted">Volume</th>
                       <th className="px-3 py-2 text-right text-xs text-beige-muted">Est. Earnings</th>
+                      <th className="px-3 py-2 text-left text-xs text-beige-muted">Progress</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -555,16 +556,28 @@ export default function DashboardPage() {
                       { level: 11, pct: 7, min: '$1,100', directs: 11 },
                     ].map((row) => {
                       const ld = levelData[row.level - 1] || { count: 0, volume: 0 };
-                      const qualified = (referralData ? Number(referralData[1]) : 0) >= row.directs;
+                      const directCount = referralData ? Number(referralData[1]) : 0;
+                      const qualified = directCount >= row.directs;
                       // Earnings = commission % on the profit portion of volume
-                      // (profit ≈ dailyRate * volume * time, but we show commission on volume as conservative estimate)
                       const estEarnings = ld.volume > 0 ? (ld.volume * row.pct / 100) : 0;
+
+                      // Progress bar: based on 2 requirements (stake + directs)
+                      // Requirement 1: user's total staked value >= min stake for this level
+                      const minStakeNum = row.level * 100; // L1=$100, L2=$200...L11=$1100
+                      const userStakeTotal = Object.values(stakesData).reduce((sum, s) => sum + (parseFloat(s.usdtAmount) || 0), 0);
+                      const stakeProgress = Math.min(100, (userStakeTotal / minStakeNum) * 100);
+                      // Requirement 2: direct referrals count
+                      const directsProgress = row.directs === 0 ? 100 : Math.min(100, (directCount / row.directs) * 100);
+                      // Overall = average of both
+                      const overallProgress = Math.round((stakeProgress + directsProgress) / 2);
+                      const completed = qualified && stakeProgress >= 100;
+
                       return (
                         <tr key={row.level} className={`border-b border-dark-border/50 ${qualified ? 'bg-green-500/5' : ''}`}>
                           <td className="px-3 py-2 font-bold text-white">
                             <span className="flex items-center gap-2">
                               L{row.level}
-                              {qualified && <Check className="h-3 w-3 text-green-400" />}
+                              {completed && <Check className="h-3 w-3 text-green-400" />}
                             </span>
                           </td>
                           <td className="px-3 py-2 text-right text-gold font-bold">{row.pct}%</td>
@@ -572,6 +585,17 @@ export default function DashboardPage() {
                           <td className={`px-3 py-2 text-right font-bold ${ld.count > 0 ? 'text-white' : 'text-beige-muted'}`}>{ld.count}</td>
                           <td className={`px-3 py-2 text-right ${ld.volume > 0 ? 'text-gold' : 'text-beige-muted'}`}>${ld.volume.toLocaleString('en-US', { maximumFractionDigits: 0 })}</td>
                           <td className={`px-3 py-2 text-right ${estEarnings > 0 ? 'text-green-400 font-bold' : 'text-beige-muted'}`}>${estEarnings > 0 ? estEarnings.toLocaleString('en-US', { maximumFractionDigits: 2 }) : '—'}</td>
+                          <td className="px-3 py-2 min-w-[120px]">
+                            <div className="flex items-center gap-2">
+                              <div className="flex-1 h-2 rounded-full bg-dark-elevated overflow-hidden">
+                                <div
+                                  className={`h-full rounded-full transition-all ${completed ? 'bg-green-500' : 'bg-gradient-to-r from-gold-light to-gold-dark'}`}
+                                  style={{ width: `${overallProgress}%` }}
+                                />
+                              </div>
+                              <span className={`text-xs font-bold w-9 text-right ${completed ? 'text-green-400' : 'text-beige-muted'}`}>{completed ? '✓' : `${overallProgress}%`}</span>
+                            </div>
+                          </td>
                         </tr>
                       );
                     })}
@@ -583,6 +607,7 @@ export default function DashboardPage() {
                       <td className="px-3 py-3 text-right font-bold text-green-400">
                         ${levelData.reduce((a, b, i) => a + (b.volume > 0 ? (b.volume * [7,6,5,4,3,2,2,2,2,2,7][i] / 100) : 0), 0).toLocaleString('en-US', { maximumFractionDigits: 2 })}
                       </td>
+                      <td></td>
                     </tr>
                   </tbody>
                 </table>
