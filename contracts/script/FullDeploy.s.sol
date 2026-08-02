@@ -85,8 +85,10 @@ contract FullDeploy is Script {
         staking.setUsdtCollector(0x77f30746492a6761C8E44A94397cc51F4313E48a);
 
         // 9. Configure presale phases ($0.01 and $0.02, no bonus)
-        presale.setPhase(0, 10000, 0, 150_000_000);
-        presale.setPhase(1, 20000, 0, 150_000_000);
+        // setPhase(phaseId, priceInCents, bonusPercent, allocation)
+        // $0.01 = 1 cent, $0.02 = 2 cents
+        presale.setPhase(0, 1, 0, 150_000_000);
+        presale.setPhase(1, 2, 0, 150_000_000);
         presale.setCurrentPhase(0);
         presale.startPresale();
 

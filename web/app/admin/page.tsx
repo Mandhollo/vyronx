@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { useAccount, useReadContract, useWriteContract } from 'wagmi';
+import { useAccount, useReadContract, useWriteContract, useConnect, useSwitchChain } from 'wagmi';
 import {
   Settings, Lock, Coins, Users, TrendingUp, Power, Gauge,
   Loader2, DollarSign, Wallet, Banknote, Shield, Flame,
@@ -25,6 +25,7 @@ type TabId = 'overview' | 'token' | 'presale' | 'staking' | 'vouchers' | 'owners
 
 export default function AdminPage() {
   const { address, isConnected, chainId } = useAccount();
+  const { switchChainAsync } = useSwitchChain();
   const { writeContractAsync } = useWriteContract();
   const [activeTab, setActiveTab] = useState<TabId>('overview');
   const [pending, setPending] = useState<string | null>(null);
@@ -159,9 +160,9 @@ export default function AdminPage() {
 
   // === GATE ===
   if (!isConnected) return (
-    <GateScreen icon={Lock} title="Admin Access" subtitle="Connect an authorized wallet to access the admin panel." />
+    <GateScreen icon={Lock} title="Admin Access" subtitle="Connect an authorized wallet to access the admin panel." showConnect />
   );
-  if (!isOwner) return (
+  if (!isAdminWallet(address)) return (
     <GateScreen icon={Shield} title="Access Denied" subtitle="This wallet is not authorized to view the admin panel." danger />
   );
 
@@ -194,7 +195,9 @@ export default function AdminPage() {
               <p className="text-xs text-beige-muted flex items-center gap-2">
                 <span className={`h-2 w-2 rounded-full ${onCorrectChain ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} />
                 Owner: {address?.slice(0, 6)}...{address?.slice(-4)}
-                {!onCorrectChain && <span className="text-red-400 ml-2">⚠ Switch to BSC Testnet</span>}
+                {!onCorrectChain && (
+                  <button onClick={async () => { await switchChainAsync({ chainId: bsc.id }); }} className="ml-2 text-xs px-2 py-1 rounded bg-gold/10 text-gold border border-gold/30 hover:bg-gold/20">Switch to BSC Mainnet</button>
+                )}
               </p>
             </div>
           </motion.div>
@@ -426,15 +429,25 @@ export default function AdminPage() {
             {/* Phase Control */}
             <motion.div variants={fadeUp} className="rounded-2xl border border-gold/30 bg-gradient-to-b from-dark-card to-gold/5 p-6 glow-gold">
               <h3 className="text-lg font-bold text-white mb-1">Phase Control</h3>
-              <p className="text-xs text-beige-muted mb-4">Switch between presale phases manually. Phase 0 = $0.01, Phase 1 = $0.02.</p>
+              <p className="text-xs text-beige-muted mb-4">Switch between presale phases or set a custom price.</p>
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
                 <div className="rounded-xl bg-dark-elevated p-4 flex-1">
                   <div className="text-xs text-beige-muted">Current Phase</div>
                   <div className="text-xl font-bold text-gold">
-                    Phase {presaleInfo ? Number(presaleInfo[0]) + 1 : 1} — {presaleInfo ? `$${(Number(presaleInfo[1]) / 1e18).toFixed(2)}` : '$0.01'}
+                    Phase {presaleInfo ? Number(presaleInfo[0]) + 1 : 1} — {presaleInfo ? `$${(Number(presaleInfo[1]) / 1e18).toFixed(4)}` : '$0.01'}
                   </div>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-wrap">
+                  <button onClick={async () => {
+                    if (!confirm('Set Phase 0 price to $0.01/VYR? This will fix the presale price.')) return;
+                    await exec('Fix Phase 0 Price', async () => {
+                      await writeContractAsync({ address: PRESALE_ADDRESS, abi: PresaleABI, functionName: 'setPhase', args: [BigInt(0), BigInt(1), BigInt(0), BigInt(150_000_000) * BigInt(10)**BigInt(18)] });
+                      await writeContractAsync({ address: PRESALE_ADDRESS, abi: PresaleABI, functionName: 'setCurrentPhase', args: [BigInt(0)] });
+                    });
+                  }} disabled={pending === 'Fix Phase 0 Price'}
+                    className="px-4 py-2 text-xs font-bold rounded-lg bg-green-500/10 text-green-400 border border-green-500/30 hover:bg-green-500/20">
+                    {pending === 'Fix Phase 0 Price' ? <Loader2 className="h-4 w-4 animate-spin" /> : '⚡ Fix Price $0.01'}
+                  </button>
                   <button onClick={async () => {
                     const current = presaleInfo ? Number(presaleInfo[0]) : 0;
                     if (current === 0) return toast.error('Already on Phase 1');
@@ -766,7 +779,9 @@ export default function AdminPage() {
 // ════════════════════════════════════════════════════════════
 // Sub-components
 // ════════════════════════════════════════════════════════════
-function GateScreen({ icon: Icon, title, subtitle, danger, extra }: { icon: typeof Lock; title: string; subtitle: string; danger?: boolean; extra?: string }) {
+function GateScreen({ icon: Icon, title, subtitle, danger, extra, showConnect }: { icon: typeof Lock; title: string; subtitle: string; danger?: boolean; extra?: string; showConnect?: boolean }) {
+  const { connectors, connectAsync } = useConnect();
+  const { switchChainAsync } = useSwitchChain();
   return (
     <div className="relative min-h-screen pt-24 pb-20 flex items-center justify-center">
       <div className="absolute inset-0 bg-grid-pattern" />
@@ -777,7 +792,20 @@ function GateScreen({ icon: Icon, title, subtitle, danger, extra }: { icon: type
       <motion.div variants={fadeUp} initial="hidden" animate="visible" className="relative text-center max-w-md mx-auto px-4">
         <Icon className={`h-16 w-16 mx-auto mb-6 float ${danger ? 'text-red-400' : 'text-gold'}`} />
         <h1 className="text-3xl font-bold text-white mb-3">{title}</h1>
-        <p className="text-beige-muted mb-4">{subtitle}</p>
+        <p className="text-beige-muted mb-6">{subtitle}</p>
+        {showConnect && (
+          <div className="flex flex-col gap-3 items-center">
+            {connectors.map((connector) => (
+              <button
+                key={connector.uid}
+                onClick={async () => { await connectAsync({ connector }); }}
+                className="px-6 py-3 rounded-xl bg-gold/10 text-gold border border-gold/30 hover:bg-gold/20 font-bold flex items-center gap-2"
+              >
+                Connect with {connector.name}
+              </button>
+            ))}
+          </div>
+        )}
         {extra && <p className="text-xs text-beige-muted font-mono">{extra}</p>}
       </motion.div>
     </div>
