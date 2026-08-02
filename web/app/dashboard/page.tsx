@@ -64,6 +64,41 @@ export default function DashboardPage() {
   });
   const stakeCount = stakeCountData ? Number(stakeCountData) : 0;
 
+  // Read pending vouchers (not yet redeemed)
+  const { data: userVouchers } = useReadContract({
+    address: STAKING_ADDRESS, abi: StakingABI, functionName: 'getUserVouchers', args: [address || '0x0'], chainId: bsc.id,
+  }) as { data: readonly [readonly bigint[], readonly bigint[], readonly bigint[], readonly bigint[], readonly boolean[], readonly boolean[]] | undefined };
+
+  const pendingVouchers = userVouchers
+    ? (userVouchers[0] as readonly bigint[]).map((id, i) => ({
+        id: Number(id),
+        value: userVouchers[1][i],
+        poolId: Number(userVouchers[2][i]),
+        expiry: Number(userVouchers[3][i]),
+        redeemed: userVouchers[4][i],
+        cancelled: userVouchers[5][i],
+      })).filter(v => !v.redeemed && !v.cancelled)
+    : [];
+
+  const [redeeming, setRedeeming] = useState<number | null>(null);
+
+  const handleRedeemVoucher = async (voucherId: number) => {
+    if (!isConnected) return;
+    setRedeeming(voucherId);
+    const toastId = toast.loading('Activating voucher...');
+    try {
+      await writeContractAsync({
+        address: STAKING_ADDRESS, abi: StakingABI, functionName: 'redeemVoucher',
+        args: [BigInt(voucherId)],
+      });
+      toast.success('Voucher activated! Your virtual stake is now earning rewards. 🎫✨', { id: toastId });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Failed to redeem voucher', { id: toastId });
+    } finally {
+      setRedeeming(null);
+    }
+  };
+
   // Read referral info
   const { data: referralData } = useReadContract({
     address: STAKING_ADDRESS, abi: StakingABI, functionName: 'getReferralInfo', args: [address || '0x0'], chainId: bsc.id,
@@ -252,6 +287,48 @@ export default function DashboardPage() {
                   <div className="text-lg font-bold text-green-400">{fmtNum(buyerInfo[2], 18, 0)} VYR</div>
                 </div>
               </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Pending Vouchers */}
+        {pendingVouchers.length > 0 && (
+          <motion.div variants={stagger} initial="hidden" animate="visible" className="mb-12">
+            <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+              <Ticket className="h-5 w-5 text-purple-400" /> Your Vouchers
+            </h2>
+            <div className="space-y-4">
+              {pendingVouchers.map((v) => {
+                const pool = STAKING_POOLS[v.poolId] || STAKING_POOLS[0];
+                const expired = v.expiry > 0 && v.expiry < Math.floor(Date.now() / 1000);
+                return (
+                  <motion.div key={v.id} variants={fadeUp} className="rounded-2xl border border-purple-500/30 bg-purple-500/5 p-5">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                      <div className="flex items-center gap-4">
+                        <div className="flex items-center justify-center h-12 w-12 rounded-xl bg-purple-500/10 border border-purple-500/20">
+                          <Ticket className="h-6 w-6 text-purple-400" />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-sm font-bold text-white">Voucher #{v.id}</span>
+                            <span className="px-2 py-0.5 text-xs rounded-full bg-purple-500/10 text-purple-400 font-bold">${(Number(v.value) / 1e18).toLocaleString()}</span>
+                            <span className="px-2 py-0.5 text-xs rounded-full bg-gold/10 text-gold">{pool.duration}</span>
+                          </div>
+                          <div className="text-xs text-beige-muted mt-1">{pool.tier} Pool • {pool.dailyRate}% daily</div>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handleRedeemVoucher(v.id)}
+                        disabled={redeeming === v.id || expired}
+                        className="px-6 py-2.5 text-sm font-bold rounded-lg bg-purple-500/20 text-purple-300 border border-purple-500/30 hover:bg-purple-500/30 transition-all disabled:opacity-50 flex items-center gap-2"
+                      >
+                        {redeeming === v.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Zap className="h-4 w-4" />}
+                        {expired ? 'Expired' : 'Activate Voucher'}
+                      </button>
+                    </div>
+                  </motion.div>
+                );
+              })}
             </div>
           </motion.div>
         )}
