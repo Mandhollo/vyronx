@@ -9,12 +9,18 @@ import { ReactNode } from 'react';
 
 // ════════════════════════════════════════════════════════════
 // Wagmi Config — BSC Mainnet (56)
+// multiInjectedProviderDiscovery handles mobile wallet apps
+// via browser wallet injection (MetaMask, Trust, Binance, etc)
 // ════════════════════════════════════════════════════════════
 const config = createConfig({
   chains: [bsc],
   connectors: [
     injected({ shimDisconnect: true }),
   ],
+  // This is critical for mobile:
+  // When a user opens vyronx.io inside MetaMask/Trust Wallet's
+  // in-app browser, the wallet injects itself automatically.
+  // multiInjectedProviderDiscovery finds it and connects.
   multiInjectedProviderDiscovery: true,
   ssr: true,
   transports: {
