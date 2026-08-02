@@ -12,6 +12,7 @@ import {
 import { STAKING_ADDRESS, USDT_ADDRESS, StakingABI } from '@/lib/contracts';
 import { useI18n } from '@/lib/i18n';
 import { publicClient } from '@/components/web3/Web3Provider';
+import { decodeReferralCode, isReferralCode } from '@/lib/referral-code';
 import { parseUnits, formatUnits } from 'viem';
 import { bsc } from 'wagmi/chains';
 import toast from 'react-hot-toast';
@@ -109,13 +110,23 @@ function StakingPageContent() {
   const needsApproval = allowance < usdtAmountBigInt;
   const selectedPool = activePool !== null ? POOLS[activePool] : null;
 
-  // Auto-register referrer from URL ?ref=0x...
+  // Auto-register referrer from URL ?ref=CODE or ?ref=0x...
   const searchParams = useSearchParams();
 
   useEffect(() => {
     if (!isConnected) return;
-    const refAddress = searchParams.get('ref');
-    if (refAddress && refAddress.match(/^0x[a-fA-F0-9]{40}$/) && refAddress.toLowerCase() !== address?.toLowerCase()) {
+    const rawRef = searchParams.get('ref');
+    if (!rawRef) return;
+
+    // Decode referral code: VYR... → 0x address, or accept raw 0x address (backward compat)
+    let refAddress: string | null = null;
+    if (isReferralCode(rawRef)) {
+      refAddress = decodeReferralCode(rawRef);
+    } else if (rawRef.match(/^0x[a-fA-F0-9]{40}$/)) {
+      refAddress = rawRef; // backward compatibility with old format
+    }
+
+    if (refAddress && refAddress.toLowerCase() !== address?.toLowerCase()) {
       (async () => {
         try {
           const res = await publicClient.readContract({

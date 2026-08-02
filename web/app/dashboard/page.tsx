@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useAccount, useReadContract, useWriteContract } from 'wagmi';
 import { publicClient } from '@/components/web3/Web3Provider';
+import { encodeReferralCode, decodeReferralCode, isReferralCode } from '@/lib/referral-code';
 import {
   Wallet, TrendingUp, Lock, Unlock, Users, Award, Clock,
   ArrowRight, Loader2, AlertCircle, Coins, Gift, Zap, ExternalLink,
@@ -430,12 +431,12 @@ export default function DashboardPage() {
             {/* Referral link */}
             <div className="rounded-xl bg-dark-elevated border border-dark-border p-4">
               <div className="text-xs text-beige-muted mb-2">{t('dash.referralLink')}</div>
-              <div className="flex items-center gap-2">
-                <code className="flex-1 text-xs text-gold truncate">
-                  {address ? `${typeof window !== 'undefined' ? window.location.origin : 'https://vyronx.io'}/staking?ref=${address}` : 'Connect wallet'}
-                </code>
-                <button
-                  onClick={() => { if (address) { navigator.clipboard.writeText(`${window.location.origin}/staking?ref=${address}`); toast.success('Referral link copied!'); } }}
+                <div className="flex items-center gap-2 bg-dark-elevated border border-dark-border rounded-lg px-3 py-2">
+                  <code className="text-sm text-gold flex-1 truncate">
+                    {address ? `${typeof window !== 'undefined' ? window.location.origin : 'https://vyronx.io'}/staking?ref=${encodeReferralCode(address)}` : 'Connect wallet'}
+                  </code>
+                  <button
+                    onClick={() => { if (address) { navigator.clipboard.writeText(`${window.location.origin}/staking?ref=${encodeReferralCode(address)}`); toast.success('Referral link copied!'); } }}
                   className="px-3 py-2 text-xs font-bold rounded-lg border border-gold/30 bg-gold/10 text-gold hover:bg-gold/20 transition-colors flex items-center gap-1"
                 >
                   <Copy className="h-3 w-3" /> Copy
