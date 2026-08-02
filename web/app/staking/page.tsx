@@ -10,6 +10,7 @@ import {
   Zap, Users, ChevronDown, Info, ArrowRight, Clock, Loader2, AlertCircle
 } from 'lucide-react';
 import { STAKING_ADDRESS, USDT_ADDRESS, StakingABI } from '@/lib/contracts';
+import ContractAddress from '@/components/web3/ContractAddress';
 import { useI18n } from '@/lib/i18n';
 import { publicClient } from '@/components/web3/Web3Provider';
 import { decodeReferralCode, isReferralCode } from '@/lib/referral-code';
@@ -420,6 +421,11 @@ function StakingPageContent() {
           <Link href="/presale" className="inline-flex items-center gap-2 px-6 py-3 text-sm font-bold rounded-xl bg-gradient-to-r from-gold-light to-gold-dark text-dark hover:shadow-lg hover:shadow-gold/40 transition-all">
             {t('staking.buyVyrFirst')} <ArrowRight className="h-4 w-4" />
           </Link>
+        </div>
+
+        {/* Contract Address */}
+        <div className="mt-8 rounded-xl border border-dark-border bg-dark-card p-4">
+          <ContractAddress address={STAKING_ADDRESS} label="Staking Contract" />
         </div>
       </div>
     </div>

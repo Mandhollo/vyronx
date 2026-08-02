@@ -2,6 +2,8 @@
 
 import Link from 'next/link';
 import { Mail, Shield, FileText, Send, MessageCircle } from 'lucide-react';
+import ContractAddress from '@/components/web3/ContractAddress';
+import { TOKEN_ADDRESS, PRESALE_ADDRESS, STAKING_ADDRESS, USDT_ADDRESS } from '@/lib/contracts';
 
 // Custom X icon
 const XIcon = ({ className }: { className?: string }) => (
@@ -103,7 +105,18 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="mt-10 pt-8 border-t border-dark-border flex flex-col md:flex-row justify-between items-center gap-4">
+        {/* Contract Addresses */}
+        <div className="mt-10 pt-8 border-t border-dark-border">
+          <h3 className="text-sm font-bold text-gold uppercase tracking-wider mb-4">Verified Contracts (BSC)</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <ContractAddress address={TOKEN_ADDRESS} label="VYR Token" />
+            <ContractAddress address={PRESALE_ADDRESS} label="Presale" />
+            <ContractAddress address={STAKING_ADDRESS} label="Staking" />
+            <ContractAddress address={USDT_ADDRESS} label="USDT" showLink={false} />
+          </div>
+        </div>
+
+        <div className="mt-8 pt-8 border-t border-dark-border flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-xs text-beige-muted">
             © 2026 VyronX. All rights reserved.
           </p>

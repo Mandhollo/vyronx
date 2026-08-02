@@ -15,6 +15,7 @@ import {
   TOKEN_ADDRESS, STAKING_ADDRESS, USDT_ADDRESS,
   PresaleABI, StakingABI, TokenABI, STAKING_POOLS
 } from '@/lib/contracts';
+import ContractAddress from '@/components/web3/ContractAddress';
 import { formatUnits, parseUnits } from 'viem';
 import { bsc } from 'wagmi/chains';
 import toast from 'react-hot-toast';
@@ -678,6 +679,15 @@ export default function DashboardPage() {
             </div>
           </div>
         </motion.div>
+
+        {/* Contract Addresses */}
+        <div className="rounded-xl border border-dark-border bg-dark-card p-4 mb-8">
+          <div className="text-xs text-beige-muted uppercase tracking-wider mb-3">Verified Contracts</div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <ContractAddress address={TOKEN_ADDRESS} label="VYR Token" />
+            <ContractAddress address={STAKING_ADDRESS} label="Staking" />
+          </div>
+        </div>
 
         {/* {t('dash.quickActions')} */}
         <motion.div variants={stagger} initial="hidden" animate="visible" className="grid grid-cols-2 sm:grid-cols-4 gap-4">

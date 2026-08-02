@@ -9,6 +9,7 @@ import {
   ArrowRight, Shield, Zap, Loader2, ExternalLink
 } from 'lucide-react';
 import { PRESALE_ADDRESS, USDT_ADDRESS, PresaleABI } from '@/lib/contracts';
+import ContractAddress from '@/components/web3/ContractAddress';
 import { parseUnits, formatUnits } from 'viem';
 import { bsc } from 'wagmi/chains';
 import toast from 'react-hot-toast';
@@ -353,6 +354,9 @@ export default function PresalePage() {
               <Shield className="inline h-3 w-3 mr-1" />
               {t('presale.secure')}
             </p>
+            <div className="mt-3 pt-3 border-t border-dark-border">
+              <ContractAddress address={PRESALE_ADDRESS} label="Presale Contract" />
+            </div>
           </div>
         </motion.div>
 
