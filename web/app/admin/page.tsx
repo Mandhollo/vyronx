@@ -12,7 +12,7 @@ import {
   TOKEN_ADDRESS, STAKING_ADDRESS, USDT_ADDRESS,
   PRESALE_ADDRESS, PresaleABI, StakingABI, TokenABI, STAKING_POOLS
 } from '@/lib/contracts';
-import { formatUnits } from 'viem';
+import { formatUnits, parseUnits } from 'viem';
 import { bsc } from 'wagmi/chains';
 import toast from 'react-hot-toast';
 import ParticleField from '@/components/fx/ParticleField';
@@ -662,7 +662,9 @@ export default function AdminPage() {
               </div>
               <button onClick={async () => {
                 const recipient = (document.getElementById('voucherRecipient') as HTMLInputElement).value;
-                const value = BigInt((Number((document.getElementById('voucherValue') as HTMLInputElement).value) || 0) * 1e18);
+                const valueUsd = Number((document.getElementById('voucherValue') as HTMLInputElement).value) || 0;
+                // Use parseUnits to avoid BigInt precision loss with 1e18
+                const value = parseUnits(String(valueUsd), 18);
                 const poolId = BigInt((document.getElementById('voucherPool') as HTMLSelectElement).value);
                 const expiryDays = Number((document.getElementById('voucherExpiry') as HTMLInputElement).value) || 0;
                 const expiry = expiryDays > 0 ? BigInt(Math.floor(Date.now() / 1000 + expiryDays * 86400)) : BigInt(0);
