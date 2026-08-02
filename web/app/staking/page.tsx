@@ -114,7 +114,7 @@ function StakingPageContent() {
   const searchParams = useSearchParams();
 
   useEffect(() => {
-    if (!isConnected) return;
+    if (!isConnected || !address) return;
     const rawRef = searchParams.get('ref');
     if (!rawRef) return;
 
@@ -126,27 +126,37 @@ function StakingPageContent() {
       refAddress = rawRef; // backward compatibility with old format
     }
 
-    if (refAddress && refAddress.toLowerCase() !== address?.toLowerCase()) {
-      (async () => {
-        try {
-          const res = await publicClient.readContract({
-            address: STAKING_ADDRESS as `0x${string}`, abi: StakingABI,
-            functionName: 'referrer', args: [address as `0x${string}`],
-          }) as `0x${string}`;
-          if (res === '0x0000000000000000000000000000000000000000') {
-            toast.promise(
-              writeContractAsync({
-                address: STAKING_ADDRESS as `0x${string}`, abi: StakingABI,
-                functionName: 'setReferrer', args: [refAddress as `0x${string}`],
-                chainId: bsc.id,
-              }),
-              { loading: 'Registering referrer...', success: 'Referrer registered!', error: 'Failed to register' }
-            );
+    if (!refAddress || refAddress.toLowerCase() === address?.toLowerCase()) return;
+
+    (async () => {
+      try {
+        // Wait a bit to ensure wallet is fully connected
+        await new Promise(r => setTimeout(r, 1500));
+
+        // Check if referrer already set
+        const existingRef = await publicClient.readContract({
+          address: STAKING_ADDRESS as `0x${string}`, abi: StakingABI,
+          functionName: 'referrer', args: [address as `0x${string}`],
+        }) as `0x${string}`;
+
+        if (existingRef === '0x0000000000000000000000000000000000000000') {
+          // Switch chain first if needed
+          if (chainId !== bsc.id) {
+            try { await switchChainAsync({ chainId: bsc.id }); } catch {}
           }
-        } catch {}
-      })();
-    }
-  }, [isConnected, onCorrectChain, address, searchParams, writeContractAsync]);
+          toast.promise(
+            writeContractAsync({
+              address: STAKING_ADDRESS as `0x${string}`, abi: StakingABI,
+              functionName: 'setReferrer', args: [refAddress as `0x${string}`],
+            }),
+            { loading: 'Registering referrer...', success: 'Referrer registered! 🎉', error: 'Failed to register referrer' }
+          );
+        }
+      } catch {
+        // Silent fail — user can manually retry
+      }
+    })();
+  }, [isConnected, address, searchParams]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleApprove = async () => {
     if (!isConnected || !stakeAmount || activePool === null) return;
