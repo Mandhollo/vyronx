@@ -108,7 +108,15 @@ export default function AdminPage() {
   const exec = async (name: string, fn: () => Promise<unknown>) => {
     setPending(name);
     const tid = toast.loading(`${name}...`);
-    try { await fn(); toast.success(`${name} successful!`, { id: tid }); }
+    try {
+      // Auto-switch to BSC if on wrong chain
+      if (chainId !== bsc.id) {
+        toast.loading('Switching to BSC Mainnet...', { id: tid });
+        await switchChainAsync({ chainId: bsc.id });
+        toast.loading(`${name}...`, { id: tid });
+      }
+      await fn(); toast.success(`${name} successful!`, { id: tid });
+    }
     catch (e) { toast.error(e instanceof Error ? e.message : `${name} failed`, { id: tid }); }
     finally { setPending(null); }
   };
