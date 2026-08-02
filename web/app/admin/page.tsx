@@ -84,6 +84,10 @@ export default function AdminPage() {
     address: STAKING_ADDRESS, abi: StakingABI, functionName: 'totalActiveVoucherValue', chainId: bsc.id,
   }) as { data: bigint | undefined };
 
+  const { data: voucherCount } = useReadContract({
+    address: STAKING_ADDRESS, abi: StakingABI, functionName: 'getVoucherCount', chainId: bsc.id,
+  }) as { data: bigint | undefined };
+
   // === READS: POOLS (individual reads) ===
   const { data: pool0 } = useReadContract({ address: STAKING_ADDRESS, abi: StakingABI, functionName: 'pools', args: [BigInt(0)], chainId: bsc.id }) as { data: readonly [bigint, bigint, boolean, string] | undefined };
   const { data: pool1 } = useReadContract({ address: STAKING_ADDRESS, abi: StakingABI, functionName: 'pools', args: [BigInt(1)], chainId: bsc.id }) as { data: readonly [bigint, bigint, boolean, string] | undefined };
@@ -694,15 +698,31 @@ export default function AdminPage() {
               <p className="text-xs text-beige-muted mt-2">Only works if voucher hasn't been redeemed yet.</p>
             </motion.div>
 
-            {/* Voucher Stats */}
+            {/* Voucher Stats + List */}
             <motion.div variants={fadeUp} className="rounded-2xl glass-card p-6">
-              <h3 className="text-lg font-bold text-white mb-4">Voucher Stats</h3>
-              <div className="grid grid-cols-2 gap-4">
+              <h3 className="text-lg font-bold text-white mb-4">Voucher Overview</h3>
+              <div className="grid grid-cols-2 gap-4 mb-6">
+                <div className="rounded-xl bg-dark-elevated p-4">
+                  <div className="text-xs text-beige-muted">Total Created</div>
+                  <div className="text-lg font-bold text-gold">{voucherCount ? Number(voucherCount) : '0'}</div>
+                </div>
                 <div className="rounded-xl bg-dark-elevated p-4">
                   <div className="text-xs text-beige-muted">Total Active Value</div>
                   <div className="text-lg font-bold text-gold">${totalActiveVoucher ? (Number(totalActiveVoucher) / 1e18).toLocaleString() : '0'}</div>
                 </div>
               </div>
+
+              {/* Voucher List */}
+              {voucherCount && Number(voucherCount) > 0 ? (
+                <div className="space-y-2">
+                  <div className="text-xs text-beige-muted uppercase tracking-wider mb-2">Voucher Recipients</div>
+                  {Array.from({ length: Math.min(Number(voucherCount), 50) }, (_, i) => (
+                    <VoucherRow key={i} id={i} />
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-sm text-beige-muted">No vouchers created yet.</div>
+              )}
             </motion.div>
           </motion.div>
         )}
@@ -848,6 +868,33 @@ function InfoBox({ label, value, gold, highlight }: { label: string; value: stri
     <div className={`rounded-xl p-4 ${gold ? 'bg-gold/5 border border-gold/20' : highlight ? 'bg-red-500/10 border border-red-500/20' : 'bg-dark-elevated'}`}>
       <div className="text-xs text-beige-muted">{label}</div>
       <div className={`text-lg font-bold ${gold ? 'text-gold' : 'text-white'}`}>{value}</div>
+    </div>
+  );
+}
+
+function VoucherRow({ id }: { id: number }) {
+  const { data } = useReadContract({
+    address: STAKING_ADDRESS, abi: StakingABI, functionName: 'vouchers', args: [BigInt(id)], chainId: bsc.id,
+  }) as { data: readonly [string, bigint, bigint, bigint, boolean, boolean] | undefined };
+
+  if (!data) return null;
+  const [recipient, value, poolId, expiry, redeemed, cancelled] = data;
+  const status = cancelled ? 'Cancelled' : redeemed ? 'Redeemed' : (Number(expiry) > 0 && Number(expiry) < Math.floor(Date.now() / 1000)) ? 'Expired' : 'Active';
+  const statusColor = status === 'Active' ? 'text-green-400 bg-green-500/10' : 'text-red-400 bg-red-500/10';
+
+  return (
+    <div className="flex items-center justify-between rounded-lg bg-dark-elevated p-3 gap-2">
+      <div className="flex items-center gap-3 min-w-0 flex-1">
+        <span className="text-xs text-beige-muted shrink-0">#{id}</span>
+        <a href={`https://bscscan.com/address/${recipient}`} target="_blank" rel="noreferrer" className="text-sm font-mono text-gold hover:text-gold-light truncate">
+          {recipient.slice(0, 8)}...{recipient.slice(-4)}
+        </a>
+      </div>
+      <div className="flex items-center gap-3 shrink-0">
+        <span className="text-sm text-white">${(Number(value) / 1e18).toLocaleString()}</span>
+        <span className="text-xs text-beige-muted">P{Number(poolId)}</span>
+        <span className={`text-xs px-2 py-0.5 rounded-full ${statusColor}`}>{status}</span>
+      </div>
     </div>
   );
 }
