@@ -8,7 +8,7 @@ import { publicClient } from '@/components/web3/Web3Provider';
 import {
   Wallet, TrendingUp, Lock, Unlock, Users, Award, Clock,
   ArrowRight, Loader2, AlertCircle, Coins, Gift, Zap, ExternalLink,
-  ChevronRight, Copy, Check
+  ChevronRight, Copy, Check, Ticket
 } from 'lucide-react';
 import {
   TOKEN_ADDRESS, STAKING_ADDRESS, USDT_ADDRESS,
@@ -71,6 +71,32 @@ export default function DashboardPage() {
 
   // Read pending earnings for each stake
   const [earningsMap, setEarningsMap] = useState<Record<number, { usdt: string; vyr: string }>>({});
+  const [stakesData, setStakesData] = useState<Record<number, { poolId: number; usdtAmount: string; isVoucher: boolean; withdrawn: boolean }>>({});
+
+  // Fetch real stake data (pool, value, isVoucher) from chain
+  useEffect(() => {
+    if (!address || stakeCount === 0) return;
+    let active = true;
+    (async () => {
+      const map: Record<number, { poolId: number; usdtAmount: string; isVoucher: boolean; withdrawn: boolean }> = {};
+      for (let i = 0; i < stakeCount; i++) {
+        try {
+          const res = await publicClient.readContract({
+            address: STAKING_ADDRESS as `0x${string}`, abi: StakingABI,
+            functionName: 'userStakes', args: [address, BigInt(i)],
+          }) as [string, bigint, bigint, bigint, bigint, boolean, bigint, boolean];
+          map[i] = {
+            poolId: Number(res[1]),
+            usdtAmount: formatUnits(res[2], 18),
+            isVoucher: res[7],
+            withdrawn: res[5],
+          };
+        } catch { map[i] = { poolId: 0, usdtAmount: '0', isVoucher: false, withdrawn: false }; }
+      }
+      if (active) setStakesData(map);
+    })();
+    return () => { active = false; };
+  }, [address, stakeCount]);
 
   // Fetch earnings for all stakes
   useEffect(() => {
@@ -250,21 +276,28 @@ export default function DashboardPage() {
           ) : (
             <div className="space-y-4">
               {Array.from({ length: stakeCount }).map((_, idx) => {
-                const pool = STAKING_POOLS[idx % 4];
+                const sData = stakesData[idx];
+                const poolId = sData?.poolId ?? 0;
+                const pool = STAKING_POOLS[poolId] || STAKING_POOLS[0];
                 const earnings = earningsMap[idx] || { usdt: '0', vyr: '0' };
+                const isVoucher = sData?.isVoucher ?? false;
+                const isWithdrawn = sData?.withdrawn ?? false;
+                const stakeValue = sData?.usdtAmount ? fmt(sData.usdtAmount, 0) : '0';
                 return (
-                  <motion.div key={idx} variants={fadeUp} className="rounded-2xl border border-dark-border bg-dark-card p-5 hover:border-gold/30 transition-colors">
+                  <motion.div key={idx} variants={fadeUp} className={`rounded-2xl border p-5 transition-colors ${isVoucher ? 'border-purple-500/30 bg-purple-500/5' : 'border-dark-border bg-dark-card hover:border-gold/30'}`}>
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                       <div className="flex items-center gap-4">
-                        <div className="flex items-center justify-center h-12 w-12 rounded-xl bg-gold/10 border border-gold/20">
-                          <Lock className="h-6 w-6 text-gold" />
+                        <div className={`flex items-center justify-center h-12 w-12 rounded-xl border ${isVoucher ? 'bg-purple-500/10 border-purple-500/20' : 'bg-gold/10 border-gold/20'}`}>
+                          {isVoucher ? <Ticket className="h-6 w-6 text-purple-400" /> : <Lock className="h-6 w-6 text-gold" />}
                         </div>
                         <div>
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 flex-wrap">
                             <span className="text-sm font-bold text-white">{pool.tier}</span>
                             <span className="px-2 py-0.5 text-xs rounded-full bg-gold/10 text-gold">{pool.duration}</span>
+                            {isVoucher && <span className="px-2 py-0.5 text-xs rounded-full bg-purple-500/10 text-purple-400 font-bold">🎫 Voucher</span>}
+                            {isWithdrawn && <span className="px-2 py-0.5 text-xs rounded-full bg-green-500/10 text-green-400">✓ Withdrawn</span>}
                           </div>
-                          <div className="text-xs text-beige-muted mt-1">{pool.dailyRate}% daily</div>
+                          <div className="text-xs text-beige-muted mt-1">{pool.dailyRate}% daily • Staked: ${stakeValue}</div>
                         </div>
                       </div>
                       <div className="flex items-center gap-6">
