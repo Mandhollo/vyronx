@@ -56,9 +56,9 @@ const ERC20_ABI = [
 ] as const;
 
 const PRESALE_PHASES = [
-  { phase: 'Phase 1', price: '$0.010', duration: '15 days', status: 'active', allocation: '150M VYR' },
-  { phase: 'Phase 2', price: '$0.020', duration: '15 days', status: 'upcoming', allocation: '150M VYR' },
-  { phase: 'Launch', price: '$0.030', duration: 'DEX Listing', status: 'upcoming', allocation: 'Public Sale' },
+  { phase: 'Phase 1', price: '$0.010', status: 'active', allocation: '150M VYR' },
+  { phase: 'Phase 2', price: '$0.020', status: 'upcoming', allocation: '150M VYR' },
+  { phase: 'Launch', price: '$0.030', status: 'upcoming', allocation: 'Public Sale' },
 ];
 
 const DISTRIBUTION = [
@@ -423,7 +423,7 @@ export default function PresalePage() {
                   )}
                 </div>
                 <div className="text-3xl font-black text-gold-gradient mb-1">{phase.price}</div>
-                <div className="text-xs text-beige-muted mb-3">{phase.duration}</div>
+                <div className="text-xs text-beige-muted mb-3">{phase.allocation}</div>
                 <div className="space-y-1 text-sm border-t border-dark-border pt-3">
                   <div className="flex justify-between"><span className="text-beige-muted">{t('presale.allocation')}</span><span className="text-beige font-medium">{phase.allocation}</span></div>
                 </div>

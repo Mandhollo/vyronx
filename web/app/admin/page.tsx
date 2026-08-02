@@ -416,10 +416,10 @@ export default function AdminPage() {
 
             {/* Distribution Info */}
             <motion.div variants={fadeUp} className="rounded-2xl glass-card p-6">
-              <h3 className="text-lg font-bold text-white mb-4">Presale Phases (30 days total)</h3>
+              <h3 className="text-lg font-bold text-white mb-4">Presale Phases</h3>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <InfoBox label="Phase 1" value="$0.01 • 15 days" gold />
-                <InfoBox label="Phase 2" value="$0.02 • 15 days" />
+                <InfoBox label="Phase 1" value="$0.01" gold />
+                <InfoBox label="Phase 2" value="$0.02" />
                 <InfoBox label="Launch" value="$0.03 • DEX" />
               </div>
               <div className="mt-4 rounded-xl bg-dark-elevated p-4">

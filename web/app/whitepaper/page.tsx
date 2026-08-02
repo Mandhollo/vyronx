@@ -290,13 +290,13 @@ export default function WhitepaperPage() {
               <motion.section variants={fadeUp} id="presale" className="scroll-mt-24">
                 <h2 className="text-2xl font-bold text-white mb-4">{t('wp.presale')}</h2>
                 <p className="text-beige leading-relaxed mb-6">
-                  Presale runs for 30 days across 2 phases (15 days each), with a launch price of $0.03 on DEX listing.
+                  Presale features 2 phases at increasing prices, with a launch price of $0.03 on DEX listing. Phase duration is determined by the project team.
                 </p>
                 <div className="space-y-3">
                   {[
                     ['Presale Allocation', '30% (300M VYR)'],
-                    ['Phase 1 Price', '$0.01 (15 days)'],
-                    ['Phase 2 Price', '$0.02 (15 days)'],
+                    ['Phase 1 Price', '$0.01'],
+                    ['Phase 2 Price', '$0.02'],
                     ['Launch Price', '$0.03 (DEX)'],
                   ].map(([label, pct]) => (
                     <div key={label} className="flex items-center justify-between rounded-lg bg-dark-card border border-dark-border px-5 py-3">
