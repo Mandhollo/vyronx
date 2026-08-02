@@ -443,6 +443,54 @@ export default function DashboardPage() {
                 </button>
               </div>
             </div>
+
+            {/* 11-Level Affiliate Breakdown */}
+            <div className="mt-6">
+              <div className="text-xs text-beige-muted uppercase tracking-wider mb-3">Affiliate Levels (11 Tiers)</div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-dark-border">
+                      <th className="px-3 py-2 text-left text-xs text-beige-muted">Level</th>
+                      <th className="px-3 py-2 text-right text-xs text-beige-muted">Commission</th>
+                      <th className="px-3 py-2 text-right text-xs text-beige-muted">Min Stake</th>
+                      <th className="px-3 py-2 text-right text-xs text-beige-muted">Directs Req.</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[
+                      { level: 1, pct: '7%', min: '$100', directs: 0 },
+                      { level: 2, pct: '6%', min: '$200', directs: 2 },
+                      { level: 3, pct: '5%', min: '$300', directs: 3 },
+                      { level: 4, pct: '4%', min: '$400', directs: 4 },
+                      { level: 5, pct: '3%', min: '$500', directs: 5 },
+                      { level: 6, pct: '2%', min: '$600', directs: 6 },
+                      { level: 7, pct: '2%', min: '$700', directs: 7 },
+                      { level: 8, pct: '2%', min: '$800', directs: 8 },
+                      { level: 9, pct: '2%', min: '$900', directs: 9 },
+                      { level: 10, pct: '2%', min: '$1,000', directs: 10 },
+                      { level: 11, pct: '7%', min: '$1,100', directs: 11 },
+                    ].map((row) => {
+                      const qualified = (referralData ? Number(referralData[1]) : 0) >= row.directs;
+                      return (
+                        <tr key={row.level} className={`border-b border-dark-border/50 ${qualified ? 'bg-green-500/5' : ''}`}>
+                          <td className="px-3 py-2 font-bold text-white">
+                            <span className="flex items-center gap-2">
+                              L{row.level}
+                              {qualified && <Check className="h-3 w-3 text-green-400" />}
+                            </span>
+                          </td>
+                          <td className="px-3 py-2 text-right text-gold font-bold">{row.pct}</td>
+                          <td className="px-3 py-2 text-right text-beige-muted">{row.min}</td>
+                          <td className={`px-3 py-2 text-right ${qualified ? 'text-green-400' : 'text-beige-muted'}`}>{row.directs}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+              <p className="text-xs text-beige-muted mt-2">Commissions are paid in VYR on referral withdrawal profits (Pool 360 only). Green rows = levels you currently qualify for.</p>
+            </div>
           </div>
         </motion.div>
 
