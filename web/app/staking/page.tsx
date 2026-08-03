@@ -7,7 +7,7 @@ import { useSearchParams } from 'next/navigation';
 import { useAccount, useReadContract, useWriteContract, useSwitchChain } from 'wagmi';
 import {
   Lock, Unlock, TrendingUp, Wallet, Award,
-  Zap, Users, ChevronDown, Info, ArrowRight, Clock, Loader2, AlertCircle
+  Zap, Users, ChevronDown, Info, ArrowRight, Clock, Loader2, AlertCircle, Check
 } from 'lucide-react';
 import { STAKING_ADDRESS, USDT_ADDRESS, StakingABI } from '@/lib/contracts';
 import ContractAddress from '@/components/web3/ContractAddress';
@@ -279,6 +279,41 @@ function StakingPageContent() {
                 </div>
                 <button onClick={() => setActivePool(null)} className="text-beige-muted hover:text-white">✕</button>
               </div>
+
+              {/* Pool 360 — Referral Requirement Notice */}
+              {selectedPool.id === 3 && (
+                <div className={`rounded-xl border p-4 mb-6 ${
+                  referralData && referralData[0] !== '0x0000000000000000000000000000000000000000'
+                    ? 'border-green-500/30 bg-green-500/5'
+                    : 'border-amber-500/30 bg-amber-500/5'
+                }`}>
+                  <div className="flex items-start gap-3">
+                    {referralData && referralData[0] !== '0x0000000000000000000000000000000000000000'
+                      ? <Check className="h-5 w-5 text-green-400 shrink-0 mt-0.5" />
+                      : <AlertCircle className="h-5 w-5 text-amber-400 shrink-0 mt-0.5" />}
+                    <div className="flex-1">
+                      {referralData && referralData[0] !== '0x0000000000000000000000000000000000000000' ? (
+                        <>
+                          <p className="text-sm font-bold text-green-400">✅ Referrer Active</p>
+                          <p className="text-xs text-beige-muted mt-1">
+                            You're eligible for the Accelerator (10% USDT cashback) and 11-Level Affiliate commissions.
+                          </p>
+                        </>
+                      ) : (
+                        <>
+                          <p className="text-sm font-bold text-amber-400">⚠ Referral Required for Bonuses</p>
+                          <p className="text-xs text-beige-muted mt-1">
+                            To participate in the <span className="text-gold font-bold">Accelerator</span> (10% USDT cashback on referral deposits) and <span className="text-gold font-bold">11-Level Affiliate Program</span>, you must enter via a referral link before staking.
+                          </p>
+                          <p className="text-xs text-beige-muted mt-2">
+                            Without a referrer, you can still stake and earn daily rewards normally.
+                          </p>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <div className="mb-6">
                 <label className="text-sm font-medium text-beige mb-2 block">{t('staking.amount')}</label>
