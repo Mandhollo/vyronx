@@ -13,7 +13,7 @@ import { useI18n } from '@/lib/i18n';
 const NAV_ITEMS = [
   { labelKey: 'nav.home', href: '/' },
   { labelKey: 'nav.presale', href: '/presale' },
-  { labelKey: 'nav.staking', href: '/staking' },
+  { labelKey: 'nav.staking', href: '/staking', soon: true },
   { labelKey: 'nav.dashboard', href: '/dashboard' },
   // Admin is hidden from nav — only accessible via direct URL for authorized wallets
   { labelKey: 'nav.whitepaper', href: '/whitepaper' },
@@ -66,13 +66,16 @@ export default function Header() {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`px-4 py-2 text-sm font-medium rounded-lg transition-all ${
+                  className={`relative px-4 py-2 text-sm font-medium rounded-lg transition-all ${
                     active
                       ? 'text-gold bg-gold/10'
                       : 'text-beige hover:text-gold hover:bg-white/5'
                   }`}
                 >
                   {t(item.labelKey)}
+                  {'soon' in item && item.soon && (
+                    <span className="absolute -top-1 -right-1 px-1.5 py-0.5 text-[9px] font-black uppercase rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30">Soon</span>
+                  )}
                 </Link>
               );
             })}
@@ -115,13 +118,16 @@ export default function Header() {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`px-4 py-3 text-base font-medium rounded-lg transition-all ${
+                  className={`relative flex items-center gap-2 px-4 py-3 text-base font-medium rounded-lg transition-all ${
                     active
                       ? 'text-gold bg-gold/10'
                       : 'text-beige hover:text-gold hover:bg-white/5'
                   }`}
                 >
                   {t(item.labelKey)}
+                  {'soon' in item && item.soon && (
+                    <span className="px-1.5 py-0.5 text-[10px] font-black uppercase rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30">Soon</span>
+                  )}
                 </Link>
               );
             })}
