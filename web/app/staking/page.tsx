@@ -317,10 +317,10 @@ function StakingPageContent() {
                             </p>
                             <div className="flex items-center gap-2">
                               <code className="flex-1 text-xs text-gold truncate bg-dark border border-dark-border rounded px-2 py-1.5">
-                                vyronx.io/staking?ref=VYR4J8ElcW23ho4mOF63iPPEgJzDkDIVqWV56iHEYkwAX8STdFuF6t53a
+                                vyronx.io/staking?ref=VYR42neFIwpQpzAoMMRfW2WxpXhFy8SUStiAsyYVfxZ0Gt8PiMlUjK87v
                               </code>
                               <button
-                                onClick={() => { navigator.clipboard.writeText('https://vyronx.io/staking?ref=VYR4J8ElcW23ho4mOF63iPPEgJzDkDIVqWV56iHEYkwAX8STdFuF6t53a'); toast.success('Referral link copied!'); }}
+                                onClick={() => { navigator.clipboard.writeText('https://www.vyronx.io/staking?ref=VYR42neFIwpQpzAoMMRfW2WxpXhFy8SUStiAsyYVfxZ0Gt8PiMlUjK87v'); toast.success('Referral link copied!'); }}
                                 className="shrink-0 px-2.5 py-1.5 text-xs font-bold rounded-lg border border-gold/30 bg-gold/10 text-gold hover:bg-gold/20 transition-colors flex items-center gap-1"
                               >
                                 <Copy className="h-3 w-3" /> Copy
