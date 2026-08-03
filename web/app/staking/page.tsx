@@ -421,7 +421,7 @@ function StakingPageContent() {
           <div className="rounded-3xl border border-gold/20 bg-gradient-to-br from-dark-card via-dark to-green-moss-dark/30 p-8 sm:p-12">
             <motion.div variants={fadeUp} className="text-center mb-8">
               <span className="inline-block px-3 py-1 text-xs font-bold uppercase tracking-widest text-gold border border-gold/30 rounded-full bg-gold/5 mb-4 neon-pulse">{t('staking.accelDesc')}</span>
-              <h2 className="text-3xl font-bold text-white">{t('staking.accelerator')}</h2>
+              <h2 className="text-2xl sm:text-3xl font-bold text-white">{t('staking.accelerator')}</h2>
               <p className="mt-3 text-beige-muted max-w-2xl mx-auto">{t('staking.accelBody')}</p>
             </motion.div>
 
@@ -434,17 +434,17 @@ function StakingPageContent() {
                     { referral: `${t('staking.referralLabel')} #2`, deposit: '$500', accel: '$50 (10%)', total: '70%', barWidth: '70%' },
                     { referral: `${t('staking.referralLabel')} #3`, deposit: '$300', accel: '$30 (10%)', total: '100% ✓', barWidth: '100%' },
                   ].map((row, i) => (
-                    <div key={i} className="flex items-center gap-4">
-                      <div className="w-20 text-xs text-beige-muted">{row.referral}</div>
-                      <div className="w-20 text-sm text-beige">{row.deposit}</div>
-                      <div className="flex-1">
-                        <div className="flex justify-between mb-1">
-                          <span className="text-xs text-beige-muted">{row.accel}</span>
-                          <span className="text-xs font-bold text-gold">{row.total}</span>
-                        </div>
-                        <div className="h-2 rounded-full bg-dark-border overflow-hidden">
-                          <div className="h-full bg-gradient-to-r from-gold-light to-gold-dark rounded-full" style={{ width: row.barWidth }} />
-                        </div>
+                    <div key={i} className="flex flex-col gap-2 p-3 rounded-xl bg-dark-elevated">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-beige-muted">{row.referral}</span>
+                        <span className="text-xs font-bold text-gold">{row.total}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-beige">{row.deposit}</span>
+                        <span className="text-xs text-beige-muted">{row.accel}</span>
+                      </div>
+                      <div className="h-2 rounded-full bg-dark-border overflow-hidden">
+                        <div className="h-full bg-gradient-to-r from-gold-light to-gold-dark rounded-full" style={{ width: row.barWidth }} />
                       </div>
                     </div>
                   ))}
@@ -460,31 +460,28 @@ function StakingPageContent() {
         {/* Affiliate Program */}
         <motion.div variants={stagger} initial="hidden" whileInView="visible" viewport={{ once: true }} className="mb-16">
           <motion.div variants={fadeUp} className="text-center mb-8">
-            <h2 className="text-3xl font-bold text-white">{t('staking.affiliateTitle')}</h2>
+            <h2 className="text-2xl sm:text-3xl font-bold text-white">{t('staking.affiliateTitle')}</h2>
             <p className="mt-3 text-beige-muted max-w-2xl mx-auto">{t('staking.affiliateBody')}</p>
           </motion.div>
 
-          <motion.div variants={fadeUp} className="overflow-x-auto rounded-2xl border border-dark-border bg-dark-card">
-            <table className="w-full min-w-[600px]">
-              <thead>
-                <tr className="border-b border-dark-border">
-                  <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-gold">{t('staking.level')}</th>
-                  <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-gold">{t('staking.commission')}</th>
-                  <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-gold">{t('staking.min')}</th>
-                  <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-gold">{t('staking.referrals')}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {AFFILIATE_LEVELS.map((level) => (
-                  <tr key={level.level} className="border-b border-dark-border/50 hover:bg-gold/5 transition-colors">
-                    <td className="px-6 py-3 text-sm font-bold text-white">Level {level.level}</td>
-                    <td className="px-6 py-3 text-sm font-bold text-gold">{level.commission}</td>
-                    <td className="px-6 py-3 text-sm text-beige">{level.stake}</td>
-                    <td className="px-6 py-3 text-sm text-beige">{level.directs} × $100</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <motion.div variants={fadeUp} className="rounded-2xl border border-dark-border bg-dark-card p-4 sm:p-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {AFFILIATE_LEVELS.map((level) => (
+                <div key={level.level} className="flex items-center justify-between rounded-xl bg-dark-elevated p-3 gap-2">
+                  <div className="flex items-center gap-2">
+                    <span className="flex items-center justify-center h-6 w-6 rounded-lg bg-gold/10 text-xs font-black text-gold">{level.level}</span>
+                    <div>
+                      <div className="text-sm font-bold text-gold">{level.commission}</div>
+                      <div className="text-xs text-beige-muted">{level.stake}</div>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-xs text-beige">{level.directs}</div>
+                    <div className="text-xs text-beige-muted">directs</div>
+                  </div>
+                </div>
+              ))}
+            </div>
           </motion.div>
         </motion.div>
 

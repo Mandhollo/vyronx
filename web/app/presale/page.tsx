@@ -365,7 +365,7 @@ export default function PresalePage() {
           const info = presaleInfo as [bigint, bigint, bigint, bigint, bigint, bigint, boolean, boolean];
           return (
           <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} className="mb-12 mx-auto max-w-3xl">
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="rounded-xl border border-dark-border bg-dark-card p-4 text-center">
                 <div className="text-2xl font-black text-gold-gradient">
                   {info[3] ? formatUnits(info[3], 18) : '0'}
@@ -395,7 +395,7 @@ export default function PresalePage() {
           <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} className="mb-12 mx-auto max-w-2xl">
             <div className="rounded-2xl border border-gold/30 bg-dark-card p-6">
               <h3 className="text-lg font-bold text-white mb-4">{t('presale.history')}</h3>
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
                   <div className="text-xs text-beige-muted">{t('presale.spent')}</div>
                   <div className="text-lg font-bold text-white">${formatUnits(bi[0], 18)}</div>

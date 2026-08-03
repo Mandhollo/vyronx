@@ -353,7 +353,7 @@ export default function DashboardPage() {
               <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
                 <Gift className="h-5 w-5 text-gold" /> Presale Purchases
               </h2>
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
                   <div className="text-xs text-beige-muted">USDT Spent</div>
                   <div className="text-lg font-bold text-white">${fmtNum(buyerInfo[0], 6, 0)}</div>

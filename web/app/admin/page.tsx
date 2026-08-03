@@ -216,7 +216,7 @@ export default function AdminPage() {
         </motion.div>
 
         {/* Tabs */}
-        <div className="flex gap-1 mb-8 overflow-x-auto">
+        <div className="flex gap-1 mb-8 overflow-x-auto pb-2 -mx-1 px-1">
           {TABS.map((tab) => (
             <button key={tab.id} onClick={() => setActiveTab(tab.id)}
               className={`flex items-center gap-2 px-4 py-2.5 text-sm font-bold rounded-lg transition-all whitespace-nowrap ${
@@ -598,7 +598,7 @@ export default function AdminPage() {
                     </button>
                   </div>
                   {/* Editable fields */}
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="text-xs text-beige-muted block mb-1">Daily Rate (bps, e.g., 11 = 0.11%)</label>
                       <input type="number" value={poolRates[pool.id] ?? String(currentRate)} onChange={(e) => setPoolRates({ ...poolRates, [pool.id]: e.target.value })}
@@ -703,7 +703,7 @@ export default function AdminPage() {
             {/* Voucher Stats + List */}
             <motion.div variants={fadeUp} className="rounded-2xl glass-card p-6">
               <h3 className="text-lg font-bold text-white mb-4">Voucher Overview</h3>
-              <div className="grid grid-cols-2 gap-4 mb-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
                 <div className="rounded-xl bg-dark-elevated p-4">
                   <div className="text-xs text-beige-muted">Total Created</div>
                   <div className="text-lg font-bold text-gold">{voucherCount ? Number(voucherCount) : '0'}</div>

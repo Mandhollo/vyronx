@@ -192,7 +192,7 @@ export default function WhitepaperPage() {
                   Four pools with escalating returns. Investors deposit <span className="text-gold font-bold">USDT</span> and receive <span className="text-gold font-bold">VYR</span> upon withdrawal at market price via Chainlink oracle.
                 </p>
                 <div className="overflow-x-auto rounded-2xl border border-dark-border bg-dark-card">
-                  <table className="w-full min-w-[500px]">
+                  <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b border-dark-border">
                         <th className="px-4 py-3 text-left text-xs font-bold uppercase text-gold">Pool</th>
@@ -209,10 +209,10 @@ export default function WhitepaperPage() {
                         ['Elite', '360 days', '0.50%', '~15%'],
                       ].map(([tier, dur, daily, monthly]) => (
                         <tr key={tier} className="border-b border-dark-border/50 last:border-0">
-                          <td className="px-4 py-3 text-sm font-bold text-white">{tier}</td>
-                          <td className="px-4 py-3 text-sm text-beige">{dur}</td>
-                          <td className="px-4 py-3 text-sm text-beige">{daily}</td>
-                          <td className="px-4 py-3 text-sm font-bold text-gold">{monthly}</td>
+                          <td className="px-2 py-2 sm:px-4 sm:py-3 text-xs sm:text-sm font-bold text-white">{tier}</td>
+                          <td className="px-2 py-2 sm:px-4 sm:py-3 text-xs sm:text-sm text-beige">{dur}</td>
+                          <td className="px-2 py-2 sm:px-4 sm:py-3 text-xs sm:text-sm text-beige">{daily}</td>
+                          <td className="px-2 py-2 sm:px-4 sm:py-3 text-xs sm:text-sm font-bold text-gold">{monthly}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -251,7 +251,7 @@ export default function WhitepaperPage() {
                   Residual commissions on <span className="text-gold font-bold">profit</span> (never principal) from your 360-day pool network.
                 </p>
                 <div className="overflow-x-auto rounded-2xl border border-dark-border bg-dark-card mb-4">
-                  <table className="w-full min-w-[500px]">
+                  <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b border-dark-border">
                         <th className="px-4 py-3 text-left text-xs font-bold uppercase text-gold">Level</th>
