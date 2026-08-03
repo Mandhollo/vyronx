@@ -37,7 +37,13 @@ export const metadata: Metadata = {
     type: "website",
     locale: "en_US",
     siteName: "VyronX",
-    images: ['/vyronx-banner.jpeg'],
+    images: ['/vyronx-og.jpeg'],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: "VyronX ($VYR) — AI-Powered DeFi Ecosystem",
+    description: "AI arbitrage agents, multi-tier staking pools, and a comprehensive utility-driven token economy on BNB Smart Chain.",
+    images: ['/vyronx-og.jpeg'],
   },
 };
 
