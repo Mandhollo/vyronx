@@ -21,6 +21,10 @@ export default function ParticleField({ count = 60 }: { count?: number }) {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
+    // Reduce particles on mobile for performance
+    const isMobile = window.innerWidth < 768;
+    const actualCount = isMobile ? Math.min(count, 12) : count;
+
     let animId = 0;
     let particles: Particle[] = [];
 
@@ -34,7 +38,7 @@ export default function ParticleField({ count = 60 }: { count?: number }) {
     // Init particles
     const initParticles = () => {
       particles = [];
-      for (let i = 0; i < count; i++) {
+      for (let i = 0; i < actualCount; i++) {
         particles.push({
           x: Math.random() * canvas.width,
           y: Math.random() * canvas.height,
