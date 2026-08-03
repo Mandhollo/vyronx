@@ -7,7 +7,7 @@ import { useSearchParams } from 'next/navigation';
 import { useAccount, useReadContract, useWriteContract, useSwitchChain } from 'wagmi';
 import {
   Lock, Unlock, TrendingUp, Wallet, Award,
-  Zap, Users, ChevronDown, Info, ArrowRight, Clock, Loader2, AlertCircle, Check
+  Zap, Users, ChevronDown, Info, ArrowRight, Clock, Loader2, AlertCircle, Check, Gift, Copy
 } from 'lucide-react';
 import { STAKING_ADDRESS, USDT_ADDRESS, StakingABI } from '@/lib/contracts';
 import ContractAddress from '@/components/web3/ContractAddress';
@@ -305,6 +305,29 @@ function StakingPageContent() {
                           <p className="text-xs text-beige-muted mt-1">
                             To participate in the <span className="text-gold font-bold">Accelerator</span> (10% USDT cashback on referral deposits) and <span className="text-gold font-bold">11-Level Affiliate Program</span>, you must enter via a referral link before staking.
                           </p>
+
+                          {/* Referral Link Box */}
+                          <div className="mt-3 rounded-lg bg-dark-elevated border border-gold/20 p-3">
+                            <div className="flex items-center gap-2 mb-2">
+                              <Gift className="h-3.5 w-3.5 text-gold" />
+                              <span className="text-xs font-bold text-gold">Get your referral link after staking</span>
+                            </div>
+                            <p className="text-xs text-beige-muted mb-2">
+                              Don't have a referrer? Use the official link to join:
+                            </p>
+                            <div className="flex items-center gap-2">
+                              <code className="flex-1 text-xs text-gold truncate bg-dark border border-dark-border rounded px-2 py-1.5">
+                                vyronx.io/staking?ref=VYR4J8ElcW23ho4mOF63iPPEgJzDkDIVqWV56iHEYkwAX8STdFuF6t53a
+                              </code>
+                              <button
+                                onClick={() => { navigator.clipboard.writeText('https://vyronx.io/staking?ref=VYR4J8ElcW23ho4mOF63iPPEgJzDkDIVqWV56iHEYkwAX8STdFuF6t53a'); toast.success('Referral link copied!'); }}
+                                className="shrink-0 px-2.5 py-1.5 text-xs font-bold rounded-lg border border-gold/30 bg-gold/10 text-gold hover:bg-gold/20 transition-colors flex items-center gap-1"
+                              >
+                                <Copy className="h-3 w-3" /> Copy
+                              </button>
+                            </div>
+                          </div>
+
                           <p className="text-xs text-beige-muted mt-2">
                             Without a referrer, you can still stake and earn daily rewards normally.
                           </p>
