@@ -294,62 +294,29 @@ function StakingPageContent() {
                 <button onClick={() => setActivePool(null)} className="text-beige-muted hover:text-white">✕</button>
               </div>
 
-              {/* Pool 360 — Referral Requirement Notice */}
+              {/* Pool 360 — Referral Requirement Notice (compact) */}
               {selectedPool.id === 3 && (
-                <div className={`rounded-xl border p-4 mb-6 ${
-                  referralData && referralData[0] !== '0x0000000000000000000000000000000000000000'
-                    ? 'border-green-500/30 bg-green-500/5'
-                    : 'border-amber-500/30 bg-amber-500/5'
-                }`}>
-                  <div className="flex items-start gap-3">
-                    {referralData && referralData[0] !== '0x0000000000000000000000000000000000000000'
-                      ? <Check className="h-5 w-5 text-green-400 shrink-0 mt-0.5" />
-                      : <AlertCircle className="h-5 w-5 text-amber-400 shrink-0 mt-0.5" />}
-                    <div className="flex-1">
-                      {referralData && referralData[0] !== '0x0000000000000000000000000000000000000000' ? (
-                        <>
-                          <p className="text-sm font-bold text-green-400">✅ Referrer Active</p>
-                          <p className="text-xs text-beige-muted mt-1">
-                            You're eligible for the Accelerator (10% USDT cashback) and 11-Level Affiliate commissions.
-                          </p>
-                        </>
-                      ) : (
-                        <>
-                          <p className="text-sm font-bold text-amber-400">⚠ Referral Required for Bonuses</p>
-                          <p className="text-xs text-beige-muted mt-1">
-                            To participate in the <span className="text-gold font-bold">Accelerator</span> (10% USDT cashback on referral deposits) and <span className="text-gold font-bold">11-Level Affiliate Program</span>, you must enter via a referral link before staking.
-                          </p>
-
-                          {/* Referral Link Box */}
-                          <div className="mt-3 rounded-lg bg-dark-elevated border border-gold/20 p-3">
-                            <div className="flex items-center gap-2 mb-2">
-                              <Gift className="h-3.5 w-3.5 text-gold" />
-                              <span className="text-xs font-bold text-gold">Get your referral link after staking</span>
-                            </div>
-                            <p className="text-xs text-beige-muted mb-2">
-                              Don't have a referrer? Use the official link to join:
-                            </p>
-                            <div className="flex items-center gap-2">
-                              <code className="flex-1 text-xs text-gold truncate bg-dark border border-dark-border rounded px-2 py-1.5">
-                                vyronx.io/staking?ref=VYR42neFIwpQpzAoMMRfW2WxpXhFy8SUStiAsyYVfxZ0Gt8PiMlUjK87v
-                              </code>
-                              <button
-                                onClick={() => { navigator.clipboard.writeText('https://www.vyronx.io/staking?ref=VYR42neFIwpQpzAoMMRfW2WxpXhFy8SUStiAsyYVfxZ0Gt8PiMlUjK87v'); toast.success('Referral link copied!'); }}
-                                className="shrink-0 px-2.5 py-1.5 text-xs font-bold rounded-lg border border-gold/30 bg-gold/10 text-gold hover:bg-gold/20 transition-colors flex items-center gap-1"
-                              >
-                                <Copy className="h-3 w-3" /> Copy
-                              </button>
-                            </div>
-                          </div>
-
-                          <p className="text-xs text-beige-muted mt-2">
-                            Without a referrer, you can still stake and earn daily rewards normally.
-                          </p>
-                        </>
-                      )}
+                referralData && referralData[0] !== '0x0000000000000000000000000000000000000000' ? (
+                  <div className="flex items-center gap-2 rounded-lg border border-green-500/30 bg-green-500/5 px-3 py-2 mb-4">
+                    <Check className="h-4 w-4 text-green-400 shrink-0" />
+                    <span className="text-xs text-green-400 font-medium">Referrer active — Accelerator &amp; Affiliate bonuses unlocked.</span>
+                  </div>
+                ) : (
+                  <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2 mb-4">
+                    <div className="flex items-center gap-2">
+                      <AlertCircle className="h-4 w-4 text-amber-400 shrink-0" />
+                      <span className="text-xs text-amber-400 font-medium flex-1">
+                        Referral required for Accelerator &amp; Affiliate bonuses.
+                      </span>
+                      <button
+                        onClick={() => { navigator.clipboard.writeText('https://www.vyronx.io/staking?ref=VYR42neFIwpQpzAoMMRfW2WxpXhFy8SUStiAsyYVfxZ0Gt8PiMlUjK87v'); toast.success('Referral link copied! Open it to register.'); }}
+                        className="shrink-0 px-2 py-1 text-xs font-bold rounded-md border border-gold/30 bg-gold/10 text-gold hover:bg-gold/20 transition-colors flex items-center gap-1"
+                      >
+                        <Copy className="h-3 w-3" /> Copy Link
+                      </button>
                     </div>
                   </div>
-                </div>
+                )
               )}
 
               <div className="mb-6">
