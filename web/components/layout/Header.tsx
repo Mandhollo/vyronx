@@ -30,10 +30,11 @@ export default function Header() {
   const pathname = usePathname();
 
   // Check if staking pool 0 is active (controls "Coming Soon" badge)
+  // Struct order: lockPeriodDays(0), dailyRateBps(1), active(2), tierName(3)
   const { data: pool0Data } = useReadContract({
     address: STAKING_ADDRESS, abi: StakingABI, functionName: 'pools', args: [BigInt(0)], chainId: bsc.id,
-  }) as { data: readonly [boolean, bigint, bigint, bigint] | undefined };
-  const stakingLive = pool0Data?.[0] ?? false;
+  }) as { data: readonly [bigint, bigint, boolean, string] | undefined };
+  const stakingLive = pool0Data?.[2] ?? false;
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);

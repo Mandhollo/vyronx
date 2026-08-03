@@ -97,16 +97,17 @@ function StakingPageContent() {
     address: STAKING_ADDRESS, abi: StakingABI, functionName: 'getReferralInfo', args: [address || '0x0'], chainId: bsc.id,
   }) as { data: readonly [`0x${string}`, bigint, bigint] | undefined };
 
-  // Read pool active status (0-3) — pools(uint256) returns (active, dailyRateBps, lockPeriodDays, ...)
-  const { data: pool0Data } = useReadContract({ address: STAKING_ADDRESS, abi: StakingABI, functionName: 'pools', args: [BigInt(0)], chainId: bsc.id }) as { data: readonly [boolean, bigint, bigint, bigint] | undefined };
-  const { data: pool1Data } = useReadContract({ address: STAKING_ADDRESS, abi: StakingABI, functionName: 'pools', args: [BigInt(1)], chainId: bsc.id }) as { data: readonly [boolean, bigint, bigint, bigint] | undefined };
-  const { data: pool2Data } = useReadContract({ address: STAKING_ADDRESS, abi: StakingABI, functionName: 'pools', args: [BigInt(2)], chainId: bsc.id }) as { data: readonly [boolean, bigint, bigint, bigint] | undefined };
-  const { data: pool3Data } = useReadContract({ address: STAKING_ADDRESS, abi: StakingABI, functionName: 'pools', args: [BigInt(3)], chainId: bsc.id }) as { data: readonly [boolean, bigint, bigint, bigint] | undefined };
+  // Read pool active status (0-3)
+  // Struct order: lockPeriodDays(0), dailyRateBps(1), active(2), tierName(3)
+  const { data: pool0Data } = useReadContract({ address: STAKING_ADDRESS, abi: StakingABI, functionName: 'pools', args: [BigInt(0)], chainId: bsc.id }) as { data: readonly [bigint, bigint, boolean, string] | undefined };
+  const { data: pool1Data } = useReadContract({ address: STAKING_ADDRESS, abi: StakingABI, functionName: 'pools', args: [BigInt(1)], chainId: bsc.id }) as { data: readonly [bigint, bigint, boolean, string] | undefined };
+  const { data: pool2Data } = useReadContract({ address: STAKING_ADDRESS, abi: StakingABI, functionName: 'pools', args: [BigInt(2)], chainId: bsc.id }) as { data: readonly [bigint, bigint, boolean, string] | undefined };
+  const { data: pool3Data } = useReadContract({ address: STAKING_ADDRESS, abi: StakingABI, functionName: 'pools', args: [BigInt(3)], chainId: bsc.id }) as { data: readonly [bigint, bigint, boolean, string] | undefined };
   const poolActiveMap: Record<number, boolean> = {
-    0: pool0Data?.[0] ?? false,
-    1: pool1Data?.[0] ?? false,
-    2: pool2Data?.[0] ?? false,
-    3: pool3Data?.[0] ?? false,
+    0: pool0Data?.[2] ?? false,
+    1: pool1Data?.[2] ?? false,
+    2: pool2Data?.[2] ?? false,
+    3: pool3Data?.[2] ?? false,
   };
 
   const calculateEarnings = (amount: number, daily: number, days: number) => {
