@@ -213,10 +213,12 @@ function StakingPageContent() {
           <motion.span variants={fadeUp} className="inline-block px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-gold border border-gold/30 rounded-full bg-gold/5 mb-4 neon-pulse">{t('staking.title')}</motion.span>
           <motion.h1 variants={fadeUp} className="text-4xl sm:text-5xl lg:text-6xl font-black text-white">{t('staking.title2').replace(/ ?VYR$/i, '').trim()} <span className="text-gold-gradient">$VYR</span></motion.h1>
           <motion.p variants={fadeUp} className="mt-4 text-lg text-beige-muted max-w-2xl mx-auto">{t('staking.heroDesc')}</motion.p>
-          <motion.div variants={fadeUp} className="mt-4 inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-amber-500/30 bg-amber-500/10">
-            <Clock className="h-3.5 w-3.5 text-amber-400" />
-            <span className="text-xs font-bold text-amber-400 uppercase tracking-wider">Coming Soon</span>
-          </motion.div>
+          {!poolActiveMap[0] && (
+            <motion.div variants={fadeUp} className="mt-4 inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-amber-500/30 bg-amber-500/10">
+              <Clock className="h-3.5 w-3.5 text-amber-400" />
+              <span className="text-xs font-bold text-amber-400 uppercase tracking-wider">Coming Soon</span>
+            </motion.div>
+          )}
         </motion.div>
 
         {/* Wrong network */}

@@ -4,11 +4,14 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Menu, X, ChevronDown } from 'lucide-react';
+import { useReadContract } from 'wagmi';
 import ConnectButton from '@/components/web3/ConnectButton';
 import LanguageSelector from '@/components/layout/LanguageSelector';
 import Coin3D from '@/components/fx/Coin3D';
 import { SocialLinks } from '@/components/layout/SocialLinks';
 import { useI18n } from '@/lib/i18n';
+import { STAKING_ADDRESS, StakingABI } from '@/lib/contracts';
+import { bsc } from 'wagmi/chains';
 
 const NAV_ITEMS = [
   { labelKey: 'nav.home', href: '/' },
@@ -25,6 +28,12 @@ export default function Header() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = usePathname();
+
+  // Check if staking pool 0 is active (controls "Coming Soon" badge)
+  const { data: pool0Data } = useReadContract({
+    address: STAKING_ADDRESS, abi: StakingABI, functionName: 'pools', args: [BigInt(0)], chainId: bsc.id,
+  }) as { data: readonly [boolean, bigint, bigint, bigint] | undefined };
+  const stakingLive = pool0Data?.[0] ?? false;
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -73,7 +82,7 @@ export default function Header() {
                   }`}
                 >
                   {t(item.labelKey)}
-                  {'soon' in item && item.soon && (
+                  {'soon' in item && item.soon && !stakingLive && (
                     <span className="absolute -top-1 -right-1 px-1.5 py-0.5 text-[9px] font-black uppercase rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30">Soon</span>
                   )}
                 </Link>
@@ -125,7 +134,7 @@ export default function Header() {
                   }`}
                 >
                   {t(item.labelKey)}
-                  {'soon' in item && item.soon && (
+                  {'soon' in item && item.soon && !stakingLive && (
                     <span className="px-1.5 py-0.5 text-[10px] font-black uppercase rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30">Soon</span>
                   )}
                 </Link>
