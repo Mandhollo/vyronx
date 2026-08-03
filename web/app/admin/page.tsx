@@ -232,7 +232,7 @@ export default function AdminPage() {
           <motion.div variants={stagger} initial="hidden" animate="visible" className="space-y-8">
             {/* Global Stats */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              <StatCard icon={DollarSign} label="USDT Raised" value={`$${fmt(presaleInfo?.[3], 6, 0)}`} gold />
+              <StatCard icon={DollarSign} label="USDT Raised" value={`$${fmt(presaleInfo?.[3], 18, 0)}`} gold />
               <StatCard icon={Coins} label="VYR Sold" value={fmt(presaleInfo?.[4], 18, 0)} />
               <StatCard icon={Users} label="Total Buyers" value={String(presaleInfo?.[5] || BigInt(0))} />
               <StatCard icon={Banknote} label="Reward Pool" value={`${fmt(rewardPool, 18, 0)} VYR`} />
@@ -240,7 +240,7 @@ export default function AdminPage() {
 
             {/* Staking Stats */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              <StatCard icon={TrendingUp} label="Total Staked" value={`$${fmt(totalStaked, 6, 0)}`} />
+              <StatCard icon={TrendingUp} label="Total Staked" value={`$${fmt(totalStaked, 18, 0)}`} />
               <StatCard icon={Users} label="Total Stakers" value={String(totalStakers || BigInt(0))} />
               <StatCard icon={Percent} label="VYR Price" value={`$${vyrPrice ? (Number(vyrPrice) / 1e18).toFixed(4) : '--'}`} />
               <StatCard icon={Clock} label="Next Dist." value={distTime ? `${Math.floor(Number(distTime) / 3600)}h ${Math.floor((Number(distTime) % 3600) / 60)}m` : 'Due!'} highlight={distDue === true} />
@@ -404,7 +404,7 @@ export default function AdminPage() {
                 <InfoBox label="Status" value={presaleInfo?.[6] ? '🟢 Active' : '🔴 Paused'} />
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-6">
-                <InfoBox label="USDT Raised" value={`$${fmt(presaleInfo?.[3], 6, 0)}`} gold />
+                <InfoBox label="USDT Raised" value={`$${fmt(presaleInfo?.[3], 18, 0)}`} gold />
                 <InfoBox label="VYR Sold" value={fmt(presaleInfo?.[4], 18, 0)} />
                 <InfoBox label="Buyers" value={String(presaleInfo?.[5] || BigInt(0))} />
               </div>

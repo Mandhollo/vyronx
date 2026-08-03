@@ -356,7 +356,7 @@ export default function DashboardPage() {
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
                   <div className="text-xs text-beige-muted">USDT Spent</div>
-                  <div className="text-lg font-bold text-white">${fmtNum(buyerInfo[0], 6, 0)}</div>
+                  <div className="text-lg font-bold text-white">${fmtNum(buyerInfo[0], 18, 0)}</div>
                 </div>
                 <div>
                   <div className="text-xs text-beige-muted">{t('dash.tokensBought')}</div>
