@@ -97,6 +97,18 @@ function StakingPageContent() {
     address: STAKING_ADDRESS, abi: StakingABI, functionName: 'getReferralInfo', args: [address || '0x0'], chainId: bsc.id,
   }) as { data: readonly [`0x${string}`, bigint, bigint] | undefined };
 
+  // Read pool active status (0-3) — pools(uint256) returns (active, dailyRateBps, lockPeriodDays, ...)
+  const { data: pool0Data } = useReadContract({ address: STAKING_ADDRESS, abi: StakingABI, functionName: 'pools', args: [BigInt(0)], chainId: bsc.id }) as { data: readonly [boolean, bigint, bigint, bigint] | undefined };
+  const { data: pool1Data } = useReadContract({ address: STAKING_ADDRESS, abi: StakingABI, functionName: 'pools', args: [BigInt(1)], chainId: bsc.id }) as { data: readonly [boolean, bigint, bigint, bigint] | undefined };
+  const { data: pool2Data } = useReadContract({ address: STAKING_ADDRESS, abi: StakingABI, functionName: 'pools', args: [BigInt(2)], chainId: bsc.id }) as { data: readonly [boolean, bigint, bigint, bigint] | undefined };
+  const { data: pool3Data } = useReadContract({ address: STAKING_ADDRESS, abi: StakingABI, functionName: 'pools', args: [BigInt(3)], chainId: bsc.id }) as { data: readonly [boolean, bigint, bigint, bigint] | undefined };
+  const poolActiveMap: Record<number, boolean> = {
+    0: pool0Data?.[0] ?? false,
+    1: pool1Data?.[0] ?? false,
+    2: pool2Data?.[0] ?? false,
+    3: pool3Data?.[0] ?? false,
+  };
+
   const calculateEarnings = (amount: number, daily: number, days: number) => {
     return (amount * daily / 100 * days).toFixed(2);
   };
@@ -259,10 +271,12 @@ function StakingPageContent() {
               )}
               <button
                 onClick={() => setActivePool(pool.id)}
-                disabled={!isConnected}
+                disabled={!isConnected || !poolActiveMap[pool.id]}
                 className={`mt-6 w-full py-3 text-sm font-bold rounded-xl transition-all disabled:opacity-50 ${pool.featured ? 'bg-gradient-to-r from-gold-light to-gold-dark text-dark hover:shadow-lg hover:shadow-gold/40' : 'border border-gold/30 bg-gold/5 text-gold hover:bg-gold/10'}`}
               >
-                {!isConnected ? t('nav.connect') : t('staking.stake')}
+                {!poolActiveMap[pool.id]
+                  ? <span className="flex items-center justify-center gap-1.5"><Lock className="h-4 w-4" /> Pool Closed</span>
+                  : !isConnected ? t('nav.connect') : t('staking.stake')}
               </button>
             </motion.div>
           ))}
