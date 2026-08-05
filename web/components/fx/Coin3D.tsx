@@ -15,7 +15,7 @@ export default function Coin3D({ size = 36, className = '' }: Coin3DProps) {
 
   return (
     <div
-      className={`coin3d ${className}`}
+      className={`coin3d coin-spin ${className}`}
       style={{
         width: size,
         height: size,

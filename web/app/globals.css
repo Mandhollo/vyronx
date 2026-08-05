@@ -367,6 +367,68 @@ body {
   animation: sweep 3s infinite;
 }
 
+/* Shimmer text for numbers */
+@keyframes shimmer-text {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+.shimmer-text {
+  background: linear-gradient(90deg, #D4AF37 0%, #fff 50%, #D4AF37 100%);
+  background-size: 200% auto;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shimmer-text 3s linear infinite;
+}
+
+/* Glow pulse for important buttons */
+@keyframes btn-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(212,175,55,0.4); }
+  50% { box-shadow: 0 0 20px 4px rgba(212,175,55,0.3); }
+}
+.btn-glow {
+  animation: btn-glow 2.5s ease-in-out infinite;
+}
+
+/* Slide-in from right (for stat cards) */
+@keyframes slide-in-right {
+  from { opacity: 0; transform: translateX(30px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+/* Pulse scale for badges/pills */
+@keyframes pulse-scale {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+.pulse-scale {
+  animation: pulse-scale 2s ease-in-out infinite;
+}
+
+/* Coin spin 3D */
+@keyframes coin-spin {
+  0% { transform: rotateY(0deg); }
+  100% { transform: rotateY(360deg); }
+}
+.coin-spin {
+  animation: coin-spin 8s linear infinite;
+  transform-style: preserve-3d;
+}
+
+/* Number count-up flash */
+@keyframes flash-gold {
+  0% { color: #D4AF37; }
+  50% { color: #fff; text-shadow: 0 0 10px rgba(212,175,55,0.8); }
+  100% { color: #D4AF37; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .float, .float-1, .float-2, .float-3, .float-4,
+  .shimmer-text, .btn-glow, .pulse-scale, .coin-spin {
+    animation: none !important;
+  }
+}
+
 /* Section reveal on scroll */
 .reveal {
   opacity: 0;

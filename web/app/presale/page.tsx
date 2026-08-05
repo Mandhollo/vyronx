@@ -347,7 +347,7 @@ export default function PresalePage() {
               <button
                 onClick={handleBuy}
                 disabled={!amount || txPending}
-                className="w-full py-4 text-base font-bold rounded-xl bg-gradient-to-r from-gold-light to-gold-dark text-dark hover:shadow-lg hover:shadow-gold/40 hover:scale-[1.01] transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
+                className="w-full py-4 text-base font-bold rounded-xl bg-gradient-to-r from-gold-light to-gold-dark text-dark hover:shadow-lg hover:shadow-gold/40 hover:scale-[1.01] transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2 btn-glow"
               >
                 {txPending ? <Loader2 className="h-5 w-5 animate-spin" /> : null}
                 {txPending ? t('presale.buying') : `${t('presale.buy')}${amount ? ' ' + fmtNum(totalVyr) : ''}`}

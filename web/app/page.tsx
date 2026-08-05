@@ -197,7 +197,7 @@ function Hero() {
           <motion.div variants={fadeUp} className="mt-10 flex flex-col sm:flex-row gap-4">
             <Link
               href="/presale"
-              className="magnetic-btn group inline-flex items-center justify-center gap-2 px-8 py-4 text-base font-bold rounded-xl bg-gradient-to-r from-gold-light to-gold-dark text-dark hover:shadow-2xl hover:shadow-gold/40 transition-all"
+              className="magnetic-btn btn-glow group inline-flex items-center justify-center gap-2 px-8 py-4 text-base font-bold rounded-xl bg-gradient-to-r from-gold-light to-gold-dark text-dark hover:shadow-2xl hover:shadow-gold/40 transition-all"
             >
               {t('hero.cta1')}
               <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
@@ -413,7 +413,7 @@ function StakingPreviewSection() {
             }`}
           >
             {pool.tierKey === 'pool.elite' && (
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-30 px-4 py-1 text-xs font-black uppercase tracking-wider rounded-full bg-gradient-to-r from-gold-light to-gold-dark text-dark shadow-lg whitespace-nowrap">
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-30 px-4 py-1 text-xs font-black uppercase tracking-wider rounded-full bg-gradient-to-r from-gold-light to-gold-dark text-dark shadow-lg whitespace-nowrap pulse-scale">
                 ⭐ Best Rate
               </div>
             )}
@@ -425,7 +425,7 @@ function StakingPreviewSection() {
               <div className="text-xl font-bold text-white">{t(pool.durationKey)}</div>
             </div>
             <div className="text-center my-4">
-              <div className={`text-4xl font-black ${pool.tierKey === 'pool.elite' ? 'text-gold-gradient' : 'text-gold'}`}>{pool.monthly}</div>
+              <div className={`text-4xl font-black ${pool.tierKey === 'pool.elite' ? 'shimmer-text' : 'text-gold'}`}>{pool.monthly}</div>
               <div className="text-xs text-beige-muted mt-1">{t(pool.monthlyKey)}</div>
             </div>
             <div className="space-y-2 text-sm border-t border-dark-border pt-4 mx-6 mb-4">

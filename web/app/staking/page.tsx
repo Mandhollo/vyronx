@@ -255,7 +255,7 @@ function StakingPageContent() {
               className={`relative overflow-visible rounded-3xl border ${pool.featured ? 'border-gold/50 bg-gradient-to-b from-dark-card to-gold/5 glow-gold' : 'border-dark-border bg-dark-card hover:border-gold/30'} transition-all`}>
               {/* "Best Rate" badge above card for Elite */}
               {pool.featured && (
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-30 px-4 py-1 text-xs font-black uppercase tracking-wider rounded-full bg-gradient-to-r from-gold-light to-gold-dark text-dark shadow-lg whitespace-nowrap">
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-30 px-4 py-1 text-xs font-black uppercase tracking-wider rounded-full bg-gradient-to-r from-gold-light to-gold-dark text-dark shadow-lg whitespace-nowrap pulse-scale">
                   {t('staking.bestRate')}
                 </div>
               )}
@@ -269,7 +269,7 @@ function StakingPageContent() {
               </div>
               {/* Return */}
               <div className="text-center my-4">
-                <div className={`text-4xl font-black ${pool.featured ? 'text-gold-gradient' : 'text-gold'}`}>{pool.monthly}</div>
+                <div className={`text-4xl font-black ${pool.featured ? 'shimmer-text' : 'text-gold'}`}>{pool.monthly}</div>
                 <div className="text-xs text-beige-muted mt-1">{t('pool.monthly')}</div>
               </div>
               {/* Details */}
