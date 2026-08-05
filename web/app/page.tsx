@@ -419,7 +419,7 @@ function StakingPreviewSection() {
             )}
             {/* Badge image — hero */}
             <div className="flex justify-center pt-10 pb-3">
-              <img src={pool.badge} alt={`${pool.tierKey} badge`} width={144} height={144} className={`rounded-full float float-${idx + 1} ${pool.tierKey === 'pool.elite' ? 'drop-shadow-[0_0_28px_rgba(212,175,55,0.7)]' : 'drop-shadow-[0_4px_18px_rgba(0,0,0,0.5)]'}`} />
+              <img src={pool.badge} alt={`${pool.tierKey} badge`} width={144} height={144} className={`rounded-full ${pool.tierKey === 'pool.elite' ? 'drop-shadow-[0_0_28px_rgba(212,175,55,0.7)]' : 'drop-shadow-[0_4px_18px_rgba(0,0,0,0.5)]'}`} />
             </div>
             <div className="text-center px-6">
               <div className="text-xl font-bold text-white">{t(pool.durationKey)}</div>
