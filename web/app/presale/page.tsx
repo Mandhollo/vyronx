@@ -519,7 +519,7 @@ export default function PresalePage() {
                 </div>
               </div>
               <a
-                href="https://t.me/vyronx"
+                href="https://t.me/vyrontoken"
                 target="_blank"
                 rel="noreferrer"
                 className="flex items-center justify-center gap-2 w-full py-3 text-sm font-bold rounded-xl bg-blue-500/20 border border-blue-500/40 text-blue-300 hover:bg-blue-500/30 transition-all"
