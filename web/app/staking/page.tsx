@@ -249,49 +249,55 @@ function StakingPageContent() {
         )}
 
         {/* Pools */}
-        <motion.div variants={stagger} initial="hidden" whileInView="visible" viewport={{ once: true }} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
+        <motion.div variants={stagger} initial="hidden" whileInView="visible" viewport={{ once: true }} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-16 mt-4">
           {POOLS.map((pool) => (
             <motion.div key={pool.id} variants={fadeUp}
-              className={`relative overflow-hidden rounded-2xl border p-6 ${pool.featured ? 'border-gold/50 bg-gradient-to-b from-dark-card to-gold/5 glow-gold' : 'border-dark-border bg-dark-card hover:border-gold/30'} transition-all`}>
-              {/* Badge image — half outside top */}
-              <div className="absolute -top-9 left-1/2 -translate-x-1/2 z-10">
-                <img src={pool.badge} alt={`${pool.tier} badge`} width={64} height={64} className="rounded-full drop-shadow-[0_4px_12px_rgba(212,175,55,0.3)]" />
-              </div>
+              className={`relative overflow-hidden rounded-3xl border ${pool.featured ? 'border-gold/50 bg-gradient-to-b from-dark-card to-gold/5 glow-gold' : 'border-dark-border bg-dark-card hover:border-gold/30'} transition-all`}>
               {/* "Best Rate" diagonal ribbon for Elite */}
               {pool.featured && (
-                <div className="absolute top-2 -right-12 z-20 rotate-45 bg-gradient-to-r from-gold-light to-gold-dark px-10 py-0.5 text-[10px] font-black uppercase tracking-wider text-dark shadow-lg">
+                <div className="absolute top-3 -right-10 z-30 rotate-45 bg-gradient-to-r from-gold-light to-gold-dark px-10 py-1 text-[10px] font-black uppercase tracking-wider text-dark shadow-lg">
                   {t('staking.bestRate')}
                 </div>
               )}
-              <div className="text-center mt-6">
-                <div className={`inline-block px-3 py-1 text-xs font-bold uppercase tracking-widest rounded-full bg-gradient-to-r ${pool.color} text-white mb-3`}>{pool.tier}</div>
-                <div className="text-2xl font-bold text-white">{pool.duration}</div>
+              {/* Badge image — large, centered at top */}
+              <div className="flex justify-center pt-8 pb-2">
+                <img src={pool.badge} alt={`${pool.tier} badge`} width={96} height={96} className={`rounded-full ${pool.featured ? 'drop-shadow-[0_0_20px_rgba(212,175,55,0.5)]' : 'drop-shadow-[0_4px_12px_rgba(0,0,0,0.5)]'}`} />
               </div>
-              <div className="my-6 text-center">
-                <div className="text-4xl font-black text-gold-gradient">{pool.monthly}</div>
+              {/* Tier name */}
+              <div className="text-center px-6">
+                <div className={`inline-block px-3 py-1 text-xs font-bold uppercase tracking-widest rounded-full bg-gradient-to-r ${pool.color} text-white`}>{pool.tier}</div>
+                <div className="text-xl font-bold text-white mt-2">{pool.duration}</div>
+              </div>
+              {/* Return */}
+              <div className="text-center my-4">
+                <div className={`text-4xl font-black ${pool.featured ? 'text-gold-gradient' : 'text-gold'}`}>{pool.monthly}</div>
                 <div className="text-xs text-beige-muted mt-1">{t('pool.monthly')}</div>
               </div>
-              <div className="space-y-2 text-sm border-t border-dark-border pt-4">
+              {/* Details */}
+              <div className="space-y-2 text-sm border-t border-dark-border pt-4 mx-6 mb-4">
                 <div className="flex justify-between"><span className="text-beige-muted">{t('pool.daily')}</span><span className="text-beige font-medium">{pool.daily}%</span></div>
                 <div className="flex justify-between"><span className="text-beige-muted">{t('pool.lock')}</span><span className="text-beige font-medium">{pool.lock} {t('pool.days')}</span></div>
                 <div className="flex justify-between"><span className="text-beige-muted">{t('staking.min')}</span><span className="text-beige font-medium">${pool.minStake} USDT</span></div>
               </div>
               {pool.features && (
-                <div className="mt-4 pt-4 border-t border-dark-border space-y-2">
+                <div className="mx-6 pt-2 border-t border-dark-border space-y-2 pb-4">
                   {pool.features.map((f) => (
                     <div key={f} className="flex items-center gap-2 text-xs text-gold"><Award className="h-3.5 w-3.5" /> {f}</div>
                   ))}
                 </div>
               )}
-              <button
-                onClick={() => setActivePool(pool.id)}
-                disabled={!isConnected || !poolActiveMap[pool.id]}
-                className={`mt-6 w-full py-3 text-sm font-bold rounded-xl transition-all disabled:opacity-50 ${pool.featured ? 'bg-gradient-to-r from-gold-light to-gold-dark text-dark hover:shadow-lg hover:shadow-gold/40' : 'border border-gold/30 bg-gold/5 text-gold hover:bg-gold/10'}`}
-              >
-                {!poolActiveMap[pool.id]
-                  ? <span className="flex items-center justify-center gap-1.5"><Lock className="h-4 w-4" /> Pool Closed</span>
-                  : !isConnected ? t('nav.connect') : t('staking.stake')}
-              </button>
+              {/* Stake button */}
+              <div className="px-6 pb-6">
+                <button
+                  onClick={() => setActivePool(pool.id)}
+                  disabled={!isConnected || !poolActiveMap[pool.id]}
+                  className={`w-full py-3 text-sm font-bold rounded-xl transition-all disabled:opacity-50 ${pool.featured ? 'bg-gradient-to-r from-gold-light to-gold-dark text-dark hover:shadow-lg hover:shadow-gold/40' : 'border border-gold/30 bg-gold/5 text-gold hover:bg-gold/10'}`}
+                >
+                  {!poolActiveMap[pool.id]
+                    ? <span className="flex items-center justify-center gap-1.5"><Lock className="h-4 w-4" /> Pool Closed</span>
+                    : !isConnected ? t('nav.connect') : t('staking.stake')}
+                </button>
+              </div>
             </motion.div>
           ))}
         </motion.div>
