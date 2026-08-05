@@ -35,10 +35,10 @@ const ERC20_ABI = [
 ] as const;
 
 const POOLS = [
-  { id: 0, duration: '30 Days', daily: 0.11, monthly: '~3.5%', lock: 30, tier: 'Starter', color: 'from-slate-600 to-slate-800', minStake: 50 },
-  { id: 1, duration: '60 Days', daily: 0.23, monthly: '~7%', lock: 60, tier: 'Growth', color: 'from-amber-500 to-amber-700', minStake: 50 },
-  { id: 2, duration: '180 Days', daily: 0.33, monthly: '~10%', lock: 180, tier: 'Pro', color: 'from-orange-500 to-orange-700', minStake: 100 },
-  { id: 3, duration: '360 Days', daily: 0.50, monthly: '~15%', lock: 360, tier: 'Elite', color: 'from-gold-light to-gold-dark', featured: true, features: ['Accelerator', '11-Level Affiliate Program'], minStake: 100 },
+  { id: 0, duration: '30 Days', daily: 0.11, monthly: '~3.5%', lock: 30, tier: 'Starter', color: 'from-slate-600 to-slate-800', minStake: 50, badge: '/badge-starter.png' },
+  { id: 1, duration: '60 Days', daily: 0.23, monthly: '~7%', lock: 60, tier: 'Growth', color: 'from-amber-500 to-amber-700', minStake: 50, badge: '/badge-growth.png' },
+  { id: 2, duration: '180 Days', daily: 0.33, monthly: '~10%', lock: 180, tier: 'Pro', color: 'from-orange-500 to-orange-700', minStake: 100, badge: '/badge-pro.png' },
+  { id: 3, duration: '360 Days', daily: 0.50, monthly: '~15%', lock: 360, tier: 'Elite', color: 'from-gold-light to-gold-dark', featured: true, features: ['Accelerator', '11-Level Affiliate Program'], minStake: 100, badge: '/badge-elite.png' },
 ];
 
 const AFFILIATE_LEVELS = [
@@ -254,9 +254,13 @@ function StakingPageContent() {
             <motion.div key={pool.id} variants={fadeUp}
               className={`relative rounded-2xl border p-6 ${pool.featured ? 'border-gold/50 bg-gradient-to-b from-dark-card to-gold/5 glow-gold' : 'border-dark-border bg-dark-card hover:border-gold/30'} transition-all`}>
               {pool.featured && (
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 text-xs font-bold rounded-full bg-gradient-to-r from-gold-light to-gold-dark text-dark whitespace-nowrap">{t('staking.bestRate')}</div>
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 text-xs font-bold rounded-full bg-gradient-to-r from-gold-light to-gold-dark text-dark whitespace-nowrap z-20">{t('staking.bestRate')}</div>
               )}
-              <div className="text-center">
+              {/* Badge image — half outside top */}
+              <div className="absolute -top-10 left-1/2 -translate-x-1/2 z-10">
+                <img src={pool.badge} alt={`${pool.tier} badge`} width={72} height={72} className="rounded-full drop-shadow-[0_4px_12px_rgba(212,175,55,0.3)]" />
+              </div>
+              <div className="text-center mt-8">
                 <div className={`inline-block px-3 py-1 text-xs font-bold uppercase tracking-widest rounded-full bg-gradient-to-r ${pool.color} text-white mb-3`}>{pool.tier}</div>
                 <div className="text-2xl font-bold text-white">{pool.duration}</div>
               </div>
