@@ -177,7 +177,7 @@ function Hero() {
             <img
               src="/vyronx-banner-clean.png"
               alt="VyronX — Vision • Innovation • Freedom • Purpose"
-              className="relative max-w-full sm:max-w-md lg:max-w-lg mx-auto float"
+              className="relative max-w-full sm:max-w-md lg:max-w-lg mx-auto"
               style={{ maxHeight: '60vh', width: 'auto' }}
             />
           </motion.div>
