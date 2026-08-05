@@ -106,11 +106,21 @@ body {
 
 /* Float animation */
 @keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-10px); }
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  25% { transform: translateY(-8px) rotate(2deg); }
+  50% { transform: translateY(-12px) rotate(0deg); }
+  75% { transform: translateY(-6px) rotate(-2deg); }
 }
 .float {
   animation: float 4s ease-in-out infinite;
+}
+.float-1 { animation-delay: 0s; }
+.float-2 { animation-delay: 0.8s; }
+.float-3 { animation-delay: 1.6s; }
+.float-4 { animation-delay: 2.4s; }
+
+@media (max-width: 768px) {
+  .float { animation-duration: 5s; transform: translateY(0) rotate(0deg) scale(1); }
 }
 
 /* Pulse glow */

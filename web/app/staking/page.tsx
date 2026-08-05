@@ -261,7 +261,7 @@ function StakingPageContent() {
               )}
               {/* Badge image — large hero */}
               <div className="flex justify-center pt-10 pb-3">
-                <img src={pool.badge} alt={`${pool.tier} badge`} width={144} height={144} className={`rounded-full ${pool.featured ? 'drop-shadow-[0_0_28px_rgba(212,175,55,0.7)]' : 'drop-shadow-[0_4px_18px_rgba(0,0,0,0.5)]'}`} />
+                <img src={pool.badge} alt={`${pool.tier} badge`} width={144} height={144} className={`rounded-full float float-${pool.id + 1} ${pool.featured ? 'drop-shadow-[0_0_28px_rgba(212,175,55,0.7)]' : 'drop-shadow-[0_4px_18px_rgba(0,0,0,0.5)]'}`} />
               </div>
               {/* Duration only (tier name removed — badge speaks for itself) */}
               <div className="text-center px-6">
