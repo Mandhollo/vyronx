@@ -252,15 +252,15 @@ function StakingPageContent() {
         <motion.div variants={stagger} initial="hidden" whileInView="visible" viewport={{ once: true }} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-16 mt-4">
           {POOLS.map((pool) => (
             <motion.div key={pool.id} variants={fadeUp}
-              className={`relative overflow-hidden rounded-3xl border ${pool.featured ? 'border-gold/50 bg-gradient-to-b from-dark-card to-gold/5 glow-gold' : 'border-dark-border bg-dark-card hover:border-gold/30'} transition-all`}>
-              {/* "Best Rate" diagonal ribbon for Elite */}
+              className={`relative overflow-visible rounded-3xl border ${pool.featured ? 'border-gold/50 bg-gradient-to-b from-dark-card to-gold/5 glow-gold' : 'border-dark-border bg-dark-card hover:border-gold/30'} transition-all`}>
+              {/* "Best Rate" badge above card for Elite */}
               {pool.featured && (
-                <div className="absolute top-3 -right-10 z-30 rotate-45 bg-gradient-to-r from-gold-light to-gold-dark px-10 py-1 text-[10px] font-black uppercase tracking-wider text-dark shadow-lg">
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-30 px-4 py-1 text-xs font-black uppercase tracking-wider rounded-full bg-gradient-to-r from-gold-light to-gold-dark text-dark shadow-lg whitespace-nowrap">
                   {t('staking.bestRate')}
                 </div>
               )}
               {/* Badge image — large hero */}
-              <div className="flex justify-center pt-6 pb-2">
+              <div className="flex justify-center pt-8 pb-2">
                 <img src={pool.badge} alt={`${pool.tier} badge`} width={128} height={128} className={`rounded-full ${pool.featured ? 'drop-shadow-[0_0_24px_rgba(212,175,55,0.6)]' : 'drop-shadow-[0_4px_16px_rgba(0,0,0,0.5)]'}`} />
               </div>
               {/* Duration only (tier name removed — badge speaks for itself) */}
