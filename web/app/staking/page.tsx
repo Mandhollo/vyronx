@@ -259,14 +259,13 @@ function StakingPageContent() {
                   {t('staking.bestRate')}
                 </div>
               )}
-              {/* Badge image — large, centered at top */}
-              <div className="flex justify-center pt-8 pb-2">
-                <img src={pool.badge} alt={`${pool.tier} badge`} width={96} height={96} className={`rounded-full ${pool.featured ? 'drop-shadow-[0_0_20px_rgba(212,175,55,0.5)]' : 'drop-shadow-[0_4px_12px_rgba(0,0,0,0.5)]'}`} />
+              {/* Badge image — large hero */}
+              <div className="flex justify-center pt-6 pb-2">
+                <img src={pool.badge} alt={`${pool.tier} badge`} width={128} height={128} className={`rounded-full ${pool.featured ? 'drop-shadow-[0_0_24px_rgba(212,175,55,0.6)]' : 'drop-shadow-[0_4px_16px_rgba(0,0,0,0.5)]'}`} />
               </div>
-              {/* Tier name */}
+              {/* Duration only (tier name removed — badge speaks for itself) */}
               <div className="text-center px-6">
-                <div className={`inline-block px-3 py-1 text-xs font-bold uppercase tracking-widest rounded-full bg-gradient-to-r ${pool.color} text-white`}>{pool.tier}</div>
-                <div className="text-xl font-bold text-white mt-2">{pool.duration}</div>
+                <div className="text-xl font-bold text-white">{pool.duration}</div>
               </div>
               {/* Return */}
               <div className="text-center my-4">
