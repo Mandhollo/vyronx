@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { useAccount, useReadContract, useWriteContract, useSimulateContract, useSwitchChain } from 'wagmi';
 import {
   Wallet, Clock, TrendingUp, Check, AlertCircle,
-  ArrowRight, Shield, Zap, Loader2, ExternalLink
+  ArrowRight, Shield, Zap, Loader2, ExternalLink, X, Send
 } from 'lucide-react';
 import { PRESALE_ADDRESS, USDT_ADDRESS, PresaleABI } from '@/lib/contracts';
 import ContractAddress from '@/components/web3/ContractAddress';
@@ -79,6 +79,8 @@ export default function PresalePage() {
   const { writeContractAsync } = useWriteContract();
   const [amount, setAmount] = useState('');
   const [txPending, setTxPending] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [boughtVyr, setBoughtVyr] = useState('0');
 
   const onCorrectChain = chainId === bsc.id;
 
@@ -185,6 +187,8 @@ export default function PresalePage() {
         args: [parseUnits(amount, 18)],
       });
       toast.success(`Successfully bought ${fmtNum(totalVyr)} VYR! 🎉`, { id: toastId });
+      setBoughtVyr(fmtNum(totalVyr));
+      setShowSuccess(true);
       setAmount('');
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Purchase failed', { id: toastId });
@@ -480,6 +484,61 @@ export default function PresalePage() {
           </Link>
         </div>
       </div>
+
+      {/* Success Modal — Telegram Invite */}
+      {showSuccess && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4" onClick={() => setShowSuccess(false)}>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            className="relative bg-dark-card border border-gold/40 rounded-3xl p-8 max-w-md w-full glow-gold"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button onClick={() => setShowSuccess(false)} className="absolute top-4 right-4 text-beige-muted hover:text-white transition-colors">
+              <X className="h-5 w-5" />
+            </button>
+
+            {/* Success Animation */}
+            <div className="text-center mb-6">
+              <div className="inline-flex items-center justify-center h-16 w-16 rounded-full bg-green-500/20 border border-green-500/40 mb-4">
+                <Check className="h-8 w-8 text-green-400" />
+              </div>
+              <h3 className="text-xl font-black text-white">Purchase Successful! 🎉</h3>
+              <p className="text-sm text-beige-muted mt-1">
+                You received <span className="text-gold font-bold">{boughtVyr} VYR</span> in your wallet.
+              </p>
+            </div>
+
+            {/* Telegram CTA */}
+            <div className="rounded-2xl border border-blue-500/30 bg-blue-500/10 p-5 mb-4">
+              <div className="flex items-center gap-3 mb-3">
+                <Send className="h-6 w-6 text-blue-400 shrink-0" />
+                <div>
+                  <div className="text-sm font-bold text-white">Join Our Telegram</div>
+                  <div className="text-xs text-beige-muted">Get updates, support & exclusive announcements.</div>
+                </div>
+              </div>
+              <a
+                href="https://t.me/vyronx"
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center justify-center gap-2 w-full py-3 text-sm font-bold rounded-xl bg-blue-500/20 border border-blue-500/40 text-blue-300 hover:bg-blue-500/30 transition-all"
+              >
+                <Send className="h-4 w-4" /> Join Telegram Group
+              </a>
+            </div>
+
+            <div className="flex gap-2">
+              <Link href="/dashboard" className="flex-1 py-3 text-sm font-bold rounded-xl bg-gradient-to-r from-gold-light to-gold-dark text-dark text-center hover:shadow-lg hover:shadow-gold/40 transition-all">
+                View Dashboard
+              </Link>
+              <button onClick={() => setShowSuccess(false)} className="flex-1 py-3 text-sm font-bold rounded-xl border border-dark-border bg-dark-elevated text-beige hover:text-white transition-colors">
+                Keep Buying
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 }
