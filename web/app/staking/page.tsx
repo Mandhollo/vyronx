@@ -252,15 +252,18 @@ function StakingPageContent() {
         <motion.div variants={stagger} initial="hidden" whileInView="visible" viewport={{ once: true }} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
           {POOLS.map((pool) => (
             <motion.div key={pool.id} variants={fadeUp}
-              className={`relative rounded-2xl border p-6 ${pool.featured ? 'border-gold/50 bg-gradient-to-b from-dark-card to-gold/5 glow-gold' : 'border-dark-border bg-dark-card hover:border-gold/30'} transition-all`}>
-              {pool.featured && (
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 text-xs font-bold rounded-full bg-gradient-to-r from-gold-light to-gold-dark text-dark whitespace-nowrap z-20">{t('staking.bestRate')}</div>
-              )}
+              className={`relative overflow-hidden rounded-2xl border p-6 ${pool.featured ? 'border-gold/50 bg-gradient-to-b from-dark-card to-gold/5 glow-gold' : 'border-dark-border bg-dark-card hover:border-gold/30'} transition-all`}>
               {/* Badge image — half outside top */}
-              <div className="absolute -top-10 left-1/2 -translate-x-1/2 z-10">
-                <img src={pool.badge} alt={`${pool.tier} badge`} width={72} height={72} className="rounded-full drop-shadow-[0_4px_12px_rgba(212,175,55,0.3)]" />
+              <div className="absolute -top-9 left-1/2 -translate-x-1/2 z-10">
+                <img src={pool.badge} alt={`${pool.tier} badge`} width={64} height={64} className="rounded-full drop-shadow-[0_4px_12px_rgba(212,175,55,0.3)]" />
               </div>
-              <div className="text-center mt-8">
+              {/* "Best Rate" diagonal ribbon for Elite */}
+              {pool.featured && (
+                <div className="absolute top-2 -right-12 z-20 rotate-45 bg-gradient-to-r from-gold-light to-gold-dark px-10 py-0.5 text-[10px] font-black uppercase tracking-wider text-dark shadow-lg">
+                  {t('staking.bestRate')}
+                </div>
+              )}
+              <div className="text-center mt-6">
                 <div className={`inline-block px-3 py-1 text-xs font-bold uppercase tracking-widest rounded-full bg-gradient-to-r ${pool.color} text-white mb-3`}>{pool.tier}</div>
                 <div className="text-2xl font-bold text-white">{pool.duration}</div>
               </div>
