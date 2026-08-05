@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import { useAccount, useReadContract, useWriteContract } from 'wagmi';
+import { useAccount, useReadContract, useWriteContract, useSwitchChain } from 'wagmi';
 import { publicClient } from '@/components/web3/Web3Provider';
 import { encodeReferralCode, decodeReferralCode, isReferralCode } from '@/lib/referral-code';
 import {
@@ -39,6 +39,7 @@ export default function DashboardPage() {
   const { t } = useI18n();
   const { address, isConnected, chainId } = useAccount();
   const { writeContractAsync } = useWriteContract();
+  const { switchChainAsync } = useSwitchChain();
   const [copied, setCopied] = useState(false);
   const [withdrawing, setWithdrawing] = useState<number | null>(null);
 
@@ -89,6 +90,7 @@ export default function DashboardPage() {
     setRedeeming(voucherId);
     const toastId = toast.loading('Activating voucher...');
     try {
+      if (chainId !== bsc.id) { toast.loading('Switching to BSC Mainnet...', { id: toastId }); await switchChainAsync({ chainId: bsc.id }); toast.loading('Activating voucher...', { id: toastId }); }
       await writeContractAsync({
         address: STAKING_ADDRESS, abi: StakingABI, functionName: 'redeemVoucher',
         args: [BigInt(voucherId)],
@@ -239,9 +241,10 @@ export default function DashboardPage() {
     setWithdrawing(stakeIndex);
     const toastId = toast.loading('Withdrawing stake...');
     try {
+      if (chainId !== bsc.id) { toast.loading('Switching to BSC Mainnet...', { id: toastId }); await switchChainAsync({ chainId: bsc.id }); toast.loading('Withdrawing stake...', { id: toastId }); }
       await writeContractAsync({
         address: STAKING_ADDRESS, abi: StakingABI, functionName: 'withdraw',
-        args: [BigInt(stakeIndex)], chainId: bsc.id,
+        args: [BigInt(stakeIndex)],
       });
       toast.success('Withdrawal successful! VYR tokens received. 🎉', { id: toastId });
     } catch (e) {
