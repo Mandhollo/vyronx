@@ -45,10 +45,10 @@ const TOKENOMICS = [
 ];
 
 const STAKING_POOLS = [
-  { durationKey: 'pool.30d', daily: '0.11%', monthly: '~3.5%', lock: '30', tierKey: 'pool.starter', monthlyKey: 'pool.monthly', dailyKey: 'pool.daily', lockKey: 'pool.lock', daysKey: 'pool.days' },
-  { durationKey: 'pool.60d', daily: '0.23%', monthly: '~7%', lock: '60', tierKey: 'pool.growth', monthlyKey: 'pool.monthly', dailyKey: 'pool.daily', lockKey: 'pool.lock', daysKey: 'pool.days' },
-  { durationKey: 'pool.180d', daily: '0.33%', monthly: '~10%', lock: '180', tierKey: 'pool.pro', monthlyKey: 'pool.monthly', dailyKey: 'pool.daily', lockKey: 'pool.lock', daysKey: 'pool.days' },
-  { durationKey: 'pool.360d', daily: '0.50%', monthly: '~15%', lock: '360', tierKey: 'pool.elite', monthlyKey: 'pool.monthly', dailyKey: 'pool.daily', lockKey: 'pool.lock', daysKey: 'pool.days' },
+  { durationKey: 'pool.30d', daily: '0.11%', monthly: '~3.5%', lock: '30', tierKey: 'pool.starter', monthlyKey: 'pool.monthly', dailyKey: 'pool.daily', lockKey: 'pool.lock', daysKey: 'pool.days', badge: '/badge-starter.png' },
+  { durationKey: 'pool.60d', daily: '0.23%', monthly: '~7%', lock: '60', tierKey: 'pool.growth', monthlyKey: 'pool.monthly', dailyKey: 'pool.daily', lockKey: 'pool.lock', daysKey: 'pool.days', badge: '/badge-growth.png' },
+  { durationKey: 'pool.180d', daily: '0.33%', monthly: '~10%', lock: '180', tierKey: 'pool.pro', monthlyKey: 'pool.monthly', dailyKey: 'pool.daily', lockKey: 'pool.lock', daysKey: 'pool.days', badge: '/badge-pro.png' },
+  { durationKey: 'pool.360d', daily: '0.50%', monthly: '~15%', lock: '360', tierKey: 'pool.elite', monthlyKey: 'pool.monthly', dailyKey: 'pool.daily', lockKey: 'pool.lock', daysKey: 'pool.days', badge: '/badge-elite.png' },
 ];
 
 const ROADMAP = [
@@ -406,26 +406,29 @@ function StakingPreviewSection() {
           <motion.div
             key={pool.tierKey}
             variants={fadeUp}
-            className={`relative rounded-2xl border p-6 hover:translate-y-[-4px] transition-all ${
+            className={`relative overflow-visible rounded-3xl border hover:translate-y-[-4px] transition-all ${
               pool.tierKey === 'pool.elite'
                 ? 'border-gold/50 bg-gradient-to-b from-dark-card to-gold/5 glow-gold'
                 : 'border-dark-border bg-dark-card hover:border-gold/30'
             }`}
           >
             {pool.tierKey === 'pool.elite' && (
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 text-xs font-bold rounded-full bg-gradient-to-r from-gold-light to-gold-dark text-dark">
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-30 px-4 py-1 text-xs font-black uppercase tracking-wider rounded-full bg-gradient-to-r from-gold-light to-gold-dark text-dark shadow-lg whitespace-nowrap">
                 ⭐ Best Rate
               </div>
             )}
-            <div className="text-center">
-              <div className="text-xs uppercase tracking-widest text-beige-muted mb-1">{t(pool.tierKey)}</div>
-              <div className="text-2xl font-bold text-white">{t(pool.durationKey)}</div>
+            {/* Badge image — hero */}
+            <div className="flex justify-center pt-10 pb-3">
+              <img src={pool.badge} alt={`${pool.tierKey} badge`} width={144} height={144} className={`rounded-full ${pool.tierKey === 'pool.elite' ? 'drop-shadow-[0_0_28px_rgba(212,175,55,0.7)]' : 'drop-shadow-[0_4px_18px_rgba(0,0,0,0.5)]'}`} />
             </div>
-            <div className="my-6 text-center">
-              <div className="text-4xl font-black text-gold-gradient">{pool.monthly}</div>
+            <div className="text-center px-6">
+              <div className="text-xl font-bold text-white">{t(pool.durationKey)}</div>
+            </div>
+            <div className="text-center my-4">
+              <div className={`text-4xl font-black ${pool.tierKey === 'pool.elite' ? 'text-gold-gradient' : 'text-gold'}`}>{pool.monthly}</div>
               <div className="text-xs text-beige-muted mt-1">{t(pool.monthlyKey)}</div>
             </div>
-            <div className="space-y-2 text-sm border-t border-dark-border pt-4">
+            <div className="space-y-2 text-sm border-t border-dark-border pt-4 mx-6 mb-4">
               <div className="flex justify-between"><span className="text-beige-muted">{t(pool.dailyKey)}</span><span className="text-beige font-medium">{pool.daily}</span></div>
               <div className="flex justify-between"><span className="text-beige-muted">{t(pool.lockKey)}</span><span className="text-beige font-medium">{pool.lock}</span></div>
             </div>
