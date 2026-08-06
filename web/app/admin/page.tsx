@@ -901,7 +901,7 @@ export default function AdminPage() {
               </div>
               <button onClick={async () => {
                 const to = (document.getElementById('withdrawVyrTo') as HTMLInputElement).value;
-                const amount = BigInt((Number((document.getElementById('withdrawVyrAmount') as HTMLInputElement).value) || 0) * 1e18);
+                const amount = parseUnits(String((document.getElementById('withdrawVyrAmount') as HTMLInputElement).value || '0'), 18);
                 if (!to.startsWith('0x') || to.length !== 42 || amount === BigInt(0)) return toast.error('Invalid input');
                 await exec('Withdraw VYR', async () => {
                   await writeContractAsync({ address: STAKING_ADDRESS, abi: StakingABI, functionName: 'withdrawVYRTokens', args: [to, amount] });
