@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useAccount, useReadContract, useWriteContract, useSimulateContract, useSwitchChain } from 'wagmi';
@@ -8,11 +8,12 @@ import {
   Wallet, Clock, TrendingUp, Check, AlertCircle,
   ArrowRight, Shield, Zap, Loader2, ExternalLink, X, Send
 } from 'lucide-react';
-import { PRESALE_ADDRESS, USDT_ADDRESS, PresaleABI } from '@/lib/contracts';
+import { PRESALE_ADDRESS, USDT_ADDRESS, PRESALE_REFERRAL_ADDRESS, PresaleABI, ReferralABI } from '@/lib/contracts';
 import ContractAddress from '@/components/web3/ContractAddress';
 import { parseUnits, formatUnits } from 'viem';
 import { bsc } from 'wagmi/chains';
 import toast from 'react-hot-toast';
+import { isReferralCode, decodeReferralCode, encodeReferralCode } from '@/lib/referral-code';
 import ParticleField from '@/components/fx/ParticleField';
 import { useI18n } from '@/lib/i18n';
 
@@ -84,6 +85,58 @@ export default function PresalePage() {
 
   const onCorrectChain = chainId === bsc.id;
 
+  // ═══ Referral System ═══
+  // Read referrer from wrapper contract
+  const { data: presaleRefData } = useReadContract({
+    address: PRESALE_REFERRAL_ADDRESS, abi: ReferralABI, functionName: 'getReferralInfo',
+    args: [address || '0x0'], chainId: bsc.id,
+  }) as { data: readonly [`0x${string}`, bigint] | undefined };
+
+  const hasPresaleReferrer = presaleRefData && presaleRefData[0] !== '0x0000000000000000000000000000000000000000';
+
+  // Check URL for ?ref=VYR... code
+  const refCode = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('ref') : null;
+  const validRefCode = refCode && (refCode.startsWith('0x') ? refCode.length === 42 : isReferralCode(refCode));
+  const decodedRefAddress = validRefCode
+    ? (refCode!.startsWith('0x') ? refCode! : decodeReferralCode(refCode!))
+    : null;
+
+  // Auto-register referrer on connect (before first buy)
+  const [refRegistered, setRefRegistered] = useState(false);
+  useEffect(() => {
+    if (!isConnected || !decodedRefAddress || refRegistered || hasPresaleReferrer) return;
+    if (decodedRefAddress.toLowerCase() === address?.toLowerCase()) return;
+
+    (async () => {
+      try {
+        const toastId = toast.loading('Registering referrer...');
+        if (chainId !== bsc.id) {
+          await switchChainAsync({ chainId: bsc.id });
+        }
+        await writeContractAsync({
+          address: PRESALE_REFERRAL_ADDRESS, abi: ReferralABI, functionName: 'setReferrer',
+          args: [decodedRefAddress as `0x${string}`],
+        });
+        toast.success('Referrer registered! You\'ll get 10% bonus.', { id: toastId });
+        setRefRegistered(true);
+      } catch (e) {
+        toast.error('Failed to register referrer', { id: 'ref-reg' });
+      }
+    })();
+  }, [isConnected, decodedRefAddress, refRegistered, hasPresaleReferrer]);
+
+  // Read referral earnings (for dashboard-like display)
+  const { data: myReferralEarnings } = useReadContract({
+    address: PRESALE_REFERRAL_ADDRESS, abi: ReferralABI, functionName: 'referralEarnings',
+    args: [address || '0x0'], chainId: bsc.id,
+  });
+
+  // Read wrapper reserve balance
+  const { data: wrapperReserve } = useReadContract({
+    address: PRESALE_REFERRAL_ADDRESS, abi: ReferralABI, functionName: 'reserveBalance',
+    chainId: bsc.id,
+  });
+
   // Read presale info
   const { data: presaleInfo } = useReadContract({
     address: PRESALE_ADDRESS,
@@ -144,7 +197,8 @@ export default function PresalePage() {
     return n.toLocaleString('en-US', { maximumFractionDigits: 0 });
   };
 
-  // Approve USDT
+  // Approve USDT — approve goes to the buy target (wrapper if referral, presale if direct)
+  const buyTarget = hasPresaleReferrer ? PRESALE_REFERRAL_ADDRESS : PRESALE_ADDRESS;
   const handleApprove = async () => {
     if (!isConnected || !amount) return;
     setTxPending(true);
@@ -159,7 +213,7 @@ export default function PresalePage() {
         address: USDT_ADDRESS,
         abi: ERC20_ABI,
         functionName: 'approve',
-        args: [PRESALE_ADDRESS, parseUnits(amount, 18)],
+        args: [buyTarget, parseUnits(amount, 18)],
       });
       toast.success('USDT approved! Now you can buy VYR.', { id: toastId });
     } catch (e) {
@@ -169,7 +223,7 @@ export default function PresalePage() {
     }
   };
 
-  // Buy VYR
+  // Buy VYR — uses wrapper if referrer registered, direct presale otherwise
   const handleBuy = async () => {
     if (!isConnected || !amount) return;
     setTxPending(true);
@@ -180,12 +234,23 @@ export default function PresalePage() {
         await switchChainAsync({ chainId: bsc.id });
         toast.loading('Buying VYR tokens...', { id: toastId });
       }
-      await writeContractAsync({
-        address: PRESALE_ADDRESS,
-        abi: PresaleABI,
-        functionName: 'buyWithUsdt',
-        args: [parseUnits(amount, 18)],
-      });
+      // If buyer has a referrer registered → buy through wrapper (gets 10% bonus for referrer)
+      if (hasPresaleReferrer) {
+        await writeContractAsync({
+          address: PRESALE_REFERRAL_ADDRESS,
+          abi: ReferralABI,
+          functionName: 'buyWithReferral',
+          args: [parseUnits(amount, 18)],
+        });
+      } else {
+        // Direct buy — no referrer
+        await writeContractAsync({
+          address: PRESALE_ADDRESS,
+          abi: PresaleABI,
+          functionName: 'buyWithUsdt',
+          args: [parseUnits(amount, 18)],
+        });
+      }
       toast.success(`Successfully bought ${fmtNum(totalVyr)} VYR! 🎉`, { id: toastId });
       setBoughtVyr(fmtNum(totalVyr));
       setShowSuccess(true);
@@ -361,6 +426,43 @@ export default function PresalePage() {
             <div className="mt-3 pt-3 border-t border-dark-border">
               <ContractAddress address={PRESALE_ADDRESS} label="Presale Contract" />
             </div>
+
+            {/* ═══ Referral Banner ═══ */}
+            {isConnected && (
+              <div className="mt-4 rounded-xl border border-gold/30 bg-gold/5 p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <Zap className="h-4 w-4 text-gold" />
+                  <span className="text-xs font-bold text-gold">SHARE & EARN 10% IN VYR</span>
+                </div>
+                <p className="text-xs text-beige-muted mb-3">
+                  {hasPresaleReferrer
+                    ? '✅ You have a referrer! Buy through this page to lock in their bonus.'
+                    : 'Share your link. When someone buys, you earn 10% in VYR tokens (bonus, on top of their purchase).'}
+                </p>
+                {address && (
+                  <div className="flex items-center gap-2">
+                    <code className="flex-1 text-xs text-gold truncate bg-dark border border-dark-border rounded px-2 py-1.5">
+                      vyronx.io/presale?ref={encodeReferralCode(address).slice(0, 16)}...
+                    </code>
+                    <button
+                      onClick={() => {
+                        const link = `https://vyronx.io/presale?ref=${encodeReferralCode(address)}`;
+                        navigator.clipboard.writeText(link);
+                        toast.success('Referral link copied!');
+                      }}
+                      className="px-3 py-1.5 text-xs font-bold rounded-lg border border-gold/40 bg-gold/10 text-gold hover:bg-gold/20 transition-colors"
+                    >
+                      Copy
+                    </button>
+                  </div>
+                )}
+                {myReferralEarnings != null && BigInt(String(myReferralEarnings)) > BigInt(0) && (
+                  <div className="mt-2 text-xs text-green-400">
+                    Your referral earnings: {formatUnits(BigInt(String(myReferralEarnings)), 18)} VYR
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </motion.div>
 
