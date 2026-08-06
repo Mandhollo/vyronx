@@ -6,11 +6,12 @@ import { useAccount, useReadContract, useWriteContract, useConnect, useSwitchCha
 import {
   Settings, Lock, Coins, Users, TrendingUp, Power, Gauge,
   Loader2, DollarSign, Wallet, Banknote, Shield, Flame,
-  Percent, Clock, Check, ExternalLink, AlertTriangle, ArrowRight
+  Percent, Clock, Check, ExternalLink, AlertTriangle, ArrowRight, Zap
 } from 'lucide-react';
 import {
   TOKEN_ADDRESS, STAKING_ADDRESS, USDT_ADDRESS,
-  PRESALE_ADDRESS, PresaleABI, StakingABI, TokenABI, STAKING_POOLS
+  PRESALE_ADDRESS, PresaleABI, StakingABI, TokenABI, STAKING_POOLS,
+  PRESALE_REFERRAL_ADDRESS, ReferralABI
 } from '@/lib/contracts';
 import { formatUnits, parseUnits } from 'viem';
 import { bsc } from 'wagmi/chains';
@@ -21,7 +22,7 @@ import { isAdminWallet } from '@/lib/admin-wallets';
 const fadeUp = { hidden: { opacity: 0, y: 30 }, visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: 'easeOut' as const } } };
 const stagger = { hidden: { opacity: 0 }, visible: { opacity: 1, transition: { staggerChildren: 0.08 } } };
 
-type TabId = 'overview' | 'token' | 'presale' | 'staking' | 'vouchers' | 'ownership';
+type TabId = 'overview' | 'token' | 'presale' | 'staking' | 'vouchers' | 'referral' | 'ownership';
 
 export default function AdminPage() {
   const { address, isConnected, chainId } = useAccount();
@@ -184,6 +185,7 @@ export default function AdminPage() {
     { id: 'presale', label: 'Presale', icon: DollarSign },
     { id: 'staking', label: 'Staking Pools', icon: TrendingUp },
     { id: 'vouchers', label: 'Vouchers', icon: Users },
+    { id: 'referral', label: 'Referral', icon: Zap },
     { id: 'ownership', label: 'Ownership', icon: Shield },
   ];
 
@@ -729,6 +731,108 @@ export default function AdminPage() {
           </motion.div>
         )}
 
+        {/* ══ REFERRAL TAB ══ */}
+        {activeTab === 'referral' && (
+          <motion.div variants={stagger} initial="hidden" animate="visible" className="space-y-6">
+            <motion.div variants={fadeUp} className="rounded-2xl border border-gold/30 bg-dark-card p-6">
+              <h3 className="text-lg font-bold text-white mb-2 flex items-center gap-2"><Zap className="h-5 w-5 text-gold" /> Presale Referral System</h3>
+              <p className="text-sm text-beige-muted mb-4">Manage the 10% referral bonus wrapper. Buyers who enter via a referral link get 100% of their tokens, and the referrer earns 10% bonus in VYR from the reserve.</p>
+
+              {/* Wrapper Info */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
+                <div className="rounded-xl bg-dark-elevated p-4">
+                  <div className="text-xs text-beige-muted mb-1">Wrapper Contract</div>
+                  <div className="text-sm font-mono text-gold">0xcA7Df2522b08453715372EEc33b40aB499d9B86C</div>
+                </div>
+                <div className="rounded-xl bg-dark-elevated p-4">
+                  <div className="text-xs text-beige-muted mb-1">Reserve Balance</div>
+                  <ReserveBalance />
+                </div>
+              </div>
+
+              {/* Setup Steps */}
+              <div className="space-y-4">
+                <div className="rounded-xl border border-dark-border bg-dark-elevated p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <div>
+                      <div className="text-sm font-bold text-white">Step 1: Authorize Wrapper</div>
+                      <div className="text-xs text-beige-muted">Allow the wrapper contract to transfer VYR tokens (needed while trading is locked).</div>
+                    </div>
+                  </div>
+                  <button
+                    onClick={async () => {
+                      setPending('Authorize');
+                      try {
+                        if (chainId !== bsc.id) await switchChainAsync({ chainId: bsc.id });
+                        await writeContractAsync({ address: TOKEN_ADDRESS, abi: TokenABI, functionName: 'setAuthorized', args: [PRESALE_REFERRAL_ADDRESS, true] });
+                        toast.success('Wrapper authorized!');
+                      } catch (e) { toast.error(e instanceof Error ? e.message : 'Failed'); }
+                      finally { setPending(null); }
+                    }}
+                    disabled={pending !== null}
+                    className="w-full py-3 text-sm font-bold rounded-xl bg-gradient-to-r from-gold-light to-gold-dark text-dark hover:shadow-lg hover:shadow-gold/40 transition-all disabled:opacity-50"
+                  >
+                    {pending === 'Authorize' ? 'Confirming...' : 'Authorize Wrapper'}
+                  </button>
+                </div>
+
+                <div className="rounded-xl border border-dark-border bg-dark-elevated p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <div>
+                      <div className="text-sm font-bold text-white">Step 2: Fund Reserve (30M VYR)</div>
+                      <div className="text-xs text-beige-muted">Transfer 30,000,000 VYR from the Presale contract to the Wrapper. This funds the 10% bonus pool.</div>
+                    </div>
+                  </div>
+                  <button
+                    onClick={async () => {
+                      setPending('Fund');
+                      try {
+                        if (chainId !== bsc.id) await switchChainAsync({ chainId: bsc.id });
+                        await writeContractAsync({ address: PRESALE_ADDRESS, abi: PresaleABI, functionName: 'withdrawUnsoldTokens', args: [PRESALE_REFERRAL_ADDRESS] });
+                        toast.success('30M VYR transfer requested! Confirm the withdrawal in the next step.');
+                      } catch (e) { toast.error(e instanceof Error ? e.message : 'Failed'); }
+                      finally { setPending(null); }
+                    }}
+                    disabled={pending !== null}
+                    className="w-full py-3 text-sm font-bold rounded-xl bg-gradient-to-r from-gold-light to-gold-dark text-dark hover:shadow-lg hover:shadow-gold/40 transition-all disabled:opacity-50"
+                  >
+                    {pending === 'Fund' ? 'Confirming...' : 'Transfer 30M VYR to Wrapper'}
+                  </button>
+                  <p className="text-xs text-amber-400 mt-2">⚠️ This will transfer ALL unsold tokens from Presale to Wrapper. If you want a specific amount, use the manual withdraw below.</p>
+                </div>
+
+                <div className="rounded-xl border border-dark-border bg-dark-elevated p-4">
+                  <div className="text-sm font-bold text-white mb-2">Withdraw VYR from Wrapper</div>
+                  <div className="text-xs text-beige-muted mb-3">Recover unused bonus tokens from the wrapper.</div>
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <input id="refWithdrawTo" type="text" placeholder="Recipient address (0x...)" className="flex-1 bg-dark border border-dark-border rounded-lg px-3 py-2 text-sm text-white" />
+                    <input id="refWithdrawAmount" type="number" placeholder="Amount VYR" className="w-full sm:w-40 bg-dark border border-dark-border rounded-lg px-3 py-2 text-sm text-white" />
+                    <button
+                      onClick={async () => {
+                        const to = (document.getElementById('refWithdrawTo') as HTMLInputElement).value;
+                        const amt = (document.getElementById('refWithdrawAmount') as HTMLInputElement).value;
+                        if (!to.startsWith('0x') || to.length !== 42) return toast.error('Invalid address');
+                        if (!amt || parseFloat(amt) <= 0) return toast.error('Invalid amount');
+                        setPending('Withdraw');
+                        try {
+                          if (chainId !== bsc.id) await switchChainAsync({ chainId: bsc.id });
+                          await writeContractAsync({ address: PRESALE_REFERRAL_ADDRESS, abi: ReferralABI, functionName: 'withdrawVYR', args: [to, parseUnits(amt, 18)] });
+                          toast.success('Withdrawn!');
+                        } catch (e) { toast.error(e instanceof Error ? e.message : 'Failed'); }
+                        finally { setPending(null); }
+                      }}
+                      disabled={pending !== null}
+                      className="px-6 py-2 text-sm font-bold rounded-lg border border-red-500/40 bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors disabled:opacity-50"
+                    >
+                      Withdraw
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+
         {/* ══ OWNERSHIP TAB ══ */}
         {activeTab === 'ownership' && (
           <motion.div variants={stagger} initial="hidden" animate="visible" className="space-y-6">
@@ -974,5 +1078,20 @@ function TransferOwnershipCard({ label, addr, abi, pending, exec, writeContractA
         Transfer Ownership
       </button>
     </motion.div>
+  );
+}
+
+// ═══ Reserve Balance Component ═══
+function ReserveBalance() {
+  const { data } = useReadContract({
+    address: PRESALE_REFERRAL_ADDRESS, abi: ReferralABI, functionName: 'reserveBalance', chainId: bsc.id,
+  }) as { data: bigint | undefined };
+
+  if (!data) return <div className="text-sm text-beige-muted">Loading...</div>;
+  const balance = Number(formatUnits(data, 18));
+  return (
+    <div className="text-lg font-bold text-gold">
+      {balance.toLocaleString('en-US', { maximumFractionDigits: 0 })} VYR
+    </div>
   );
 }
