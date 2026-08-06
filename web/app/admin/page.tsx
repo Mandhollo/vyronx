@@ -779,26 +779,35 @@ export default function AdminPage() {
                 <div className="rounded-xl border border-dark-border bg-dark-elevated p-4">
                   <div className="flex items-center justify-between mb-2">
                     <div>
-                      <div className="text-sm font-bold text-white">Step 2: Fund Reserve (30M VYR)</div>
-                      <div className="text-xs text-beige-muted">Transfer 30,000,000 VYR from the Presale contract to the Wrapper. This funds the 10% bonus pool.</div>
+                      <div className="text-sm font-bold text-white">Step 2: Fund Reserve with VYR</div>
+                      <div className="text-xs text-beige-muted">Transfer VYR tokens from your wallet to the wrapper reserve. Enter the amount of VYR to send.</div>
                     </div>
                   </div>
-                  <button
-                    onClick={async () => {
-                      setPending('Fund');
-                      try {
-                        if (chainId !== bsc.id) await switchChainAsync({ chainId: bsc.id });
-                        await writeContractAsync({ address: PRESALE_ADDRESS, abi: PresaleABI, functionName: 'withdrawUnsoldTokens', args: [PRESALE_REFERRAL_ADDRESS] });
-                        toast.success('30M VYR transfer requested! Confirm the withdrawal in the next step.');
-                      } catch (e) { toast.error(e instanceof Error ? e.message : 'Failed'); }
-                      finally { setPending(null); }
-                    }}
-                    disabled={pending !== null}
-                    className="w-full py-3 text-sm font-bold rounded-xl bg-gradient-to-r from-gold-light to-gold-dark text-dark hover:shadow-lg hover:shadow-gold/40 transition-all disabled:opacity-50"
-                  >
-                    {pending === 'Fund' ? 'Confirming...' : 'Transfer 30M VYR to Wrapper'}
-                  </button>
-                  <p className="text-xs text-amber-400 mt-2">⚠️ This will transfer ALL unsold tokens from Presale to Wrapper. If you want a specific amount, use the manual withdraw below.</p>
+                  <div className="flex flex-col sm:flex-row gap-2 mb-2">
+                    <input id="fundAmount" type="number" placeholder="Amount in VYR (e.g. 30000000)" className="flex-1 bg-dark border border-dark-border rounded-lg px-3 py-2 text-sm text-white" />
+                    <button
+                      onClick={async () => {
+                        const amt = (document.getElementById('fundAmount') as HTMLInputElement).value;
+                        if (!amt || parseFloat(amt) <= 0) return toast.error('Invalid amount');
+                        setPending('Fund');
+                        try {
+                          if (chainId !== bsc.id) await switchChainAsync({ chainId: bsc.id });
+                          // Step 1: Approve wrapper to spend VYR
+                          await writeContractAsync({ address: TOKEN_ADDRESS, abi: TokenABI, functionName: 'approve', args: [PRESALE_REFERRAL_ADDRESS, parseUnits(amt, 18)] });
+                          toast.loading('Approved! Funding reserve...', { id: 'fund' });
+                          // Step 2: Call fundReserve on wrapper
+                          await writeContractAsync({ address: PRESALE_REFERRAL_ADDRESS, abi: ReferralABI, functionName: 'fundReserve', args: [parseUnits(amt, 18)] });
+                          toast.success('Reserve funded!', { id: 'fund' });
+                        } catch (e) { toast.error(e instanceof Error ? e.message : 'Failed', { id: 'fund' }); }
+                        finally { setPending(null); }
+                      }}
+                      disabled={pending !== null}
+                      className="px-6 py-2 text-sm font-bold rounded-xl bg-gradient-to-r from-gold-light to-gold-dark text-dark hover:shadow-lg hover:shadow-gold/40 transition-all disabled:opacity-50"
+                    >
+                      {pending === 'Fund' ? 'Confirming...' : 'Fund Reserve'}
+                    </button>
+                  </div>
+                  <p className="text-xs text-green-400">✅ 10,000 VYR already funded from deployer. System is LIVE! Add more anytime.</p>
                 </div>
 
                 <div className="rounded-xl border border-dark-border bg-dark-elevated p-4">
