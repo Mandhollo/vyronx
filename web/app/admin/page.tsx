@@ -1149,9 +1149,15 @@ function V2MigrationBanner({ pending, setPending, exec }: { pending: string | nu
   const step0Done = v2LimitsRemoved === true;
   const step1Done = v2Authorized === true;
   const step2Done = v2Balance != null && BigInt(String(v2Balance)) > BigInt(0);
+
+  // Step 3: V3 excluded from limits
+  const { data: v3LimitsRemoved } = useReadContract({
+    address: TOKEN_ADDRESS, abi: TokenABI, functionName: 'isExcludedFromLimits', args: [STAKING_ADDRESS], chainId: bsc.id,
+  });
+  const step3Done = v3LimitsRemoved === true;
   const allDone = step1Done && step2Done;
 
-  if (allDone) {
+  if (allDone && step3Done) {
     return (
       <motion.div variants={fadeUp} className="rounded-2xl border border-green-500/40 bg-green-500/5 p-6">
         <div className="flex items-center gap-3">
@@ -1274,6 +1280,33 @@ function V2MigrationBanner({ pending, setPending, exec }: { pending: string | nu
             </>
           )}
         </div>
+
+        {/* Step 3: Exclude V3 from limits */}
+        {allDone && !step3Done && (
+          <div className="mt-4 rounded-xl border border-amber-500/40 bg-amber-500/5 p-4">
+            <div className="flex items-center justify-between mb-2">
+              <div>
+                <div className="text-sm font-bold text-amber-400 flex items-center gap-2">Step 3: Remove V3 Token Limits</div>
+                <div className="text-xs text-beige-muted mt-1">Required so V3 can pay out staking rewards without hitting the 10M maxTx limit.</div>
+              </div>
+            </div>
+            <button
+              onClick={async () => {
+                setPending('V3 Limits');
+                try {
+                  if (chainId !== bsc.id) await switchChainAsync({ chainId: bsc.id });
+                  await writeContractAsync({ address: TOKEN_ADDRESS, abi: TokenABI, functionName: 'setExcludedFromLimits', args: [STAKING_ADDRESS, true] });
+                  toast.success('Step 3 concluído! ✅ V3 sem limites.');
+                } catch (e) { toast.error(e instanceof Error ? e.message : 'Failed'); }
+                finally { setPending(null); }
+              }}
+              disabled={pending !== null}
+              className="w-full sm:w-auto px-6 py-2.5 text-sm font-bold rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/30 hover:bg-amber-500/30 transition-all disabled:opacity-50"
+            >
+              {pending === 'V3 Limits' ? 'Confirming...' : 'Exclude V3 from Limits'}
+            </button>
+          </div>
+        )}
       </div>
     </motion.div>
   );
