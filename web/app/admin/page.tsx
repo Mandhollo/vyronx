@@ -81,9 +81,8 @@ export default function AdminPage() {
     address: STAKING_ADDRESS, abi: StakingABI, functionName: 'totalStakers', chainId: bsc.id,
   }) as { data: bigint | undefined };
 
-  const { data: totalActiveVoucher } = useReadContract({
-    address: STAKING_ADDRESS, abi: StakingABI, functionName: 'totalActiveVoucherValue', chainId: bsc.id,
-  }) as { data: bigint | undefined };
+  // V2: totalActiveVoucherValue removed — vouchers are now licenses (no value)
+  const totalActiveVoucher = BigInt(0);
 
   const { data: voucherCount } = useReadContract({
     address: STAKING_ADDRESS, abi: StakingABI, functionName: 'getVoucherCount', chainId: bsc.id,
@@ -893,7 +892,7 @@ export default function AdminPage() {
             {/* Transfer Ownership — 3 contracts */}
             <TransferOwnershipCard label="Token" addr={TOKEN_ADDRESS} abi={TokenABI} pending={pending} exec={exec} writeContractAsync={writeContractAsync} />
             <TransferOwnershipCard label="Presale" addr={PRESALE_ADDRESS} abi={PresaleABI} pending={pending} exec={exec} writeContractAsync={writeContractAsync} />
-            <TransferOwnershipCard label="Staking" addr={STAKING_ADDRESS} abi={StakingABI} pending={pending} exec={exec} writeContractAsync={writeContractAsync} />
+            <TransferOwnershipCard label="Staking V2" addr={STAKING_ADDRESS} abi={StakingABI} pending={pending} exec={exec} writeContractAsync={writeContractAsync} />
 
             {/* Staking Wallets */}
             <motion.div variants={fadeUp} className="rounded-2xl border border-dark-border bg-dark-card p-6">
@@ -1046,12 +1045,13 @@ function InfoBox({ label, value, gold, highlight }: { label: string; value: stri
 }
 
 function VoucherRow({ id }: { id: number }) {
+  // V2 struct: recipient, poolId, expiry, redeemed, cancelled (NO value field)
   const { data } = useReadContract({
     address: STAKING_ADDRESS, abi: StakingABI, functionName: 'vouchers', args: [BigInt(id)], chainId: bsc.id,
-  }) as { data: readonly [string, bigint, bigint, bigint, boolean, boolean] | undefined };
+  }) as { data: readonly [string, bigint, bigint, boolean, boolean] | undefined };
 
   if (!data) return null;
-  const [recipient, value, poolId, expiry, redeemed, cancelled] = data;
+  const [recipient, poolId, expiry, redeemed, cancelled] = data;
   const status = cancelled ? 'Cancelled' : redeemed ? 'Redeemed' : (Number(expiry) > 0 && Number(expiry) < Math.floor(Date.now() / 1000)) ? 'Expired' : 'Active';
   const statusColor = status === 'Active' ? 'text-green-400 bg-green-500/10' : 'text-red-400 bg-red-500/10';
 
@@ -1064,7 +1064,6 @@ function VoucherRow({ id }: { id: number }) {
         </a>
       </div>
       <div className="flex items-center gap-3 shrink-0">
-        <span className="text-sm text-white">${(Number(value) / 1e18).toLocaleString()}</span>
         <span className="text-xs text-beige-muted">P{Number(poolId)}</span>
         <span className={`text-xs px-2 py-0.5 rounded-full ${statusColor}`}>{status}</span>
       </div>

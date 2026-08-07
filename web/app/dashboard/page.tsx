@@ -71,18 +71,18 @@ export default function DashboardPage() {
   const stakeCount = stakeCountData ? Number(stakeCountData) : 0;
 
   // Read pending vouchers (not yet redeemed)
+  // V2: getUserVouchers returns (ids, poolIds, expiries, redeemed, cancelled) — NO values array
   const { data: userVouchers } = useReadContract({
     address: STAKING_ADDRESS, abi: StakingABI, functionName: 'getUserVouchers', args: [address || '0x0'], chainId: bsc.id,
-  }) as { data: readonly [readonly bigint[], readonly bigint[], readonly bigint[], readonly bigint[], readonly boolean[], readonly boolean[]] | undefined };
+  }) as { data: readonly [readonly bigint[], readonly bigint[], readonly bigint[], readonly boolean[], readonly boolean[]] | undefined };
 
   const pendingVouchers = userVouchers
     ? (userVouchers[0] as readonly bigint[]).map((id, i) => ({
         id: Number(id),
-        value: userVouchers[1][i],
-        poolId: Number(userVouchers[2][i]),
-        expiry: Number(userVouchers[3][i]),
-        redeemed: userVouchers[4][i],
-        cancelled: userVouchers[5][i],
+        poolId: Number(userVouchers[1][i]),
+        expiry: Number(userVouchers[2][i]),
+        redeemed: userVouchers[3][i],
+        cancelled: userVouchers[4][i],
       })).filter(v => !v.redeemed && !v.cancelled)
     : [];
 
@@ -461,7 +461,7 @@ export default function DashboardPage() {
                         <div>
                           <div className="flex items-center gap-2 flex-wrap">
                             <span className="text-sm font-bold text-white">Voucher #{v.id}</span>
-                            <span className="px-2 py-0.5 text-xs rounded-full bg-purple-500/10 text-purple-400 font-bold">${(Number(v.value) / 1e18).toLocaleString()}</span>
+                            <span className="px-2 py-0.5 text-xs rounded-full bg-purple-500/10 text-purple-400 font-bold">🎫 License</span>
                             <span className="px-2 py-0.5 text-xs rounded-full bg-gold/10 text-gold">{pool.duration}</span>
                           </div>
                           <div className="text-xs text-beige-muted mt-1">{pool.tier} Pool • {pool.dailyRate}% daily</div>
