@@ -189,8 +189,20 @@ export default function WhitepaperPage() {
               <motion.section variants={fadeUp} id="staking" className="scroll-mt-24">
                 <h2 className="text-2xl font-bold text-white mb-4">{t('wp.staking')}</h2>
                 <p className="text-beige leading-relaxed mb-6">
-                  Four pools with escalating returns. Investors deposit <span className="text-gold font-bold">USDT</span> and receive <span className="text-gold font-bold">VYR</span> upon withdrawal at market price via Chainlink oracle.
+                  Four pools with escalating returns. Investors deposit <span className="text-gold font-bold">USDT</span> and receive <span className="text-gold font-bold">VYR</span> at market price via Chainlink oracle.
                 </p>
+                <div className="rounded-xl bg-dark-card border border-gold/30 p-5 mb-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <div className="text-gold font-bold mb-1">Daily Earnings</div>
+                      <div className="text-beige-muted">Withdraw your daily earnings in VYR anytime (minimum $10 accumulated). Only 4% withdrawal fee.</div>
+                    </div>
+                    <div>
+                      <div className="text-gold font-bold mb-1">Principal Lock</div>
+                      <div className="text-beige-muted">Your principal (USDT deposit) is locked until the pool ends, then converted to VYR with a 4% fee.</div>
+                    </div>
+                  </div>
+                </div>
                 <div className="overflow-x-auto rounded-2xl border border-dark-border bg-dark-card">
                   <table className="w-full text-sm">
                     <thead>
@@ -226,6 +238,10 @@ export default function WhitepaperPage() {
                 <p className="text-beige leading-relaxed mb-4">
                   Exclusive to the 360-day pool. Each referral&apos;s deposit adds <span className="text-gold font-bold">10% of their amount</span> to your accelerator. When accumulated referrals reach <span className="text-gold font-bold">100% of your stake</span>, you unlock early withdrawal of your earnings.
                 </p>
+                <div className="rounded-xl bg-dark-card border border-gold/30 p-5 mb-4">
+                  <div className="text-sm font-bold text-gold mb-2">12-Hour Grace Period</div>
+                  <div className="text-xs text-beige-muted">When your accelerator reaches 100% and auto-liquidates, you have <span className="text-gold font-bold">12 hours</span> to open a new Pool 360 stake. During this window, commissions are held pending — re-stake in time to claim them all. Miss the window, and pending commissions are lost.</div>
+                </div>
                 <div className="rounded-xl bg-dark-card border border-dark-border p-5">
                   <div className="text-sm font-bold text-gold mb-3">Example: Your stake = $100</div>
                   <div className="space-y-2">

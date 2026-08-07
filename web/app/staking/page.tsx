@@ -214,6 +214,22 @@ function StakingPageContent() {
           <motion.span variants={fadeUp} className="inline-block px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-gold border border-gold/30 rounded-full bg-gold/5 mb-4 neon-pulse">{t('staking.title')}</motion.span>
           <motion.h1 variants={fadeUp} className="text-4xl sm:text-5xl lg:text-6xl font-black text-white">{t('staking.title2').replace(/ ?VYR$/i, '').trim()} <span className="text-gold-gradient">$VYR</span></motion.h1>
           <motion.p variants={fadeUp} className="mt-4 text-lg text-beige-muted max-w-2xl mx-auto">{t('staking.heroDesc')}</motion.p>
+
+          {/* V2 Info Banner */}
+          <motion.div variants={fadeUp} className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-3xl mx-auto">
+            <div className="rounded-xl border border-green-500/30 bg-green-500/5 p-3 text-center">
+              <div className="text-sm font-bold text-green-400">Daily Withdrawals</div>
+              <div className="text-xs text-beige-muted mt-1">Claim earnings anytime in VYR (min $10)</div>
+            </div>
+            <div className="rounded-xl border border-gold/30 bg-gold/5 p-3 text-center">
+              <div className="text-sm font-bold text-gold">4% Withdrawal Fee</div>
+              <div className="text-xs text-beige-muted mt-1">Only 4% on rewards &amp; principal</div>
+            </div>
+            <div className="rounded-xl border border-purple-500/30 bg-purple-500/5 p-3 text-center">
+              <div className="text-sm font-bold text-purple-400">12h Grace Period</div>
+              <div className="text-xs text-beige-muted mt-1">Pool 360 accelerator gives you 12h to re-stake</div>
+            </div>
+          </motion.div>
           {!poolActiveMap[0] && (
             <motion.div variants={fadeUp} className="mt-4 inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-amber-500/30 bg-amber-500/10">
               <Clock className="h-3.5 w-3.5 text-amber-400" />
