@@ -1142,7 +1142,11 @@ function V2MigrationBanner({ pending, setPending, exec }: { pending: string | nu
   const { data: v2Balance } = useReadContract({
     address: TOKEN_ADDRESS, abi: TokenABI, functionName: 'balanceOf', args: [STAKING_ADDRESS], chainId: bsc.id,
   });
+  const { data: v2LimitsRemoved } = useReadContract({
+    address: TOKEN_ADDRESS, abi: TokenABI, functionName: 'isExcludedFromLimits', args: [STAKING_V1_ADDRESS], chainId: bsc.id,
+  });
 
+  const step0Done = v2LimitsRemoved === true;
   const step1Done = v2Authorized === true;
   const step2Done = v2Balance != null && BigInt(String(v2Balance)) > BigInt(0);
   const allDone = step1Done && step2Done;
@@ -1173,24 +1177,34 @@ function V2MigrationBanner({ pending, setPending, exec }: { pending: string | nu
 
       <div className="space-y-3">
         {/* Step 0: Remove Token Limits on Old Staking (required for 470M transfer) */}
-        <div className="rounded-xl bg-dark-elevated p-4 border border-amber-500/30">
-          <div className="text-sm font-bold text-white mb-1">Step 0: Remove Token Limits on Old Staking</div>
-          <div className="text-xs text-beige-muted mb-3">Required to transfer 470M VYR in a single transaction (maxTx is 10M).</div>
-          <button
-            onClick={async () => {
-              setPending('Exclude Limits');
-              try {
-                if (chainId !== bsc.id) await switchChainAsync({ chainId: bsc.id });
-                await writeContractAsync({ address: TOKEN_ADDRESS, abi: TokenABI, functionName: 'setExcludedFromLimits', args: [STAKING_V1_ADDRESS, true] });
-                toast.success('Limits removed!');
-              } catch (e) { toast.error(e instanceof Error ? e.message : 'Failed'); }
-              finally { setPending(null); }
-            }}
-            disabled={pending !== null}
-            className="w-full sm:w-auto px-6 py-2.5 text-sm font-bold rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/30 hover:bg-amber-500/30 transition-all disabled:opacity-50"
-          >
-            {pending === 'Exclude Limits' ? 'Confirming...' : 'Remove Limits'}
-          </button>
+        <div className={`rounded-xl p-4 border ${step0Done ? 'border-green-500/40 bg-green-500/5' : 'border-amber-500/30 bg-dark-elevated'}`}>
+          <div className="flex items-center justify-between mb-2">
+            <div>
+              <div className="text-sm font-bold text-white flex items-center gap-2">
+                {step0Done && <Check className="h-4 w-4 text-green-400" />}
+                Step 0: Remove Token Limits on Old Staking
+              </div>
+              <div className="text-xs text-beige-muted">Required to transfer 470M VYR (maxTx is 10M).</div>
+            </div>
+            {step0Done && <span className="text-xs font-bold text-green-400">✓ DONE</span>}
+          </div>
+          {!step0Done && (
+            <button
+              onClick={async () => {
+                setPending('Exclude Limits');
+                try {
+                  if (chainId !== bsc.id) await switchChainAsync({ chainId: bsc.id });
+                  await writeContractAsync({ address: TOKEN_ADDRESS, abi: TokenABI, functionName: 'setExcludedFromLimits', args: [STAKING_V1_ADDRESS, true] });
+                  toast.success('Step 0 concluído! ✅ Limits removidos.');
+                } catch (e) { toast.error(e instanceof Error ? e.message : 'Failed'); }
+                finally { setPending(null); }
+              }}
+              disabled={pending !== null}
+              className="w-full sm:w-auto px-6 py-2.5 text-sm font-bold rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/30 hover:bg-amber-500/30 transition-all disabled:opacity-50"
+            >
+              {pending === 'Exclude Limits' ? 'Confirming...' : 'Remove Limits'}
+            </button>
+          )}
         </div>
 
         {/* Step 1 */}
@@ -1216,7 +1230,7 @@ function V2MigrationBanner({ pending, setPending, exec }: { pending: string | nu
                 } catch (e) { toast.error(e instanceof Error ? e.message : 'Failed'); }
                 finally { setPending(null); }
               }}
-              disabled={pending !== null}
+              disabled={pending !== null || !step0Done}
               className="w-full sm:w-auto px-6 py-2.5 text-sm font-bold rounded-xl bg-gradient-to-r from-gold-light to-gold-dark text-dark hover:shadow-lg hover:shadow-gold/40 transition-all disabled:opacity-50"
             >
               {pending === 'Auth V2' ? 'Confirming...' : 'Authorize V3'}
