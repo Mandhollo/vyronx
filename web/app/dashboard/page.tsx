@@ -139,8 +139,9 @@ export default function DashboardPage() {
   }, [address, stakeCount, now > 0 && now % 10 === 0]); // refresh every 10s tick
 
   // === FETCH 11-LEVEL NETWORK (real-time from chain) ===
-  const [levelData, setLevelData] = useState<Array<{ count: number; volume: number }>>(Array.from({ length: 11 }, () => ({ count: 0, volume: 0 })));
+  const [levelData, setLevelData] = useState<Array<{ count: number; volume: number; members: { address: string; volume: number }[] }>>(Array.from({ length: 11 }, () => ({ count: 0, volume: 0, members: [] })));
   const [networkLoading, setNetworkLoading] = useState(false);
+  const [expandedLevel, setExpandedLevel] = useState<number | null>(null);
 
   useEffect(() => {
     if (!address) return;
@@ -151,7 +152,7 @@ export default function DashboardPage() {
         const STAKING = STAKING_ADDRESS as `0x${string}`;
         // Level configs (commission % from contract)
         const LEVEL_COMMS = [7, 6, 5, 4, 3, 2, 2, 2, 2, 2, 7];
-        const result = Array.from({ length: 11 }, () => ({ count: 0, volume: 0 }));
+        const result: Array<{ count: number; volume: number; members: { address: string; volume: number }[] }> = Array.from({ length: 11 }, () => ({ count: 0, volume: 0, members: [] }));
 
         // BFS through 11 levels
         let currentLevelAddresses: string[] = [address];
@@ -191,12 +192,17 @@ export default function DashboardPage() {
                       address: STAKING, abi: StakingABI,
                       functionName: 'getUserStakeCount', args: [direct],
                     }) as bigint;
+                    let userVol = 0;
                     for (let s = 0; s < Number(stakeCount); s++) {
                       const stake = await publicClient.readContract({
                         address: STAKING, abi: StakingABI,
                         functionName: 'userStakes', args: [direct, BigInt(s)],
                       }) as [string, bigint, bigint, bigint, bigint, boolean, bigint, boolean];
-                      result[level].volume += Number(stake[2]) / 1e18;
+                      userVol += Number(stake[2]) / 1e18;
+                    }
+                    result[level].volume += userVol;
+                    if (userVol > 0) {
+                      result[level].members.push({ address: direct, volume: userVol });
                     }
                   } catch {}
                 }
@@ -795,6 +801,39 @@ export default function DashboardPage() {
                           {completed ? 'MAX' : `${overallProgress}%`}
                         </span>
                       </div>
+
+                      {/* Expandable member list */}
+                      {ld.members.length > 0 && (
+                        <>
+                          <button
+                            onClick={() => setExpandedLevel(expandedLevel === row.level ? null : row.level)}
+                            className="mt-2 text-xs text-gold/70 hover:text-gold flex items-center gap-1"
+                          >
+                            {expandedLevel === row.level ? '▲ Hide' : `▼ Show ${ld.members.length} member${ld.members.length > 1 ? 's' : ''}`}
+                          </button>
+                          {expandedLevel === row.level && (
+                            <motion.div
+                              initial={{ height: 0, opacity: 0 }}
+                              animate={{ height: 'auto', opacity: 1 }}
+                              className="mt-2 space-y-1 overflow-hidden"
+                            >
+                              {[...ld.members].sort((a, b) => b.volume - a.volume).map((m, mi) => (
+                                <div key={mi} className="flex items-center justify-between rounded-lg bg-dark/50 border border-dark-border/50 px-2 py-1.5">
+                                  <a
+                                    href={`https://bscscan.com/address/${m.address}`}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="text-xs font-mono text-beige hover:text-gold"
+                                  >
+                                    ...{m.address.slice(-8)}
+                                  </a>
+                                  <span className="text-xs font-bold text-gold">${m.volume.toLocaleString('en-US', { maximumFractionDigits: 0 })}</span>
+                                </div>
+                              ))}
+                            </motion.div>
+                          )}
+                        </>
+                      )}
                     </motion.div>
                   );
                 })}
