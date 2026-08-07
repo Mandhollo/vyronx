@@ -1052,7 +1052,9 @@ function VoucherRow({ id }: { id: number }) {
 
   if (!data) return null;
   const [recipient, poolId, expiry, redeemed, cancelled] = data;
-  const status = cancelled ? 'Cancelled' : redeemed ? 'Redeemed' : (Number(expiry) > 0 && Number(expiry) < Math.floor(Date.now() / 1000)) ? 'Expired' : 'Active';
+  // V2: Don't show cancelled or redeemed vouchers — keeps the list clean
+  if (cancelled || redeemed) return null;
+  const status = (Number(expiry) > 0 && Number(expiry) < Math.floor(Date.now() / 1000)) ? 'Expired' : 'Active';
   const statusColor = status === 'Active' ? 'text-green-400 bg-green-500/10' : 'text-red-400 bg-red-500/10';
 
   return (
