@@ -1116,7 +1116,9 @@ function ReserveBalance() {
 
 // ═══ V2 Migration Banner with real-time status ═══
 function V2MigrationBanner({ pending, setPending, exec }: { pending: string | null; setPending: (v: string | null) => void; exec: (label: string, fn: () => Promise<void>) => Promise<void> }) {
-  const { chainId, switchChainAsync, writeContractAsync, address } = useAccount() as any;
+  const { chainId } = useAccount();
+  const { switchChainAsync } = useSwitchChain();
+  const { writeContractAsync } = useWriteContract();
 
   // Real-time checks
   const { data: v2Authorized } = useReadContract({
