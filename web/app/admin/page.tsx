@@ -722,11 +722,18 @@ export default function AdminPage() {
                 <div className="space-y-2">
                   <div className="text-xs text-beige-muted uppercase tracking-wider mb-2">Voucher Recipients</div>
                   {Array.from({ length: Math.min(Number(voucherCount), 50) }, (_, i) => (
-                    <VoucherRow key={i} id={i} />
+                    <VoucherRow key={i} id={i} pending={pending} onAction={async (action, vid) => {
+                      if (action === 'cancel') {
+                        if (!confirm(`Cancel voucher #${vid}? This cannot be undone.`)) return;
+                        await exec(`Cancel Voucher ${vid}`, async () => {
+                          await writeContractAsync({ address: STAKING_ADDRESS, abi: StakingABI, functionName: 'cancelVoucher', args: [BigInt(vid)] });
+                        });
+                      }
+                    }} />
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-8 text-sm text-beige-muted">No vouchers created yet.</div>
+                <div className="text-sm text-beige-muted text-center py-6">No vouchers issued yet.</div>
               )}
             </motion.div>
           </motion.div>
@@ -1008,7 +1015,7 @@ function InfoBox({ label, value, gold, highlight }: { label: string; value: stri
   );
 }
 
-function VoucherRow({ id }: { id: number }) {
+function VoucherRow({ id, onAction, pending }: { id: number; onAction: (action: string, id: number) => void; pending: string | null }) {
   // V3 struct: recipient, poolId, usdtValue, expiry, redeemed, cancelled
   const { data } = useReadContract({
     address: STAKING_ADDRESS, abi: StakingABI, functionName: 'vouchers', args: [BigInt(id)], chainId: bsc.id,
@@ -1016,23 +1023,35 @@ function VoucherRow({ id }: { id: number }) {
 
   if (!data) return null;
   const [recipient, poolId, usdtValue, expiry, redeemed, cancelled] = data;
-  // Don't show cancelled or redeemed vouchers
-  if (cancelled || redeemed) return null;
-  const status = (Number(expiry) > 0 && Number(expiry) < Math.floor(Date.now() / 1000)) ? 'Expired' : 'Active';
-  const statusColor = status === 'Active' ? 'text-green-400 bg-green-500/10' : 'text-red-400 bg-red-500/10';
+
+  // Status: redeemed=Activated by promoter, cancelled=Revoked by owner
+  let status = 'Pending';
+  let statusColor = 'text-amber-400 bg-amber-500/10';
+  if (cancelled) { status = 'Cancelled'; statusColor = 'text-red-400 bg-red-500/10'; }
+  else if (redeemed) { status = 'Active'; statusColor = 'text-green-400 bg-green-500/10'; }
+  else if (Number(expiry) > 0 && Number(expiry) < Math.floor(Date.now() / 1000)) { status = 'Expired'; statusColor = 'text-red-400 bg-red-500/10'; }
 
   return (
-    <div className="flex items-center justify-between rounded-lg bg-dark-elevated p-3 gap-2">
+    <div className="flex items-center justify-between rounded-lg bg-dark-elevated p-3 gap-2 flex-wrap">
       <div className="flex items-center gap-3 min-w-0 flex-1">
         <span className="text-xs text-beige-muted shrink-0">#{id}</span>
         <a href={`https://bscscan.com/address/${recipient}`} target="_blank" rel="noreferrer" className="text-sm font-mono text-gold hover:text-gold-light truncate">
           {recipient.slice(0, 8)}...{recipient.slice(-4)}
         </a>
       </div>
-      <div className="flex items-center gap-3 shrink-0">
+      <div className="flex items-center gap-2 shrink-0 flex-wrap">
         <span className="text-xs text-purple-400/70">${(Number(usdtValue) / 1e18).toLocaleString()}</span>
         <span className="text-xs text-beige-muted">P{Number(poolId)}</span>
         <span className={`text-xs px-2 py-0.5 rounded-full ${statusColor}`}>{status}</span>
+        {!cancelled && (
+          <button
+            onClick={() => onAction('cancel', id)}
+            disabled={pending !== null}
+            className="text-xs px-2 py-0.5 rounded-lg bg-red-500/10 text-red-400 border border-red-500/30 hover:bg-red-500/20 transition-colors disabled:opacity-50"
+          >
+            {pending === `Cancel Voucher ${id}` ? '...' : redeemed ? 'Revoke' : 'Cancel'}
+          </button>
+        )}
       </div>
     </div>
   );
