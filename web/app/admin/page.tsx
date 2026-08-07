@@ -11,7 +11,7 @@ import {
 import {
   TOKEN_ADDRESS, STAKING_ADDRESS, USDT_ADDRESS,
   PRESALE_ADDRESS, PresaleABI, StakingABI, TokenABI, STAKING_POOLS,
-  PRESALE_REFERRAL_ADDRESS, ReferralABI
+  PRESALE_REFERRAL_ADDRESS, ReferralABI, STAKING_V1_ADDRESS
 } from '@/lib/contracts';
 import { formatUnits, parseUnits } from 'viem';
 import { bsc } from 'wagmi/chains';
@@ -232,6 +232,59 @@ export default function AdminPage() {
         {/* ════════════ OVERVIEW ════════════ */}
         {activeTab === 'overview' && (
           <motion.div variants={stagger} initial="hidden" animate="visible" className="space-y-8">
+            {/* MIGRATION V2 BANNER */}
+            <motion.div variants={fadeUp} className="rounded-2xl border border-gold/40 bg-gradient-to-b from-dark-card to-gold/10 p-6 glow-gold">
+              <div className="flex items-center gap-2 mb-3">
+                <Zap className="h-5 w-5 text-gold" />
+                <h3 className="text-base font-bold text-gold">Staking V2 Migration — Action Required</h3>
+              </div>
+              <p className="text-xs text-beige-muted mb-4">The new Staking V2 contract is deployed. Complete the 2 steps below to activate it.</p>
+
+              <div className="space-y-3">
+                {/* Step 1: Authorize V2 */}
+                <div className="rounded-xl bg-dark-elevated p-4 border border-dark-border">
+                  <div className="text-sm font-bold text-white mb-1">Step 1: Authorize V2 Contract</div>
+                  <div className="text-xs text-beige-muted mb-3">Allow the new Staking V2 to transfer VYR tokens.</div>
+                  <button
+                    onClick={async () => {
+                      setPending('Auth V2');
+                      try {
+                        if (chainId !== bsc.id) await switchChainAsync({ chainId: bsc.id });
+                        await writeContractAsync({ address: TOKEN_ADDRESS, abi: TokenABI, functionName: 'setAuthorized', args: [STAKING_ADDRESS, true] });
+                        toast.success('V2 authorized!');
+                      } catch (e) { toast.error(e instanceof Error ? e.message : 'Failed'); }
+                      finally { setPending(null); }
+                    }}
+                    disabled={pending !== null}
+                    className="w-full sm:w-auto px-6 py-2.5 text-sm font-bold rounded-xl bg-gradient-to-r from-gold-light to-gold-dark text-dark hover:shadow-lg hover:shadow-gold/40 transition-all disabled:opacity-50"
+                  >
+                    {pending === 'Auth V2' ? 'Confirming...' : 'Authorize V2'}
+                  </button>
+                </div>
+
+                {/* Step 2: Transfer 470M from V1 to V2 */}
+                <div className="rounded-xl bg-dark-elevated p-4 border border-dark-border">
+                  <div className="text-sm font-bold text-white mb-1">Step 2: Transfer 470M VYR (V1 → V2)</div>
+                  <div className="text-xs text-beige-muted mb-3">Move all reward tokens from the old Staking V1 to the new Staking V2.</div>
+                  <button
+                    onClick={async () => {
+                      setPending('Migrate VYR');
+                      try {
+                        if (chainId !== bsc.id) await switchChainAsync({ chainId: bsc.id });
+                        await writeContractAsync({ address: STAKING_V1_ADDRESS, abi: StakingABI, functionName: 'withdrawVYRTokens', args: [STAKING_ADDRESS, parseUnits('470000000', 18)] });
+                        toast.success('470M VYR transfer initiated!');
+                      } catch (e) { toast.error(e instanceof Error ? e.message : 'Failed'); }
+                      finally { setPending(null); }
+                    }}
+                    disabled={pending !== null}
+                    className="w-full sm:w-auto px-6 py-2.5 text-sm font-bold rounded-xl bg-gradient-to-r from-gold-light to-gold-dark text-dark hover:shadow-lg hover:shadow-gold/40 transition-all disabled:opacity-50"
+                  >
+                    {pending === 'Migrate VYR' ? 'Confirming...' : 'Transfer 470M to V2'}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+
             {/* Global Stats */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               <StatCard icon={DollarSign} label="USDT Raised" value={`$${fmt(presaleInfo?.[3], 18, 0)}`} gold />
