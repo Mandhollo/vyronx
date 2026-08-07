@@ -232,57 +232,7 @@ export default function AdminPage() {
         {activeTab === 'overview' && (
           <motion.div variants={stagger} initial="hidden" animate="visible" className="space-y-8">
             {/* MIGRATION V2 BANNER */}
-            <motion.div variants={fadeUp} className="rounded-2xl border border-gold/40 bg-gradient-to-b from-dark-card to-gold/10 p-6 glow-gold">
-              <div className="flex items-center gap-2 mb-3">
-                <Zap className="h-5 w-5 text-gold" />
-                <h3 className="text-base font-bold text-gold">Staking V2 Migration — Action Required</h3>
-              </div>
-              <p className="text-xs text-beige-muted mb-4">The new Staking V2 contract is deployed. Complete the 2 steps below to activate it.</p>
-
-              <div className="space-y-3">
-                {/* Step 1: Authorize V2 */}
-                <div className="rounded-xl bg-dark-elevated p-4 border border-dark-border">
-                  <div className="text-sm font-bold text-white mb-1">Step 1: Authorize V2 Contract</div>
-                  <div className="text-xs text-beige-muted mb-3">Allow the new Staking V2 to transfer VYR tokens.</div>
-                  <button
-                    onClick={async () => {
-                      setPending('Auth V2');
-                      try {
-                        if (chainId !== bsc.id) await switchChainAsync({ chainId: bsc.id });
-                        await writeContractAsync({ address: TOKEN_ADDRESS, abi: TokenABI, functionName: 'setAuthorized', args: [STAKING_ADDRESS, true] });
-                        toast.success('V2 authorized!');
-                      } catch (e) { toast.error(e instanceof Error ? e.message : 'Failed'); }
-                      finally { setPending(null); }
-                    }}
-                    disabled={pending !== null}
-                    className="w-full sm:w-auto px-6 py-2.5 text-sm font-bold rounded-xl bg-gradient-to-r from-gold-light to-gold-dark text-dark hover:shadow-lg hover:shadow-gold/40 transition-all disabled:opacity-50"
-                  >
-                    {pending === 'Auth V2' ? 'Confirming...' : 'Authorize V2'}
-                  </button>
-                </div>
-
-                {/* Step 2: Transfer 470M from V1 to V2 */}
-                <div className="rounded-xl bg-dark-elevated p-4 border border-dark-border">
-                  <div className="text-sm font-bold text-white mb-1">Step 2: Transfer 470M VYR (V1 → V2)</div>
-                  <div className="text-xs text-beige-muted mb-3">Move all reward tokens from the old Staking V1 to the new Staking V2.</div>
-                  <button
-                    onClick={async () => {
-                      setPending('Migrate VYR');
-                      try {
-                        if (chainId !== bsc.id) await switchChainAsync({ chainId: bsc.id });
-                        await writeContractAsync({ address: STAKING_V1_ADDRESS, abi: StakingABI, functionName: 'withdrawVYRTokens', args: [STAKING_ADDRESS, parseUnits('470000000', 18)] });
-                        toast.success('470M VYR transfer initiated!');
-                      } catch (e) { toast.error(e instanceof Error ? e.message : 'Failed'); }
-                      finally { setPending(null); }
-                    }}
-                    disabled={pending !== null}
-                    className="w-full sm:w-auto px-6 py-2.5 text-sm font-bold rounded-xl bg-gradient-to-r from-gold-light to-gold-dark text-dark hover:shadow-lg hover:shadow-gold/40 transition-all disabled:opacity-50"
-                  >
-                    {pending === 'Migrate VYR' ? 'Confirming...' : 'Transfer 470M to V2'}
-                  </button>
-                </div>
-              </div>
-            </motion.div>
+            <V2MigrationBanner pending={pending} setPending={setPending} exec={exec} />
 
             {/* Global Stats */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -1161,5 +1111,118 @@ function ReserveBalance() {
     <div className="text-lg font-bold text-gold">
       {balance.toLocaleString('en-US', { maximumFractionDigits: 0 })} VYR
     </div>
+  );
+}
+
+// ═══ V2 Migration Banner with real-time status ═══
+function V2MigrationBanner({ pending, setPending, exec }: { pending: string | null; setPending: (v: string | null) => void; exec: (label: string, fn: () => Promise<void>) => Promise<void> }) {
+  const { chainId, switchChainAsync, writeContractAsync, address } = useAccount() as any;
+
+  // Real-time checks
+  const { data: v2Authorized } = useReadContract({
+    address: TOKEN_ADDRESS, abi: TokenABI, functionName: 'isAuthorized', args: [STAKING_ADDRESS], chainId: bsc.id,
+  });
+  const { data: v2Balance } = useReadContract({
+    address: TOKEN_ADDRESS, abi: TokenABI, functionName: 'balanceOf', args: [STAKING_ADDRESS], chainId: bsc.id,
+  });
+
+  const step1Done = v2Authorized === true;
+  const step2Done = v2Balance != null && BigInt(String(v2Balance)) > BigInt(0);
+  const allDone = step1Done && step2Done;
+
+  if (allDone) {
+    return (
+      <motion.div variants={fadeUp} className="rounded-2xl border border-green-500/40 bg-green-500/5 p-6">
+        <div className="flex items-center gap-3">
+          <div className="flex items-center justify-center h-10 w-10 rounded-full bg-green-500/20 border border-green-500/40">
+            <Check className="h-6 w-6 text-green-400" />
+          </div>
+          <div>
+            <h3 className="text-base font-bold text-green-400">✅ Staking V2 Ativo!</h3>
+            <p className="text-xs text-beige-muted">Migração concluída. V2 tem {v2Balance ? Number(BigInt(String(v2Balance)) / BigInt(10**18)).toLocaleString() : 0} VYR.</p>
+          </div>
+        </div>
+      </motion.div>
+    );
+  }
+
+  return (
+    <motion.div variants={fadeUp} className="rounded-2xl border border-gold/40 bg-gradient-to-b from-dark-card to-gold/10 p-6 glow-gold">
+      <div className="flex items-center gap-2 mb-3">
+        <Zap className="h-5 w-5 text-gold" />
+        <h3 className="text-base font-bold text-gold">Staking V2 Migration — Action Required</h3>
+      </div>
+      <p className="text-xs text-beige-muted mb-4">Complete the 2 steps below to activate the new Staking V2.</p>
+
+      <div className="space-y-3">
+        {/* Step 1 */}
+        <div className={`rounded-xl p-4 border ${step1Done ? 'border-green-500/40 bg-green-500/5' : 'border-dark-border bg-dark-elevated'}`}>
+          <div className="flex items-center justify-between mb-2">
+            <div>
+              <div className="text-sm font-bold text-white flex items-center gap-2">
+                {step1Done && <Check className="h-4 w-4 text-green-400" />}
+                Step 1: Authorize V2 Contract
+              </div>
+              <div className="text-xs text-beige-muted">Allow V2 to transfer VYR tokens (required while trading is locked).</div>
+            </div>
+            {step1Done && <span className="text-xs font-bold text-green-400">✓ DONE</span>}
+          </div>
+          {!step1Done && (
+            <button
+              onClick={async () => {
+                setPending('Auth V2');
+                try {
+                  if (chainId !== bsc.id) await switchChainAsync({ chainId: bsc.id });
+                  await writeContractAsync({ address: TOKEN_ADDRESS, abi: TokenABI, functionName: 'setAuthorized', args: [STAKING_ADDRESS, true] });
+                  toast.success('Step 1 concluído! ✅ V2 autorizado.');
+                } catch (e) { toast.error(e instanceof Error ? e.message : 'Failed'); }
+                finally { setPending(null); }
+              }}
+              disabled={pending !== null}
+              className="w-full sm:w-auto px-6 py-2.5 text-sm font-bold rounded-xl bg-gradient-to-r from-gold-light to-gold-dark text-dark hover:shadow-lg hover:shadow-gold/40 transition-all disabled:opacity-50"
+            >
+              {pending === 'Auth V2' ? 'Confirming...' : 'Authorize V2'}
+            </button>
+          )}
+          {step1Done && !step2Done && (
+            <div className="text-xs text-green-400 font-medium mt-1">✅ Step 1 concluído! Siga para o Step 2 →</div>
+          )}
+        </div>
+
+        {/* Step 2 */}
+        <div className={`rounded-xl p-4 border ${step2Done ? 'border-green-500/40 bg-green-500/5' : step1Done ? 'border-gold/30 bg-dark-elevated' : 'border-dark-border bg-dark-elevated opacity-60'}`}>
+          <div className="flex items-center justify-between mb-2">
+            <div>
+              <div className="text-sm font-bold text-white flex items-center gap-2">
+                {step2Done && <Check className="h-4 w-4 text-green-400" />}
+                Step 2: Transfer 470M VYR (V1 → V2)
+              </div>
+              <div className="text-xs text-beige-muted">Move reward tokens from old V1 to new V2.</div>
+            </div>
+            {step2Done && <span className="text-xs font-bold text-green-400">✓ DONE</span>}
+          </div>
+          {!step2Done && (
+            <>
+              <button
+                onClick={async () => {
+                  setPending('Migrate VYR');
+                  try {
+                    if (chainId !== bsc.id) await switchChainAsync({ chainId: bsc.id });
+                    await writeContractAsync({ address: STAKING_V1_ADDRESS, abi: StakingABI, functionName: 'withdrawVYRTokens', args: [STAKING_ADDRESS, parseUnits('470000000', 18)] });
+                    toast.success('Step 2 concluído! ✅ 470M VYR transferidos.');
+                  } catch (e) { toast.error(e instanceof Error ? e.message : 'Failed'); }
+                  finally { setPending(null); }
+                }}
+                disabled={pending !== null || !step1Done}
+                className="w-full sm:w-auto px-6 py-2.5 text-sm font-bold rounded-xl bg-gradient-to-r from-gold-light to-gold-dark text-dark hover:shadow-lg hover:shadow-gold/40 transition-all disabled:opacity-50"
+              >
+                {pending === 'Migrate VYR' ? 'Confirming...' : 'Transfer 470M to V2'}
+              </button>
+              {!step1Done && <p className="text-xs text-amber-400 mt-2">⚠️ Complete Step 1 first.</p>}
+            </>
+          )}
+        </div>
+      </div>
+    </motion.div>
   );
 }
