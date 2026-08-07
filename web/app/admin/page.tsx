@@ -631,12 +631,23 @@ export default function AdminPage() {
             {/* Create Voucher */}
             <motion.div variants={fadeUp} className="rounded-2xl border border-gold/30 bg-gradient-to-b from-dark-card to-gold/5 p-6 glow-gold">
               <h3 className="text-lg font-bold text-white mb-1">Create Voucher (MLM License)</h3>
-              <p className="text-xs text-beige-muted mb-4">Issues a license for promoters to participate in the affiliate system. No yield, no principal — just unlocks MLM + accelerator.</p>
+              <p className="text-xs text-beige-muted mb-4">Issues a license for promoters to participate in the affiliate system + accelerator. No yield, no principal — just unlocks MLM + accelerator.</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                 <div>
                   <label className="text-xs text-beige-muted block mb-1">Recipient Address</label>
                   <input type="text" id="voucherRecipient" placeholder="0x..."
                     className="w-full bg-dark-elevated border border-dark-border rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-gold/50" />
+                </div>
+                <div>
+                  <label className="text-xs text-beige-muted block mb-1">Value (USDT — for accelerator % calc only)</label>
+                  <div className="flex gap-2">
+                    <button onClick={() => { (document.getElementById('voucherValue') as HTMLInputElement).value = '100'; }}
+                      className="px-3 py-2 text-xs font-bold rounded-lg bg-gold/10 text-gold border border-gold/30 hover:bg-gold/20 whitespace-nowrap">$100</button>
+                    <button onClick={() => { (document.getElementById('voucherValue') as HTMLInputElement).value = '1100'; }}
+                      className="px-3 py-2 text-xs font-bold rounded-lg bg-gold/10 text-gold border border-gold/30 hover:bg-gold/20 whitespace-nowrap">$1,100</button>
+                    <input type="number" id="voucherValue" placeholder="100"
+                      className="flex-1 bg-dark-elevated border border-dark-border rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-gold/50" />
+                  </div>
                 </div>
                 <div>
                   <label className="text-xs text-beige-muted block mb-1">Pool</label>
@@ -655,12 +666,15 @@ export default function AdminPage() {
               </div>
               <button onClick={async () => {
                 const recipient = (document.getElementById('voucherRecipient') as HTMLInputElement).value;
+                const valueUsd = Number((document.getElementById('voucherValue') as HTMLInputElement).value) || 0;
+                const value = parseUnits(String(valueUsd), 18);
                 const poolId = BigInt((document.getElementById('voucherPool') as HTMLSelectElement).value);
                 const expiryDays = Number((document.getElementById('voucherExpiry') as HTMLInputElement).value) || 0;
                 const expiry = expiryDays > 0 ? BigInt(Math.floor(Date.now() / 1000 + expiryDays * 86400)) : BigInt(0);
                 if (!recipient.startsWith('0x') || recipient.length !== 42) return toast.error('Invalid address');
+                if (value === BigInt(0)) return toast.error('Invalid value');
                 await exec('Create Voucher', async () => {
-                  await writeContractAsync({ address: STAKING_ADDRESS, abi: StakingABI, functionName: 'createVoucher', args: [recipient, poolId, expiry] });
+                  await writeContractAsync({ address: STAKING_ADDRESS, abi: StakingABI, functionName: 'createVoucher', args: [recipient, poolId, value, expiry] });
                 });
               }} disabled={pending === 'Create Voucher'}
                 className="px-4 py-2 text-xs font-bold rounded-lg bg-gold/10 text-gold border border-gold/30 hover:bg-gold/20 disabled:opacity-50 flex items-center gap-2">
@@ -842,7 +856,7 @@ export default function AdminPage() {
             {/* Transfer Ownership — 3 contracts */}
             <TransferOwnershipCard label="Token" addr={TOKEN_ADDRESS} abi={TokenABI} pending={pending} exec={exec} writeContractAsync={writeContractAsync} />
             <TransferOwnershipCard label="Presale" addr={PRESALE_ADDRESS} abi={PresaleABI} pending={pending} exec={exec} writeContractAsync={writeContractAsync} />
-            <TransferOwnershipCard label="Staking V2" addr={STAKING_ADDRESS} abi={StakingABI} pending={pending} exec={exec} writeContractAsync={writeContractAsync} />
+            <TransferOwnershipCard label="Staking V3" addr={STAKING_ADDRESS} abi={StakingABI} pending={pending} exec={exec} writeContractAsync={writeContractAsync} />
 
             {/* Staking Wallets */}
             <motion.div variants={fadeUp} className="rounded-2xl border border-dark-border bg-dark-card p-6">
@@ -995,14 +1009,14 @@ function InfoBox({ label, value, gold, highlight }: { label: string; value: stri
 }
 
 function VoucherRow({ id }: { id: number }) {
-  // V2 struct: recipient, poolId, expiry, redeemed, cancelled (NO value field)
+  // V3 struct: recipient, poolId, usdtValue, expiry, redeemed, cancelled
   const { data } = useReadContract({
     address: STAKING_ADDRESS, abi: StakingABI, functionName: 'vouchers', args: [BigInt(id)], chainId: bsc.id,
-  }) as { data: readonly [string, bigint, bigint, boolean, boolean] | undefined };
+  }) as { data: readonly [string, bigint, bigint, bigint, boolean, boolean] | undefined };
 
   if (!data) return null;
-  const [recipient, poolId, expiry, redeemed, cancelled] = data;
-  // V2: Don't show cancelled or redeemed vouchers — keeps the list clean
+  const [recipient, poolId, usdtValue, expiry, redeemed, cancelled] = data;
+  // Don't show cancelled or redeemed vouchers
   if (cancelled || redeemed) return null;
   const status = (Number(expiry) > 0 && Number(expiry) < Math.floor(Date.now() / 1000)) ? 'Expired' : 'Active';
   const statusColor = status === 'Active' ? 'text-green-400 bg-green-500/10' : 'text-red-400 bg-red-500/10';
@@ -1016,6 +1030,7 @@ function VoucherRow({ id }: { id: number }) {
         </a>
       </div>
       <div className="flex items-center gap-3 shrink-0">
+        <span className="text-xs text-purple-400/70">${(Number(usdtValue) / 1e18).toLocaleString()}</span>
         <span className="text-xs text-beige-muted">P{Number(poolId)}</span>
         <span className={`text-xs px-2 py-0.5 rounded-full ${statusColor}`}>{status}</span>
       </div>
@@ -1140,8 +1155,8 @@ function V2MigrationBanner({ pending, setPending, exec }: { pending: string | nu
             <Check className="h-6 w-6 text-green-400" />
           </div>
           <div>
-            <h3 className="text-base font-bold text-green-400">✅ Staking V2 Ativo!</h3>
-            <p className="text-xs text-beige-muted">Migração concluída. V2 tem {v2Balance ? Number(BigInt(String(v2Balance)) / BigInt(10**18)).toLocaleString() : 0} VYR.</p>
+            <h3 className="text-base font-bold text-green-400">✅ Staking V3 Ativo!</h3>
+            <p className="text-xs text-beige-muted">Migração concluída. V3 tem {v2Balance ? Number(BigInt(String(v2Balance)) / BigInt(10**18)).toLocaleString() : 0} VYR.</p>
           </div>
         </div>
       </motion.div>
@@ -1152,9 +1167,9 @@ function V2MigrationBanner({ pending, setPending, exec }: { pending: string | nu
     <motion.div variants={fadeUp} className="rounded-2xl border border-gold/40 bg-gradient-to-b from-dark-card to-gold/10 p-6 glow-gold">
       <div className="flex items-center gap-2 mb-3">
         <Zap className="h-5 w-5 text-gold" />
-        <h3 className="text-base font-bold text-gold">Staking V2 Migration — Action Required</h3>
+        <h3 className="text-base font-bold text-gold">Staking V3 Migration — Action Required</h3>
       </div>
-      <p className="text-xs text-beige-muted mb-4">Complete the 2 steps below to activate the new Staking V2.</p>
+      <p className="text-xs text-beige-muted mb-4">Complete the 2 steps below to activate the new Staking V3.</p>
 
       <div className="space-y-3">
         {/* Step 1 */}
@@ -1163,9 +1178,9 @@ function V2MigrationBanner({ pending, setPending, exec }: { pending: string | nu
             <div>
               <div className="text-sm font-bold text-white flex items-center gap-2">
                 {step1Done && <Check className="h-4 w-4 text-green-400" />}
-                Step 1: Authorize V2 Contract
+                Step 1: Authorize V3 Contract
               </div>
-              <div className="text-xs text-beige-muted">Allow V2 to transfer VYR tokens (required while trading is locked).</div>
+              <div className="text-xs text-beige-muted">Allow V3 to transfer VYR tokens.</div>
             </div>
             {step1Done && <span className="text-xs font-bold text-green-400">✓ DONE</span>}
           </div>
@@ -1176,14 +1191,14 @@ function V2MigrationBanner({ pending, setPending, exec }: { pending: string | nu
                 try {
                   if (chainId !== bsc.id) await switchChainAsync({ chainId: bsc.id });
                   await writeContractAsync({ address: TOKEN_ADDRESS, abi: TokenABI, functionName: 'setAuthorized', args: [STAKING_ADDRESS, true] });
-                  toast.success('Step 1 concluído! ✅ V2 autorizado.');
+                  toast.success('Step 1 concluído! ✅ V3 autorizado.');
                 } catch (e) { toast.error(e instanceof Error ? e.message : 'Failed'); }
                 finally { setPending(null); }
               }}
               disabled={pending !== null}
               className="w-full sm:w-auto px-6 py-2.5 text-sm font-bold rounded-xl bg-gradient-to-r from-gold-light to-gold-dark text-dark hover:shadow-lg hover:shadow-gold/40 transition-all disabled:opacity-50"
             >
-              {pending === 'Auth V2' ? 'Confirming...' : 'Authorize V2'}
+              {pending === 'Auth V2' ? 'Confirming...' : 'Authorize V3'}
             </button>
           )}
           {step1Done && !step2Done && (
@@ -1197,9 +1212,9 @@ function V2MigrationBanner({ pending, setPending, exec }: { pending: string | nu
             <div>
               <div className="text-sm font-bold text-white flex items-center gap-2">
                 {step2Done && <Check className="h-4 w-4 text-green-400" />}
-                Step 2: Transfer 470M VYR (V1 → V2)
+                Step 2: Transfer 470M VYR (V2 → V3)
               </div>
-              <div className="text-xs text-beige-muted">Move reward tokens from old V1 to new V2.</div>
+              <div className="text-xs text-beige-muted">Move reward tokens from V2 to new V3.</div>
             </div>
             {step2Done && <span className="text-xs font-bold text-green-400">✓ DONE</span>}
           </div>
