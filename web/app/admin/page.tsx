@@ -628,24 +628,13 @@ export default function AdminPage() {
           <motion.div variants={stagger} initial="hidden" animate="visible" className="space-y-6">
             {/* Create Voucher */}
             <motion.div variants={fadeUp} className="rounded-2xl border border-gold/30 bg-gradient-to-b from-dark-card to-gold/5 p-6 glow-gold">
-              <h3 className="text-lg font-bold text-white mb-1">Create Voucher</h3>
-              <p className="text-xs text-beige-muted mb-4">Issue a virtual stake for promoters. They earn yield + qualify for affiliate system. No principal on withdraw.</p>
+              <h3 className="text-lg font-bold text-white mb-1">Create Voucher (MLM License)</h3>
+              <p className="text-xs text-beige-muted mb-4">Issues a license for promoters to participate in the affiliate system. No yield, no principal — just unlocks MLM + accelerator.</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                 <div>
                   <label className="text-xs text-beige-muted block mb-1">Recipient Address</label>
                   <input type="text" id="voucherRecipient" placeholder="0x..."
                     className="w-full bg-dark-elevated border border-dark-border rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-gold/50" />
-                </div>
-                <div>
-                  <label className="text-xs text-beige-muted block mb-1">Value (USDT)</label>
-                  <div className="flex gap-2">
-                    <button onClick={() => { (document.getElementById('voucherValue') as HTMLInputElement).value = '100'; }}
-                      className="px-3 py-2 text-xs font-bold rounded-lg bg-gold/10 text-gold border border-gold/30 hover:bg-gold/20 whitespace-nowrap">$100</button>
-                    <button onClick={() => { (document.getElementById('voucherValue') as HTMLInputElement).value = '1100'; }}
-                      className="px-3 py-2 text-xs font-bold rounded-lg bg-gold/10 text-gold border border-gold/30 hover:bg-gold/20 whitespace-nowrap">$1,100</button>
-                    <input type="number" id="voucherValue" placeholder="100"
-                      className="flex-1 bg-dark-elevated border border-dark-border rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-gold/50" />
-                  </div>
                 </div>
                 <div>
                   <label className="text-xs text-beige-muted block mb-1">Pool</label>
@@ -664,21 +653,17 @@ export default function AdminPage() {
               </div>
               <button onClick={async () => {
                 const recipient = (document.getElementById('voucherRecipient') as HTMLInputElement).value;
-                const valueUsd = Number((document.getElementById('voucherValue') as HTMLInputElement).value) || 0;
-                // Use parseUnits to avoid BigInt precision loss with 1e18
-                const value = parseUnits(String(valueUsd), 18);
                 const poolId = BigInt((document.getElementById('voucherPool') as HTMLSelectElement).value);
                 const expiryDays = Number((document.getElementById('voucherExpiry') as HTMLInputElement).value) || 0;
                 const expiry = expiryDays > 0 ? BigInt(Math.floor(Date.now() / 1000 + expiryDays * 86400)) : BigInt(0);
                 if (!recipient.startsWith('0x') || recipient.length !== 42) return toast.error('Invalid address');
-                if (value === BigInt(0)) return toast.error('Invalid value');
                 await exec('Create Voucher', async () => {
-                  await writeContractAsync({ address: STAKING_ADDRESS, abi: StakingABI, functionName: 'createVoucher', args: [recipient, value, poolId, expiry] });
+                  await writeContractAsync({ address: STAKING_ADDRESS, abi: StakingABI, functionName: 'createVoucher', args: [recipient, poolId, expiry] });
                 });
               }} disabled={pending === 'Create Voucher'}
                 className="px-4 py-2 text-xs font-bold rounded-lg bg-gold/10 text-gold border border-gold/30 hover:bg-gold/20 disabled:opacity-50 flex items-center gap-2">
                 {pending === 'Create Voucher' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Users className="h-3.5 w-3.5" />}
-                Create Voucher
+                Create License
               </button>
             </motion.div>
 
@@ -859,10 +844,30 @@ export default function AdminPage() {
 
             {/* Staking Wallets */}
             <motion.div variants={fadeUp} className="rounded-2xl border border-dark-border bg-dark-card p-6">
-              <h3 className="text-lg font-bold text-white mb-4">Staking Wallets</h3>
+              <h3 className="text-lg font-bold text-white mb-4">Staking Wallets & Fees</h3>
+
+              {/* CHANGE #7: Configurable withdrawal fee */}
+              <div className="rounded-xl bg-gold/5 border border-gold/20 p-4 mb-4">
+                <label className="text-xs text-gold block mb-1">Withdrawal Fee (currently 4%, max 10%)</label>
+                <div className="flex gap-2">
+                  <input type="number" id="newFeeBps" placeholder="e.g. 4 (for 4%)" min="0" max="10"
+                    className="flex-1 bg-dark-elevated border border-dark-border rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-gold/50" />
+                  <button onClick={async () => {
+                    const val = parseFloat((document.getElementById('newFeeBps') as HTMLInputElement).value);
+                    if (isNaN(val) || val < 0 || val > 10) return toast.error('Enter 0-10');
+                    await exec('Set Fee', async () => {
+                      await writeContractAsync({ address: STAKING_ADDRESS, abi: StakingABI, functionName: 'setWithdrawalFee', args: [BigInt(Math.round(val * 100))] });
+                    });
+                  }} disabled={pending === 'Set Fee'}
+                    className="px-4 py-2 text-sm font-bold rounded-lg bg-gradient-to-r from-gold-light to-gold-dark text-dark disabled:opacity-50">
+                    {pending === 'Set Fee' ? '...' : 'Set Fee %'}
+                  </button>
+                </div>
+              </div>
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="text-xs text-beige-muted block mb-1">New Fee Wallet (10%)</label>
+                  <label className="text-xs text-beige-muted block mb-1">New Fee Wallet</label>
                   <input type="text" id="newFeeWallet" placeholder="0x..."
                     className="w-full bg-dark-elevated border border-dark-border rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-gold/50 mb-2" />
                   <button onClick={async () => {

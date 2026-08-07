@@ -42,6 +42,9 @@ export default function DashboardPage() {
   const { switchChainAsync } = useSwitchChain();
   const [copied, setCopied] = useState(false);
   const [withdrawing, setWithdrawing] = useState<number | null>(null);
+  // CHANGE #6: 12h countdown timer state (declared early so hooks below can use it)
+  const [now, setNow] = useState(Math.floor(Date.now() / 1000));
+  useEffect(() => { const t = setInterval(() => setNow(Math.floor(Date.now() / 1000)), 1000); return () => clearInterval(t); }, []);
 
   const onCorrectChain = chainId === bsc.id;
 
@@ -107,6 +110,32 @@ export default function DashboardPage() {
   const { data: referralData } = useReadContract({
     address: STAKING_ADDRESS, abi: StakingABI, functionName: 'getReferralInfo', args: [address || '0x0'], chainId: bsc.id,
   }) as { data: readonly [`0x${string}`, bigint, bigint] | undefined };
+
+  // CHANGE #6: Read accelerator status for grace period countdown
+  const [acceleratorData, setAcceleratorData] = useState<Array<{ unlocked: boolean; graceEndTime: number; pendingCommission: string; graceExpired: boolean } | undefined>>([]);
+  useEffect(() => {
+    if (!address || !stakeCount) { setAcceleratorData([]); return; }
+    (async () => {
+      const results = [];
+      for (let i = 0; i < 2; i++) { // check up to 2 accelerator entries
+        try {
+          const acc = await publicClient.readContract({
+            address: STAKING_ADDRESS, abi: StakingABI, functionName: 'getAcceleratorStatus',
+            args: [address, BigInt(i)],
+          }) as [bigint, boolean, bigint, bigint, bigint, boolean];
+          if (!acc) break;
+          if (!acc[1]) continue; // not unlocked
+          results.push({
+            unlocked: acc[1],
+            graceEndTime: Number(acc[3]),
+            pendingCommission: acc[4].toString(),
+            graceExpired: acc[5],
+          });
+        } catch { break; }
+      }
+      setAcceleratorData(results);
+    })();
+  }, [address, stakeCount, now > 0 && now % 10 === 0]); // refresh every 10s tick
 
   // === FETCH 11-LEVEL NETWORK (real-time from chain) ===
   const [levelData, setLevelData] = useState<Array<{ count: number; volume: number }>>(Array.from({ length: 11 }, () => ({ count: 0, volume: 0 })));
@@ -253,6 +282,44 @@ export default function DashboardPage() {
       setWithdrawing(null);
     }
   };
+
+  // CHANGE #2: Daily earnings claim
+  const [claiming, setClaiming] = useState<number | null>(null);
+  const handleClaimDaily = async (stakeIndex: number) => {
+    if (!isConnected) return;
+    setClaiming(stakeIndex);
+    const toastId = toast.loading('Claiming daily earnings...');
+    try {
+      if (chainId !== bsc.id) { toast.loading('Switching to BSC Mainnet...', { id: toastId }); await switchChainAsync({ chainId: bsc.id }); toast.loading('Claiming...', { id: toastId }); }
+      await writeContractAsync({
+        address: STAKING_ADDRESS, abi: StakingABI, functionName: 'claimDailyEarnings',
+        args: [BigInt(stakeIndex)],
+      });
+      toast.success('Daily earnings claimed in VYR! 🎉', { id: toastId });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Claim failed', { id: toastId });
+    } finally {
+      setClaiming(null);
+    }
+  };
+
+  // CHANGE #4: Grace commission claim
+  const handleClaimGrace = async (accIndex: number) => {
+    if (!isConnected) return;
+    const toastId = toast.loading('Claiming grace commissions...');
+    try {
+      if (chainId !== bsc.id) await switchChainAsync({ chainId: bsc.id });
+      await writeContractAsync({
+        address: STAKING_ADDRESS, abi: StakingABI, functionName: 'claimGraceCommission',
+        args: [BigInt(accIndex)],
+      });
+      toast.success('Grace commissions claimed! 🎉', { id: toastId });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Claim failed', { id: toastId });
+    }
+  };
+
+  // CHANGE #6: countdown 'now' state declared at top of component
 
   const fmt = (val: string, decimals = 2) => {
     const n = parseFloat(val);
@@ -443,6 +510,7 @@ export default function DashboardPage() {
                 const isVoucher = sData?.isVoucher ?? false;
                 const isWithdrawn = sData?.withdrawn ?? false;
                 const stakeValue = sData?.usdtAmount ? fmt(sData.usdtAmount, 0) : '0';
+                const canClaimDaily = !isVoucher && !isWithdrawn && parseFloat(earnings.usdt) >= 10;
                 return (
                   <motion.div key={idx} variants={fadeUp} className={`rounded-2xl border p-5 transition-colors ${isVoucher ? 'border-purple-500/30 bg-purple-500/5' : 'border-dark-border bg-dark-card hover:border-gold/30'}`}>
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -454,27 +522,46 @@ export default function DashboardPage() {
                           <div className="flex items-center gap-2 flex-wrap">
                             <span className="text-sm font-bold text-white">{pool.tier}</span>
                             <span className="px-2 py-0.5 text-xs rounded-full bg-gold/10 text-gold">{pool.duration}</span>
-                            {isVoucher && <span className="px-2 py-0.5 text-xs rounded-full bg-purple-500/10 text-purple-400 font-bold">🎫 Voucher</span>}
-                            {isWithdrawn && <span className="px-2 py-0.5 text-xs rounded-full bg-green-500/10 text-green-400">✓ Withdrawn</span>}
+                            {isVoucher && <span className="px-2 py-0.5 text-xs rounded-full bg-purple-500/10 text-purple-400 font-bold">🎫 License</span>}
+                            {isWithdrawn && <span className="px-2 py-0.5 text-xs rounded-full bg-green-500/10 text-green-400">✓ Closed</span>}
                           </div>
-                          <div className="text-xs text-beige-muted mt-1">{pool.dailyRate}% daily • Staked: ${stakeValue}</div>
+                          <div className="text-xs text-beige-muted mt-1">
+                            {isVoucher ? 'MLM License — no yield, no principal' : `${pool.dailyRate}% daily • Staked: $${stakeValue}`}
+                          </div>
                         </div>
                       </div>
-                      <div className="flex items-center gap-6">
-                        <div className="text-center">
-                          <div className="text-xs text-beige-muted">{t('dash.pending')}</div>
-                          <div className="text-sm font-bold text-green-400">{fmt(earnings.usdt)} USDT</div>
-                          <div className="text-xs text-gold">≈ {fmt(earnings.vyr)} VYR</div>
+
+                      {/* Right side: earnings + buttons */}
+                      {!isVoucher ? (
+                        <div className="flex items-center gap-4">
+                          <div className="text-center">
+                            <div className="text-xs text-beige-muted">Pending</div>
+                            <div className="text-sm font-bold text-green-400">{fmt(earnings.usdt)} USDT</div>
+                            <div className="text-xs text-gold">≈ {fmt(earnings.vyr)} VYR</div>
+                          </div>
+                          {/* CHANGE #2: Daily claim button */}
+                          <button
+                            onClick={() => handleClaimDaily(idx)}
+                            disabled={!canClaimDaily || claiming === idx}
+                            className="px-4 py-2 text-xs font-bold rounded-lg border border-green-500/30 bg-green-500/10 text-green-400 hover:bg-green-500/20 transition-colors disabled:opacity-40 flex items-center gap-1.5"
+                          >
+                            {claiming === idx ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Zap className="h-3.5 w-3.5" />}
+                            Claim Daily
+                          </button>
+                          {!isWithdrawn && (
+                            <button
+                              onClick={() => handleWithdraw(idx)}
+                              disabled={withdrawing === idx}
+                              className="px-4 py-2 text-sm font-bold rounded-lg border border-gold/30 bg-gold/5 text-gold hover:bg-gold/10 transition-colors disabled:opacity-50 flex items-center gap-2"
+                            >
+                              {withdrawing === idx ? <Loader2 className="h-4 w-4 animate-spin" /> : <Unlock className="h-4 w-4" />}
+                              Withdraw
+                            </button>
+                          )}
                         </div>
-                        <button
-                          onClick={() => handleWithdraw(idx)}
-                          disabled={withdrawing === idx}
-                          className="px-4 py-2 text-sm font-bold rounded-lg border border-gold/30 bg-gold/5 text-gold hover:bg-gold/10 transition-colors disabled:opacity-50 flex items-center gap-2"
-                        >
-                          {withdrawing === idx ? <Loader2 className="h-4 w-4 animate-spin" /> : <Unlock className="h-4 w-4" />}
-                          Withdraw
-                        </button>
-                      </div>
+                      ) : (
+                        <div className="text-xs text-purple-400/60 italic">No earnings (license only)</div>
+                      )}
                     </div>
                   </motion.div>
                 );
@@ -538,6 +625,53 @@ export default function DashboardPage() {
                 </Link>
               </div>
             )}
+
+            {/* CHANGE #6: Accelerator 100% + 12h Countdown */}
+            {acceleratorData && acceleratorData.map((acc, accIdx) => {
+              if (!acc?.unlocked) return null;
+              const graceEnd = Number(acc?.graceEndTime ?? 0);
+              const remaining = graceEnd - now;
+              const expired = acc?.graceExpired ?? false;
+              const pending = acc?.pendingCommission ? formatUnits(BigInt(String(acc.pendingCommission)), 18) : '0';
+              const hours = Math.floor(remaining / 3600);
+              const mins = Math.floor((remaining % 3600) / 60);
+              const secs = remaining % 60;
+              return (
+                <motion.div key={accIdx} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
+                  className={`mt-4 rounded-2xl border p-5 ${expired ? 'border-red-500/40 bg-red-500/5' : 'border-gold/50 bg-gradient-to-b from-dark-card to-gold/5 glow-gold'}`}>
+                  <div className="text-center">
+                    <div className="text-2xl mb-2">{expired ? '⌛' : '🎉'}</div>
+                    <h3 className={`text-lg font-black ${expired ? 'text-red-400' : 'text-gold'}`}>
+                      {expired ? 'Grace Period Expired' : 'Accelerator 100% Complete!'}
+                    </h3>
+                    {!expired && remaining > 0 ? (
+                      <>
+                        <div className="text-4xl font-black text-white mt-2 tabular-nums">
+                          ⏰ {String(hours).padStart(2, '0')}:{String(mins).padStart(2, '0')}:{String(secs).padStart(2, '0')}
+                        </div>
+                        <p className="text-xs text-beige-muted mt-2">Open a new Pool 360 stake before time runs out to claim pending commissions.</p>
+                        <div className="mt-3 text-sm">
+                          <span className="text-beige-muted">Pending: </span>
+                          <span className="font-bold text-green-400">{fmt(pending, 2)} USDT</span>
+                        </div>
+                        <div className="flex gap-2 justify-center mt-4">
+                          <Link href="/staking" className="px-4 py-2 text-sm font-bold rounded-lg bg-gradient-to-r from-gold-light to-gold-dark text-dark">
+                            🔓 Open Pool 360
+                          </Link>
+                          <button onClick={() => handleClaimGrace(accIdx)} className="px-4 py-2 text-sm font-bold rounded-lg border border-green-500/40 bg-green-500/10 text-green-400">
+                            Claim Pending
+                          </button>
+                        </div>
+                      </>
+                    ) : (
+                      <p className="text-sm text-red-400 mt-2">
+                        {expired ? 'You lost pending commissions. Open a new Pool 360 to receive future ones.' : 'Claim your pending commissions now!'}
+                      </p>
+                    )}
+                  </div>
+                </motion.div>
+              );
+            })}
 
             {/* 11-Level Affiliate Breakdown — Only for stakers */}
             {stakeCount > 0 && (

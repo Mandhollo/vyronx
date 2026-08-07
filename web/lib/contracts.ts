@@ -4,18 +4,18 @@
 
 import VyronXTokenABI from './abi/VyronXToken.json';
 import VyronXPresaleABI from './abi/VyronXPresale.json';
-import VyronXStakingABI from './abi/VyronXStaking.json';
+import VyronXStakingV2ABI from './abi/VyronXStakingV2.json';
 import PresaleReferralABI from './abi/PresaleReferral.json';
 
 export const TOKEN_ADDRESS = process.env.NEXT_PUBLIC_TOKEN_ADDRESS as `0x${string}`;
 export const PRESALE_ADDRESS = process.env.NEXT_PUBLIC_PRESALE_ADDRESS as `0x${string}`;
-export const STAKING_ADDRESS = process.env.NEXT_PUBLIC_STAKING_ADDRESS as `0x${string}`;
+export const STAKING_ADDRESS = (process.env.NEXT_PUBLIC_STAKING_ADDRESS || '0x216309a86dD8BBE3767811150a916A98E9D1348E') as `0x${string}`;
 export const USDT_ADDRESS = process.env.NEXT_PUBLIC_USDT_ADDRESS as `0x${string}`;
 export const PRESALE_REFERRAL_ADDRESS = (process.env.NEXT_PUBLIC_PRESALE_REFERRAL_ADDRESS || '0xcA7Df2522b08453715372EEc33b40aB499d9B86C') as `0x${string}`;
 
 export const TokenABI = VyronXTokenABI;
 export const PresaleABI = VyronXPresaleABI;
-export const StakingABI = VyronXStakingABI;
+export const StakingABI = VyronXStakingV2ABI;
 export const ReferralABI = PresaleReferralABI;
 
 // Chain config
