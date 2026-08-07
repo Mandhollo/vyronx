@@ -1172,6 +1172,27 @@ function V2MigrationBanner({ pending, setPending, exec }: { pending: string | nu
       <p className="text-xs text-beige-muted mb-4">Complete the 2 steps below to activate the new Staking V3.</p>
 
       <div className="space-y-3">
+        {/* Step 0: Remove Token Limits on Old Staking (required for 470M transfer) */}
+        <div className="rounded-xl bg-dark-elevated p-4 border border-amber-500/30">
+          <div className="text-sm font-bold text-white mb-1">Step 0: Remove Token Limits on Old Staking</div>
+          <div className="text-xs text-beige-muted mb-3">Required to transfer 470M VYR in a single transaction (maxTx is 10M).</div>
+          <button
+            onClick={async () => {
+              setPending('Exclude Limits');
+              try {
+                if (chainId !== bsc.id) await switchChainAsync({ chainId: bsc.id });
+                await writeContractAsync({ address: TOKEN_ADDRESS, abi: TokenABI, functionName: 'setExcludedFromLimits', args: [STAKING_V1_ADDRESS, true] });
+                toast.success('Limits removed!');
+              } catch (e) { toast.error(e instanceof Error ? e.message : 'Failed'); }
+              finally { setPending(null); }
+            }}
+            disabled={pending !== null}
+            className="w-full sm:w-auto px-6 py-2.5 text-sm font-bold rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/30 hover:bg-amber-500/30 transition-all disabled:opacity-50"
+          >
+            {pending === 'Exclude Limits' ? 'Confirming...' : 'Remove Limits'}
+          </button>
+        </div>
+
         {/* Step 1 */}
         <div className={`rounded-xl p-4 border ${step1Done ? 'border-green-500/40 bg-green-500/5' : 'border-dark-border bg-dark-elevated'}`}>
           <div className="flex items-center justify-between mb-2">
