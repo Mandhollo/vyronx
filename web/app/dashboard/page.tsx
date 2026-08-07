@@ -465,7 +465,7 @@ export default function DashboardPage() {
                             <span className="px-2 py-0.5 text-xs rounded-full bg-purple-500/10 text-purple-400 font-bold">${(Number(v.value) / 1e18).toLocaleString()}</span>
                             <span className="px-2 py-0.5 text-xs rounded-full bg-gold/10 text-gold">{pool.duration}</span>
                           </div>
-                          <div className="text-xs text-beige-muted mt-1">{pool.tier} Pool • {pool.dailyRate}% daily</div>
+                          <div className="text-xs text-beige-muted mt-1">🎫 MLM License — unlocks affiliate system & accelerator (no yield, no principal)</div>
                         </div>
                       </div>
                       <button
@@ -474,7 +474,7 @@ export default function DashboardPage() {
                         className="px-6 py-2.5 text-sm font-bold rounded-lg bg-purple-500/20 text-purple-300 border border-purple-500/30 hover:bg-purple-500/30 transition-all disabled:opacity-50 flex items-center gap-2"
                       >
                         {redeeming === v.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Zap className="h-4 w-4" />}
-                        {expired ? 'Expired' : 'Activate Voucher'}
+                        {expired ? 'Expired' : 'Activate License'}
                       </button>
                     </div>
                   </motion.div>
