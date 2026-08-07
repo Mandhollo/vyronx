@@ -26,6 +26,7 @@ const SECTIONS = [
   { id: 'fees', labelKey: 'wp.fees' },
   { id: 'staking', labelKey: 'wp.staking' },
   { id: 'accelerator', labelKey: 'wp.accelerator' },
+  { id: 'voucher', labelKey: 'wp.voucher' },
   { id: 'affiliates', labelKey: 'wp.affiliates' },
   { id: 'presale', labelKey: 'wp.presale' },
   { id: 'ecosystem', labelKey: 'wp.ecosystem' },
@@ -192,14 +193,18 @@ export default function WhitepaperPage() {
                   Four pools with escalating returns. Investors deposit <span className="text-gold font-bold">USDT</span> and receive <span className="text-gold font-bold">VYR</span> at market price via Chainlink oracle.
                 </p>
                 <div className="rounded-xl bg-dark-card border border-gold/30 p-5 mb-6">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
                     <div>
                       <div className="text-gold font-bold mb-1">Daily Earnings</div>
-                      <div className="text-beige-muted">Withdraw your daily earnings in VYR anytime (minimum $10 accumulated). Only 4% withdrawal fee.</div>
+                      <div className="text-beige-muted">Withdraw daily earnings in VYR anytime (min $10). Only 4% withdrawal fee.</div>
                     </div>
                     <div>
                       <div className="text-gold font-bold mb-1">Principal Lock</div>
-                      <div className="text-beige-muted">Your principal (USDT deposit) is locked until the pool ends, then converted to VYR with a 4% fee.</div>
+                      <div className="text-beige-muted">Principal is locked until pool ends, then converted to VYR (4% fee).</div>
+                    </div>
+                    <div>
+                      <div className="text-gold font-bold mb-1">12h Grace Period</div>
+                      <div className="text-beige-muted">Pool 360 accelerator: re-stake within 12h to claim pending commissions.</div>
                     </div>
                   </div>
                 </div>
@@ -258,6 +263,38 @@ export default function WhitepaperPage() {
                     ))}
                   </div>
                 </div>
+              </motion.section>
+
+              {/* Voucher / License */}
+              <motion.section variants={fadeUp} id="voucher" className="scroll-mt-24">
+                <h2 className="text-2xl font-bold text-white mb-4">Voucher System (MLM License)</h2>
+                <p className="text-beige leading-relaxed mb-4">
+                  Promoters can be issued a <span className="text-gold font-bold">voucher</span> (MLM license) that activates their participation in the affiliate system and accelerator — without depositing USDT.
+                </p>
+                <div className="rounded-xl bg-dark-card border border-purple-500/30 p-5 mb-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <div className="text-purple-400 font-bold mb-1">What it DOES</div>
+                      <ul className="space-y-1 text-beige-muted">
+                        <li>✓ Activates MLM affiliate system (11 levels)</li>
+                        <li>✓ Participates in Pool 360 accelerator</li>
+                        <li>✓ Earns 10% USDT commissions from referrals</li>
+                        <li>✓ 12h grace period at 100% accelerator completion</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <div className="text-red-400 font-bold mb-1">What it DOES NOT</div>
+                      <ul className="space-y-1 text-beige-muted">
+                        <li>✗ Does NOT yield daily earnings in VYR</li>
+                        <li>✗ Does NOT return principal value</li>
+                        <li>✗ No USDT deposit required</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+                <p className="text-sm text-beige-muted">
+                  The voucher value (set by the owner) is used <span className="text-gold">only</span> to calculate the accelerator percentage — it is never paid out or returned.
+                </p>
               </motion.section>
 
               {/* Affiliates */}
