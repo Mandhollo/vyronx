@@ -204,9 +204,8 @@ export default function DashboardPage() {
                       userVol += Number(stake[2]) / 1e18;
                     }
                     result[level].volume += userVol;
-                    if (userVol > 0) {
-                      result[level].members.push({ address: direct, volume: userVol });
-                    }
+                    // Show ALL members (even if volume = 0 — they registered with the link but haven't staked yet)
+                    result[level].members.push({ address: direct, volume: userVol });
                   } catch {}
                 }
               }
@@ -830,7 +829,9 @@ export default function DashboardPage() {
                                   >
                                     ...{m.address.slice(-8)}
                                   </a>
-                                  <span className="text-xs font-bold text-gold">${m.volume.toLocaleString('en-US', { maximumFractionDigits: 0 })}</span>
+                                  <span className={`text-xs font-bold ${m.volume > 0 ? 'text-gold' : 'text-beige-muted'}`}>
+                                    {m.volume > 0 ? `$${m.volume.toLocaleString('en-US', { maximumFractionDigits: 0 })}` : 'Pending'}
+                                  </span>
                                 </div>
                               ))}
                             </motion.div>
