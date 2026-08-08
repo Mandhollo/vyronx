@@ -51,7 +51,7 @@ export default function CoinConfetti() {
 
     const burst = () => {
       if (!canvas) return;
-      const count = 120; // more coins
+      const count = 350; // massive burst
       const cx = canvas.width / 2;
       const cy = canvas.height * 0.35; // higher up
       for (let i = 0; i < count; i++) {
@@ -63,12 +63,12 @@ export default function CoinConfetti() {
           vx: Math.cos(angle) * speed * (0.5 + Math.random()),
           vy: Math.sin(angle) * speed - 10 - Math.random() * 8,
           rotation: Math.random() * Math.PI * 2,
-          vr: (Math.random() - 0.5) * 0.2,
+          vr: (Math.random() - 0.5) * 0.15,
           size: 20 + Math.random() * 28,
           life: 0,
-          maxLife: 400 + Math.random() * 200, // much longer life
+          maxLife: 1100 + Math.random() * 400, // ~20 seconds at 60fps
           flip: 0,
-          vflip: 0.03 + Math.random() * 0.06, // slower flip
+          vflip: 0.02 + Math.random() * 0.04, // even slower flip
         });
       }
     };
@@ -81,21 +81,21 @@ export default function CoinConfetti() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
       const particles = particlesRef.current;
-      const gravity = 0.18; // much lighter gravity = coins float longer
+      const gravity = 0.1; // very light gravity = coins float much longer
 
       for (let i = particles.length - 1; i >= 0; i--) {
         const p = particles[i];
         p.life++;
         p.vy += gravity;
-        p.vx *= 0.995; // less air resistance
+        p.vx *= 0.997; // minimal air resistance
         p.x += p.vx;
         p.y += p.vy;
         p.rotation += p.vr;
         p.flip += p.vflip;
 
-        // Only start fading in the last 15% of life
+        // Only start fading in the last 30% of life
         const lifeRatio = p.life / p.maxLife;
-        const fade = lifeRatio > 0.85 ? Math.max(0, 1 - (lifeRatio - 0.85) / 0.15) : 1;
+        const fade = lifeRatio > 0.7 ? Math.max(0, 1 - (lifeRatio - 0.7) / 0.3) : 1;
 
         if (p.life >= p.maxLife || p.y > canvas.height + 60) {
           particles.splice(i, 1);
