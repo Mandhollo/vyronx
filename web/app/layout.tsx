@@ -69,12 +69,15 @@ export default function RootLayout({
         <Toaster
           position="top-right"
           toastOptions={{
+            duration: Infinity,
             style: {
               background: '#141414',
               color: '#fff',
               border: '1px solid #2a2a2a',
             },
             success: { iconTheme: { primary: '#d4af37', secondary: '#0a0a0a' } },
+            error: { duration: Infinity },
+            loading: { duration: Infinity },
           }}
         />
       </body>
