@@ -524,6 +524,123 @@ contract VyronXStakingV4 is ReentrancyGuard {
         emit VoucherCreated(voucherId, recipient, poolId, usdtValue, expiryTimestamp);
     }
 
+    /// @notice V4 Migration: Re-create an already-redeemed voucher with its full state (stake + accelerator + referrer chain).
+    /// @dev Only callable by owner. Used to migrate vouchers from V3 without users needing to re-redeem.
+    function migrateVoucher(
+        address recipient,
+        uint256 poolId,
+        uint256 usdtValue,
+        address referrerAddr
+    ) external onlyOwner {
+        require(poolId < POOL_COUNT, "Invalid pool");
+        require(usdtValue > 0, "Value must be > 0");
+
+        // 1. Create voucher already redeemed
+        uint256 voucherId = vouchers.length;
+        vouchers.push(Voucher({
+            recipient: recipient,
+            poolId: poolId,
+            usdtValue: usdtValue,
+            expiry: 0,
+            redeemed: true,
+            cancelled: false
+        }));
+        userVoucherIds[recipient].push(voucherId);
+
+        // 2. Set referrer chain (rebuilds MLM tree)
+        if (referrer[recipient] == address(0) && recipient != rootReferrer) {
+            if (referrerAddr != address(0) && referrerAddr != recipient) {
+                referrer[recipient] = referrerAddr;
+                directReferrals[referrerAddr].push(recipient);
+                emit ReferralRegistered(recipient, referrerAddr);
+            } else {
+                // No referrer -> attach to root
+                referrer[recipient] = rootReferrer;
+                directReferrals[rootReferrer].push(recipient);
+                emit ReferralRegistered(recipient, rootReferrer);
+            }
+        }
+
+        // 3. Create virtual Pool 360 stake
+        userStakes[recipient].push(Stake({
+            staker: recipient,
+            poolId: POOL_360_ID,
+            usdtAmount: usdtValue,
+            startTime: block.timestamp,
+            lockEndTime: block.timestamp + 360 days,
+            withdrawn: false,
+            lastClaimDay: block.timestamp / 1 days,
+            isVoucher: true
+        }));
+
+        // 4. Create accelerator entry
+        _createAccelerator(recipient, userStakes[recipient].length - 1);
+
+        emit VoucherCreated(voucherId, recipient, poolId, usdtValue, 0);
+        emit VoucherRedeemed(voucherId, recipient);
+    }
+
+    /// @notice Batch migrate multiple vouchers at once
+    function migrateVoucherBatch(
+        address[] calldata recipients,
+        uint256[] calldata poolIds,
+        uint256[] calldata usdtValues,
+        address[] calldata referrers
+    ) external onlyOwner {
+        require(recipients.length == poolIds.length, "Length mismatch");
+        require(recipients.length == usdtValues.length, "Length mismatch");
+        require(recipients.length == referrers.length, "Length mismatch");
+        for (uint256 i = 0; i < recipients.length; i++) {
+            // inline the migrate logic to avoid external call overhead
+            address recipient = recipients[i];
+            uint256 poolId = poolIds[i];
+            uint256 usdtValue = usdtValues[i];
+            address referrerAddr = referrers[i];
+
+            require(poolId < POOL_COUNT, "Invalid pool");
+            require(usdtValue > 0, "Value must be > 0");
+
+            uint256 voucherId = vouchers.length;
+            vouchers.push(Voucher({
+                recipient: recipient,
+                poolId: poolId,
+                usdtValue: usdtValue,
+                expiry: 0,
+                redeemed: true,
+                cancelled: false
+            }));
+            userVoucherIds[recipient].push(voucherId);
+
+            if (referrer[recipient] == address(0) && recipient != rootReferrer) {
+                if (referrerAddr != address(0) && referrerAddr != recipient) {
+                    referrer[recipient] = referrerAddr;
+                    directReferrals[referrerAddr].push(recipient);
+                    emit ReferralRegistered(recipient, referrerAddr);
+                } else {
+                    referrer[recipient] = rootReferrer;
+                    directReferrals[rootReferrer].push(recipient);
+                    emit ReferralRegistered(recipient, rootReferrer);
+                }
+            }
+
+            userStakes[recipient].push(Stake({
+                staker: recipient,
+                poolId: POOL_360_ID,
+                usdtAmount: usdtValue,
+                startTime: block.timestamp,
+                lockEndTime: block.timestamp + 360 days,
+                withdrawn: false,
+                lastClaimDay: block.timestamp / 1 days,
+                isVoucher: true
+            }));
+
+            _createAccelerator(recipient, userStakes[recipient].length - 1);
+
+            emit VoucherCreated(voucherId, recipient, poolId, usdtValue, 0);
+            emit VoucherRedeemed(voucherId, recipient);
+        }
+    }
+
     /// @notice Redeem voucher -> creates virtual Pool 360 stake + accelerator entry
     function redeemVoucher(uint256 voucherId) external nonReentrant {
         require(voucherId < vouchers.length, "Invalid voucher");

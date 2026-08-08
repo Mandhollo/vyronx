@@ -6,7 +6,7 @@ import { useAccount, useReadContract, useWriteContract, useConnect, useSwitchCha
 import {
   Settings, Lock, Coins, Users, TrendingUp, Power, Gauge,
   Loader2, DollarSign, Wallet, Banknote, Shield, Flame,
-  Percent, Clock, Check, ExternalLink, AlertTriangle, ArrowRight, Zap
+  Percent, Clock, Check, ExternalLink, AlertTriangle, ArrowRight, Zap, Gift
 } from 'lucide-react';
 import {
   TOKEN_ADDRESS, STAKING_ADDRESS, USDT_ADDRESS,
@@ -233,6 +233,9 @@ export default function AdminPage() {
           <motion.div variants={stagger} initial="hidden" animate="visible" className="space-y-8">
             {/* MIGRATION V2 BANNER */}
             <V2MigrationBanner pending={pending} setPending={setPending} exec={exec} />
+
+            {/* VOUCHER MIGRATION */}
+            <VoucherMigration pending={pending} setPending={setPending} />
 
             {/* Global Stats */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -1407,6 +1410,88 @@ function V2MigrationBanner({ pending, setPending, exec }: { pending: string | nu
           )}
         </div>
       </div>
+    </motion.div>
+  );
+}
+
+// ═══ VOUCHER MIGRATION COMPONENT ═══
+function VoucherMigration({ pending, setPending }: { pending: string | null; setPending: (v: string | null) => void }) {
+  const { chainId } = useAccount();
+  const { switchChainAsync } = useSwitchChain();
+  const { writeContractAsync } = useWriteContract();
+
+  // Check if vouchers already migrated
+  const { data: voucherCount } = useReadContract({
+    address: STAKING_ADDRESS, abi: StakingABI, functionName: 'getVoucherCount', chainId: bsc.id,
+  });
+
+  const migrated = voucherCount != null && Number(voucherCount) >= 7;
+
+  // The 7 vouchers from V3 with their referrer chain
+  const vouchers = [
+    { recipient: '0xFfAF2525F659aC7Da49dfCd4D15b12eFc578539c', poolId: 3, usdtValue: '1100', referrer: '0x77619322427f006b14DA3Dbb25F9eb420372f7c7', name: 'Conta Mãe' },
+    { recipient: '0xEd324c73fae8bCbC3318123a025ec47A41E20b71', poolId: 3, usdtValue: '1100', referrer: '0xFfAF2525F659aC7Da49dfCd4D15b12eFc578539c', name: 'Thiago' },
+    { recipient: '0xB863C989b252749f89d14086fabB40E5f17ab77D', poolId: 3, usdtValue: '1100', referrer: '0xEd324c73fae8bCbC3318123a025ec47A41E20b71', name: 'Indicado Thiago' },
+    { recipient: '0x5b4b91aA04e2722ebAF4A6090970c1c92BEe1090', poolId: 3, usdtValue: '1100', referrer: '0xFfAF2525F659aC7Da49dfCd4D15b12eFc578539c', name: 'Promotor 3' },
+    { recipient: '0xd7A8484fD713D28870FCd4ad198fAB9e3ffDedB1', poolId: 3, usdtValue: '1100', referrer: '0xFfAF2525F659aC7Da49dfCd4D15b12eFc578539c', name: 'Deployer' },
+    { recipient: '0xB783cC9C7785caf201d77167eCB60f381AAca9d9', poolId: 3, usdtValue: '1100', referrer: '0xFfAF2525F659aC7Da49dfCd4D15b12eFc578539c', name: 'Promotor 5' },
+    { recipient: '0x470a2608fa72f823d4C32Bf32f3ea318fb995c6E', poolId: 3, usdtValue: '1100', referrer: '0xFfAF2525F659aC7Da49dfCd4D15b12eFc578539c', name: 'Promotor 6' },
+  ];
+
+  if (migrated) {
+    return null; // Already done, hide component
+  }
+
+  return (
+    <motion.div variants={fadeUp} className="rounded-2xl border border-purple-500/40 bg-purple-500/5 p-6">
+      <div className="flex items-center gap-2 mb-3">
+        <Gift className="h-5 w-5 text-purple-400" />
+        <h3 className="text-base font-bold text-purple-400">Voucher Migration (V3 → V4)</h3>
+      </div>
+      <p className="text-xs text-beige-muted mb-4">
+        Migrates all 7 vouchers from V3 with the full referral chain intact. Each voucher keeps its $1,100 value, Elite pool, MLM position, and accelerator entry. Users don&apos;t need to re-activate.
+      </p>
+
+      {/* Preview */}
+      <div className="rounded-xl bg-dark-elevated border border-dark-border p-3 mb-4 max-h-48 overflow-y-auto">
+        {vouchers.map((v, i) => (
+          <div key={i} className="flex items-center gap-2 text-xs py-1 border-b border-dark-border/30 last:border-0">
+            <span className="text-purple-400 font-bold w-6">#{i}</span>
+            <span className="text-white font-mono flex-1">{v.recipient.slice(0, 6)}...{v.recipient.slice(-4)}</span>
+            <span className="text-beige-muted">{v.name}</span>
+            <span className="text-gold">↑ {v.referrer.slice(0, 6)}...{v.referrer.slice(-4)}</span>
+          </div>
+        ))}
+      </div>
+
+      <button
+        onClick={async () => {
+          setPending('Migrate Vouchers');
+          try {
+            if (chainId !== bsc.id) await switchChainAsync({ chainId: bsc.id });
+            await writeContractAsync({
+              address: STAKING_ADDRESS,
+              abi: StakingABI,
+              functionName: 'migrateVoucherBatch',
+              args: [
+                vouchers.map(v => v.recipient as `0x${string}`),
+                vouchers.map(v => BigInt(v.poolId)),
+                vouchers.map(v => parseUnits(v.usdtValue, 18)),
+                vouchers.map(v => v.referrer as `0x${string}`),
+              ],
+            });
+            toast.success('Vouchers migrados! ✅ 7 vouchers ativos no V4.');
+          } catch (e) {
+            toast.error(e instanceof Error ? e.message : 'Failed');
+          } finally {
+            setPending(null);
+          }
+        }}
+        disabled={pending !== null}
+        className="w-full sm:w-auto px-6 py-3 text-sm font-bold rounded-xl bg-gradient-to-r from-purple-600 to-purple-800 text-white hover:shadow-lg hover:shadow-purple-500/40 transition-all disabled:opacity-50"
+      >
+        {pending === 'Migrate Vouchers' ? 'Confirming...' : 'Migrate 7 Vouchers'}
+      </button>
     </motion.div>
   );
 }

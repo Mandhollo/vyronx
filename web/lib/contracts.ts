@@ -9,7 +9,7 @@ import PresaleReferralABI from './abi/PresaleReferral.json';
 
 export const TOKEN_ADDRESS = process.env.NEXT_PUBLIC_TOKEN_ADDRESS as `0x${string}`;
 export const PRESALE_ADDRESS = process.env.NEXT_PUBLIC_PRESALE_ADDRESS as `0x${string}`;
-export const STAKING_ADDRESS = '0x50214aEEf78714827efDb768499d9FeCffD30424' as `0x${string}`; // Staking V4 — hardcoded
+export const STAKING_ADDRESS = '0x32fa9BFdD3b8BA0938148A8f0c2DA3C56395EDa6' as `0x${string}`; // Staking V4 — hardcoded
 // V3 address kept for migration (owner needs to transfer 432.4M VYR from V3)
 export const STAKING_V1_ADDRESS = '0x441e8b33Edf2A3E5aaD350B74DE42b366481eaa5';
 export const USDT_ADDRESS = process.env.NEXT_PUBLIC_USDT_ADDRESS as `0x${string}`;
