@@ -194,7 +194,7 @@ function StakingPageContent() {
       if (chainId !== bsc.id) { toast.loading('Switching to BSC Mainnet...', { id: toastId }); await switchChainAsync({ chainId: bsc.id }); toast.loading(`Staking ${stakeAmount} USDT in ${selectedPool?.tier} pool...`, { id: toastId }); }
       await writeContractAsync({ address: STAKING_ADDRESS, abi: StakingABI, functionName: 'stake', args: [BigInt(activePool), parseUnits(stakeAmount, 18)] });
       toast.success(`Successfully staked ${stakeAmount} USDT! 🎉`, { id: toastId });
-      triggerCoinConfetti();
+      setTimeout(() => triggerCoinConfetti(), 1500);
       setStakeAmount('');
       setActivePool(null);
     } catch (e) {

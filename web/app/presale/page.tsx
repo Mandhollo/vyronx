@@ -253,7 +253,7 @@ export default function PresalePage() {
         });
       }
       toast.success(`Successfully bought ${fmtNum(totalVyr)} VYR! 🎉`, { id: toastId });
-      triggerCoinConfetti();
+      setTimeout(() => triggerCoinConfetti(), 1500);
       setBoughtVyr(fmtNum(totalVyr));
       setShowSuccess(true);
       setAmount('');
