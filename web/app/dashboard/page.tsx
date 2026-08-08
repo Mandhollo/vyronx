@@ -227,6 +227,7 @@ export default function DashboardPage() {
   // Read pending earnings for each stake
   const [earningsMap, setEarningsMap] = useState<Record<number, { usdt: string; vyr: string }>>({});
   const [stakesData, setStakesData] = useState<Record<number, { poolId: number; usdtAmount: string; isVoucher: boolean; withdrawn: boolean; startTime: number; lockEndTime: number }>>({});
+  const [stakeAccelerator, setStakeAccelerator] = useState<Record<number, { pct: number; unlocked: boolean; pendingCommission: string; graceExpired: boolean }>>({});
 
   // Fetch real stake data (pool, value, isVoucher, times) from chain
   useEffect(() => {
@@ -251,6 +252,21 @@ export default function DashboardPage() {
         } catch { map[i] = { poolId: 0, usdtAmount: '0', isVoucher: false, withdrawn: false, startTime: 0, lockEndTime: 0 }; }
       }
       if (active) setStakesData(map);
+
+      // Fetch accelerator status for each Pool 360 stake
+      const accMap: Record<number, { pct: number; unlocked: boolean; pendingCommission: string; graceExpired: boolean }> = {};
+      for (let i = 0; i < stakeCount; i++) {
+        if (map[i]?.poolId === 3) {
+          try {
+            const acc = await publicClient.readContract({
+              address: STAKING_ADDRESS as `0x${string}`, abi: StakingABI,
+              functionName: 'getAcceleratorStatus', args: [address, BigInt(i)],
+            }) as [bigint, boolean, bigint, bigint, bigint, boolean];
+            accMap[i] = { pct: Number(acc[0]), unlocked: acc[1], pendingCommission: acc[4].toString(), graceExpired: acc[5] };
+          } catch {}
+        }
+      }
+      if (active) setStakeAccelerator(accMap);
     })();
     return () => { active = false; };
   }, [address, stakeCount]);
@@ -575,8 +591,32 @@ export default function DashboardPage() {
                       )}
                     </div>
 
-                    {/* Stake progress bar */}
-                    {!isVoucher && (() => {
+                    {/* Progress bar: normal stakes = lock time, vouchers = accelerator % */}
+                    {(() => {
+                      if (isVoucher) {
+                        // Voucher: show accelerator progress
+                        const acc = stakeAccelerator[idx];
+                        const pct = acc?.pct ?? 0;
+                        const unlocked = acc?.unlocked ?? false;
+                        if (unlocked) return null; // has dedicated countdown UI
+                        return (
+                          <div className="mt-3">
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-xs text-purple-400/70">⚡ Accelerator Progress</span>
+                              <span className="text-xs font-bold text-gold">{pct}%</span>
+                            </div>
+                            <div className="h-2 rounded-full bg-dark-elevated overflow-hidden">
+                              <motion.div
+                                initial={{ width: 0 }}
+                                animate={{ width: `${pct}%` }}
+                                transition={{ duration: 0.6, ease: 'easeOut' }}
+                                className="h-full rounded-full bg-gradient-to-r from-purple-600 to-purple-400"
+                              />
+                            </div>
+                          </div>
+                        );
+                      }
+                      // Normal stake: show lock time progress
                       const start = sData?.startTime ?? 0;
                       const end = sData?.lockEndTime ?? 0;
                       if (start === 0 || end === 0) return null;
