@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { STAKING_ADDRESS, USDT_ADDRESS, StakingABI } from '@/lib/contracts';
 import ContractAddress from '@/components/web3/ContractAddress';
+import { triggerCoinConfetti } from '@/components/effects/CoinConfetti';
 import { useI18n } from '@/lib/i18n';
 import { publicClient } from '@/components/web3/Web3Provider';
 import { decodeReferralCode, isReferralCode } from '@/lib/referral-code';
@@ -193,6 +194,7 @@ function StakingPageContent() {
       if (chainId !== bsc.id) { toast.loading('Switching to BSC Mainnet...', { id: toastId }); await switchChainAsync({ chainId: bsc.id }); toast.loading(`Staking ${stakeAmount} USDT in ${selectedPool?.tier} pool...`, { id: toastId }); }
       await writeContractAsync({ address: STAKING_ADDRESS, abi: StakingABI, functionName: 'stake', args: [BigInt(activePool), parseUnits(stakeAmount, 18)] });
       toast.success(`Successfully staked ${stakeAmount} USDT! 🎉`, { id: toastId });
+      triggerCoinConfetti();
       setStakeAmount('');
       setActivePool(null);
     } catch (e) {

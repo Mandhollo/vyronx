@@ -15,6 +15,7 @@ import { bsc } from 'wagmi/chains';
 import toast from 'react-hot-toast';
 import { isReferralCode, decodeReferralCode, encodeReferralCode } from '@/lib/referral-code';
 import ParticleField from '@/components/fx/ParticleField';
+import { triggerCoinConfetti } from '@/components/effects/CoinConfetti';
 import { useI18n } from '@/lib/i18n';
 
 const fadeUp = {
@@ -252,6 +253,7 @@ export default function PresalePage() {
         });
       }
       toast.success(`Successfully bought ${fmtNum(totalVyr)} VYR! 🎉`, { id: toastId });
+      triggerCoinConfetti();
       setBoughtVyr(fmtNum(totalVyr));
       setShowSuccess(true);
       setAmount('');

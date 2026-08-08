@@ -15,6 +15,7 @@ import {
   TOKEN_ADDRESS, STAKING_ADDRESS, USDT_ADDRESS,
   PresaleABI, StakingABI, TokenABI, STAKING_POOLS
 } from '@/lib/contracts';
+import { triggerCoinConfetti } from '@/components/effects/CoinConfetti';
 import ContractAddress from '@/components/web3/ContractAddress';
 import { formatUnits, parseUnits } from 'viem';
 import { bsc } from 'wagmi/chains';
@@ -99,7 +100,8 @@ export default function DashboardPage() {
         address: STAKING_ADDRESS, abi: StakingABI, functionName: 'redeemVoucher',
         args: [BigInt(voucherId)],
       });
-      toast.success('Voucher activated! Your virtual stake is now earning rewards. 🎫✨', { id: toastId });
+      toast.success('Voucher activated! MLM license active. 🎫✨', { id: toastId });
+      triggerCoinConfetti();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Failed to redeem voucher', { id: toastId });
     } finally {
@@ -303,6 +305,7 @@ export default function DashboardPage() {
         args: [BigInt(stakeIndex)],
       });
       toast.success('Withdrawal successful! VYR tokens received. 🎉', { id: toastId });
+      triggerCoinConfetti();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Withdrawal failed', { id: toastId });
     } finally {
@@ -323,6 +326,7 @@ export default function DashboardPage() {
         args: [BigInt(stakeIndex)],
       });
       toast.success('Daily earnings claimed in VYR! 🎉', { id: toastId });
+      triggerCoinConfetti();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Claim failed', { id: toastId });
     } finally {
@@ -341,6 +345,7 @@ export default function DashboardPage() {
         args: [BigInt(accIndex)],
       });
       toast.success('Grace commissions claimed! 🎉', { id: toastId });
+      triggerCoinConfetti();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Claim failed', { id: toastId });
     }

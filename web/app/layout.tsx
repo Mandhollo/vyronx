@@ -5,6 +5,7 @@ import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { Web3Provider } from "@/components/web3/Web3Provider";
 import { Toaster } from "react-hot-toast";
+import CoinConfetti from "@/components/effects/CoinConfetti";
 import { ScrollProgress, CustomCursor } from "@/components/fx/CursorFX";
 import { I18nProvider } from "@/lib/i18n";
 
@@ -80,6 +81,7 @@ export default function RootLayout({
             loading: { duration: Infinity },
           }}
         />
+        <CoinConfetti />
       </body>
     </html>
   );
