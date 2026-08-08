@@ -226,14 +226,14 @@ export default function DashboardPage() {
 
   // Read pending earnings for each stake
   const [earningsMap, setEarningsMap] = useState<Record<number, { usdt: string; vyr: string }>>({});
-  const [stakesData, setStakesData] = useState<Record<number, { poolId: number; usdtAmount: string; isVoucher: boolean; withdrawn: boolean }>>({});
+  const [stakesData, setStakesData] = useState<Record<number, { poolId: number; usdtAmount: string; isVoucher: boolean; withdrawn: boolean; startTime: number; lockEndTime: number }>>({});
 
-  // Fetch real stake data (pool, value, isVoucher) from chain
+  // Fetch real stake data (pool, value, isVoucher, times) from chain
   useEffect(() => {
     if (!address || stakeCount === 0) return;
     let active = true;
     (async () => {
-      const map: Record<number, { poolId: number; usdtAmount: string; isVoucher: boolean; withdrawn: boolean }> = {};
+      const map: Record<number, { poolId: number; usdtAmount: string; isVoucher: boolean; withdrawn: boolean; startTime: number; lockEndTime: number }> = {};
       for (let i = 0; i < stakeCount; i++) {
         try {
           const res = await publicClient.readContract({
@@ -243,10 +243,12 @@ export default function DashboardPage() {
           map[i] = {
             poolId: Number(res[1]),
             usdtAmount: formatUnits(res[2], 18),
-            isVoucher: res[7],
+            startTime: Number(res[3]),
+            lockEndTime: Number(res[4]),
             withdrawn: res[5],
+            isVoucher: res[7],
           };
-        } catch { map[i] = { poolId: 0, usdtAmount: '0', isVoucher: false, withdrawn: false }; }
+        } catch { map[i] = { poolId: 0, usdtAmount: '0', isVoucher: false, withdrawn: false, startTime: 0, lockEndTime: 0 }; }
       }
       if (active) setStakesData(map);
     })();
@@ -572,6 +574,36 @@ export default function DashboardPage() {
                         <div className="text-xs text-purple-400/60 italic">No earnings (license only)</div>
                       )}
                     </div>
+
+                    {/* Stake progress bar */}
+                    {!isVoucher && (() => {
+                      const start = sData?.startTime ?? 0;
+                      const end = sData?.lockEndTime ?? 0;
+                      if (start === 0 || end === 0) return null;
+                      const totalDuration = end - start;
+                      const elapsed = Math.max(0, now - start);
+                      const progressPct = isWithdrawn ? 100 : Math.min(100, Math.round((elapsed / totalDuration) * 100));
+                      const daysLeft = Math.max(0, Math.ceil((end - now) / 86400));
+                      const hoursLeft = Math.max(0, Math.ceil((end - now) / 3600));
+                      return (
+                        <div className="mt-3">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-xs text-beige-muted">
+                              {isWithdrawn ? '✓ Completed' : progressPct >= 100 ? 'Ready to withdraw' : daysLeft > 0 ? `${daysLeft} days left` : `${hoursLeft}h left`}
+                            </span>
+                            <span className={`text-xs font-bold ${progressPct >= 100 ? 'text-green-400' : 'text-gold'}`}>{progressPct}%</span>
+                          </div>
+                          <div className="h-2 rounded-full bg-dark-elevated overflow-hidden">
+                            <motion.div
+                              initial={{ width: 0 }}
+                              animate={{ width: `${progressPct}%` }}
+                              transition={{ duration: 0.6, ease: 'easeOut' }}
+                              className={`h-full rounded-full ${progressPct >= 100 ? 'bg-gradient-to-r from-green-500 to-green-400' : isWithdrawn ? 'bg-dark-border' : 'bg-gradient-to-r from-gold-dark to-gold-light'}`}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })()}
                   </motion.div>
                 );
               })}
