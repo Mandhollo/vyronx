@@ -51,24 +51,24 @@ export default function CoinConfetti() {
 
     const burst = () => {
       if (!canvas) return;
-      const count = 80; // number of coins
+      const count = 120; // more coins
       const cx = canvas.width / 2;
-      const cy = canvas.height * 0.4; // slightly above center
+      const cy = canvas.height * 0.35; // higher up
       for (let i = 0; i < count; i++) {
         const angle = (Math.PI * 2 * i) / count + Math.random() * 0.5;
-        const speed = 6 + Math.random() * 10;
+        const speed = 4 + Math.random() * 8;
         particlesRef.current.push({
           x: cx + (Math.random() - 0.5) * 200,
           y: cy,
           vx: Math.cos(angle) * speed * (0.5 + Math.random()),
-          vy: Math.sin(angle) * speed - 8 - Math.random() * 6,
+          vy: Math.sin(angle) * speed - 10 - Math.random() * 8,
           rotation: Math.random() * Math.PI * 2,
-          vr: (Math.random() - 0.5) * 0.3,
-          size: 18 + Math.random() * 22,
+          vr: (Math.random() - 0.5) * 0.2,
+          size: 20 + Math.random() * 28,
           life: 0,
-          maxLife: 120 + Math.random() * 80,
+          maxLife: 400 + Math.random() * 200, // much longer life
           flip: 0,
-          vflip: 0.05 + Math.random() * 0.1,
+          vflip: 0.03 + Math.random() * 0.06, // slower flip
         });
       }
     };
@@ -81,19 +81,21 @@ export default function CoinConfetti() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
       const particles = particlesRef.current;
-      const gravity = 0.35;
+      const gravity = 0.18; // much lighter gravity = coins float longer
 
       for (let i = particles.length - 1; i >= 0; i--) {
         const p = particles[i];
         p.life++;
         p.vy += gravity;
-        p.vx *= 0.992;
+        p.vx *= 0.995; // less air resistance
         p.x += p.vx;
         p.y += p.vy;
         p.rotation += p.vr;
         p.flip += p.vflip;
 
-        const fade = Math.max(0, 1 - p.life / p.maxLife);
+        // Only start fading in the last 15% of life
+        const lifeRatio = p.life / p.maxLife;
+        const fade = lifeRatio > 0.85 ? Math.max(0, 1 - (lifeRatio - 0.85) / 0.15) : 1;
 
         if (p.life >= p.maxLife || p.y > canvas.height + 60) {
           particles.splice(i, 1);
