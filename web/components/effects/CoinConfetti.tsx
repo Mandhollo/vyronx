@@ -81,7 +81,7 @@ export default function CoinConfetti() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
       const particles = particlesRef.current;
-      const gravity = 0.1; // very light gravity = coins float much longer
+      const gravity = 0.02; // almost zero gravity = coins barely fall
 
       for (let i = particles.length - 1; i >= 0; i--) {
         const p = particles[i];
