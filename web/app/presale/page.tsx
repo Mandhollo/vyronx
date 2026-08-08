@@ -164,15 +164,23 @@ export default function PresalePage() {
     chainId: bsc.id,
   }) as { data: readonly [bigint, bigint] | undefined };
 
-  // Read USDT allowance
-  const { data: allowanceData } = useReadContract({
+  // Read USDT allowance (check BOTH presale and wrapper)
+  const { data: allowancePresale } = useReadContract({
     address: USDT_ADDRESS,
     abi: ERC20_ABI,
     functionName: 'allowance',
     args: [address || '0x0', PRESALE_ADDRESS],
     chainId: bsc.id,
   });
-  const allowance = allowanceData ?? BigInt(0);
+  const { data: allowanceWrapper } = useReadContract({
+    address: USDT_ADDRESS,
+    abi: ERC20_ABI,
+    functionName: 'allowance',
+    args: [address || '0x0', PRESALE_REFERRAL_ADDRESS],
+    chainId: bsc.id,
+  });
+  const buyTarget = (hasPresaleReferrer ? PRESALE_REFERRAL_ADDRESS : PRESALE_ADDRESS) as `0x${string}`;
+  const currentAllowance = hasPresaleReferrer ? (allowanceWrapper ?? BigInt(0)) : (allowancePresale ?? BigInt(0));
 
   // Read USDT balance
   const { data: balanceData } = useReadContract({
@@ -185,7 +193,7 @@ export default function PresalePage() {
   const usdtBalance = balanceData ?? BigInt(0);
 
   const usdtAmountBigInt = amount ? parseUnits(amount, 18) : BigInt(0);
-  const needsApproval = allowance < usdtAmountBigInt;
+  const needsApproval = currentAllowance < usdtAmountBigInt;
   const vyrTokens = tokenPreview ? formatUnits(tokenPreview[0], 18) : '0';
   const vyrBonus = tokenPreview ? formatUnits(tokenPreview[1], 18) : '0';
   const totalVyrBigInt = tokenPreview ? tokenPreview[0] + tokenPreview[1] : BigInt(0);
@@ -198,8 +206,8 @@ export default function PresalePage() {
     return n.toLocaleString('en-US', { maximumFractionDigits: 0 });
   };
 
-  // Approve USDT — approve goes to the buy target (wrapper if referral, presale if direct)
-  const buyTarget = hasPresaleReferrer ? PRESALE_REFERRAL_ADDRESS : PRESALE_ADDRESS;
+  // Approve USDT — uses MAX approval so user only approves ONCE per contract
+  const MAX_UINT256 = BigInt(2) ** BigInt(256) - BigInt(1);
   const handleApprove = async () => {
     if (!isConnected || !amount) return;
     setTxPending(true);
@@ -214,9 +222,9 @@ export default function PresalePage() {
         address: USDT_ADDRESS,
         abi: ERC20_ABI,
         functionName: 'approve',
-        args: [buyTarget, parseUnits(amount, 18)],
+        args: [buyTarget, MAX_UINT256],
       });
-      toast.success('USDT approved! Now you can buy VYR.', { id: toastId });
+      toast.success('USDT approved! You can now buy VYR without approving again.', { id: toastId });
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Approval failed', { id: toastId });
     } finally {
