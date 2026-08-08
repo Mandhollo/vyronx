@@ -21,8 +21,8 @@ export const StakingABI = VyronXStakingV4ABI;
 export const ReferralABI = PresaleReferralABI;
 
 // Chain config
-export const CHAIN_ID = Number(process.env.NEXT_PUBLIC_CHAIN_ID || 97);
-export const RPC_URL = process.env.NEXT_PUBLIC_RPC_URL || 'https://data-seed-prebsc-1-s1.binance.org:8545';
+export const CHAIN_ID = Number(process.env.NEXT_PUBLIC_CHAIN_ID || 56);
+export const RPC_URL = process.env.NEXT_PUBLIC_RPC_URL || 'https://bsc-dataseed.binance.org';
 
 // Token info
 export const TOKEN_INFO = {
