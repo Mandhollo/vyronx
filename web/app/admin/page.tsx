@@ -1192,29 +1192,42 @@ function V2MigrationBanner({ pending, setPending, exec }: { pending: string | nu
   const { switchChainAsync } = useSwitchChain();
   const { writeContractAsync } = useWriteContract();
 
-  // Real-time checks
-  const { data: v2Authorized } = useReadContract({
-    address: TOKEN_ADDRESS, abi: TokenABI, functionName: 'isAuthorized', args: [STAKING_ADDRESS], chainId: bsc.id,
+  // Read V3 balance (source of migration)
+  const { data: v3Balance } = useReadContract({
+    address: TOKEN_ADDRESS, abi: TokenABI, functionName: 'balanceOf', args: [STAKING_V1_ADDRESS], chainId: bsc.id,
   });
-  const { data: v2Balance } = useReadContract({
+  // Read V4 balance (destination)
+  const { data: v4Balance } = useReadContract({
     address: TOKEN_ADDRESS, abi: TokenABI, functionName: 'balanceOf', args: [STAKING_ADDRESS], chainId: bsc.id,
   });
-  const { data: v2LimitsRemoved } = useReadContract({
-    address: TOKEN_ADDRESS, abi: TokenABI, functionName: 'isExcludedFromLimits', args: [STAKING_V1_ADDRESS], chainId: bsc.id,
+
+  // Step 0: Exclude V3 from FEES (CRITICAL — prevents 8% tax on transfer)
+  const { data: v3FeeExcluded } = useReadContract({
+    address: TOKEN_ADDRESS, abi: TokenABI, functionName: 'isExcludedFromFees', args: [STAKING_V1_ADDRESS], chainId: bsc.id,
   });
-
-  const step0Done = v2LimitsRemoved === true;
-  const step1Done = v2Authorized === true;
-  const step2Done = v2Balance != null && BigInt(String(v2Balance)) > BigInt(0);
-
-  // Step 3: V3 excluded from limits
-  const { data: v3LimitsRemoved } = useReadContract({
+  // Step 1: Authorize V4
+  const { data: v4Authorized } = useReadContract({
+    address: TOKEN_ADDRESS, abi: TokenABI, functionName: 'isAuthorized', args: [STAKING_ADDRESS], chainId: bsc.id,
+  });
+  // Step 2: Exclude V4 from FEES (CRITICAL — V4 payouts don't lose 8%)
+  const { data: v4FeeExcluded } = useReadContract({
+    address: TOKEN_ADDRESS, abi: TokenABI, functionName: 'isExcludedFromFees', args: [STAKING_ADDRESS], chainId: bsc.id,
+  });
+  // Step 3: Exclude V4 from limits (for large payouts)
+  const { data: v4LimitsRemoved } = useReadContract({
     address: TOKEN_ADDRESS, abi: TokenABI, functionName: 'isExcludedFromLimits', args: [STAKING_ADDRESS], chainId: bsc.id,
   });
-  const step3Done = v3LimitsRemoved === true;
-  const allDone = step1Done && step2Done;
 
-  if (allDone && step3Done) {
+  const step0Done = v3FeeExcluded === true;
+  const step1Done = v4Authorized === true;
+  const step2Done = v4FeeExcluded === true;
+  const step3Done = v4LimitsRemoved === true;
+  const step4Done = v4Balance != null && BigInt(String(v4Balance)) > BigInt(0);
+  const allDone = step0Done && step1Done && step2Done && step3Done && step4Done;
+
+  const transferAmount = v3Balance ? String(BigInt(String(v3Balance)) / BigInt(10**18)) : '432400000';
+
+  if (allDone) {
     return (
       <motion.div variants={fadeUp} className="rounded-2xl border border-green-500/40 bg-green-500/5 p-6">
         <div className="flex items-center gap-3">
@@ -1222,8 +1235,8 @@ function V2MigrationBanner({ pending, setPending, exec }: { pending: string | nu
             <Check className="h-6 w-6 text-green-400" />
           </div>
           <div>
-            <h3 className="text-base font-bold text-green-400">✅ Staking V3 Ativo!</h3>
-            <p className="text-xs text-beige-muted">Migração concluída. V3 tem {v2Balance ? Number(BigInt(String(v2Balance)) / BigInt(10**18)).toLocaleString() : 0} VYR.</p>
+            <h3 className="text-base font-bold text-green-400">✅ Staking V4 Ativo!</h3>
+            <p className="text-xs text-beige-muted">Migração concluída. V4 tem {v4Balance ? Number(BigInt(String(v4Balance)) / BigInt(10**18)).toLocaleString() : 0} VYR.</p>
           </div>
         </div>
       </motion.div>
@@ -1234,136 +1247,165 @@ function V2MigrationBanner({ pending, setPending, exec }: { pending: string | nu
     <motion.div variants={fadeUp} className="rounded-2xl border border-gold/40 bg-gradient-to-b from-dark-card to-gold/10 p-6 glow-gold">
       <div className="flex items-center gap-2 mb-3">
         <Zap className="h-5 w-5 text-gold" />
-        <h3 className="text-base font-bold text-gold">Staking V3 Migration — Action Required</h3>
+        <h3 className="text-base font-bold text-gold">Staking V4 Migration — Action Required</h3>
       </div>
-      <p className="text-xs text-beige-muted mb-4">Complete the 2 steps below to activate the new Staking V3.</p>
+      <p className="text-xs text-beige-muted mb-4">Complete all 5 steps IN ORDER. Each step prevents supply loss. V3 has {v3Balance ? Number(BigInt(String(v3Balance)) / BigInt(10**18)).toLocaleString() : '?'} VYR.</p>
 
       <div className="space-y-3">
-        {/* Step 0: Remove Token Limits on Old Staking (required for 470M transfer) */}
-        <div className={`rounded-xl p-4 border ${step0Done ? 'border-green-500/40 bg-green-500/5' : 'border-amber-500/30 bg-dark-elevated'}`}>
+        {/* Step 0: Exclude V3 from FEES (CRITICAL) */}
+        <div className={`rounded-xl p-4 border ${step0Done ? 'border-green-500/40 bg-green-500/5' : 'border-red-500/40 bg-red-500/5'}`}>
           <div className="flex items-center justify-between mb-2">
             <div>
               <div className="text-sm font-bold text-white flex items-center gap-2">
                 {step0Done && <Check className="h-4 w-4 text-green-400" />}
-                Step 0: Remove Token Limits on Old Staking
+                Step 0: Exclude V3 from Transfer Fees
               </div>
-              <div className="text-xs text-beige-muted">Required to transfer 470M VYR (maxTx is 10M).</div>
+              <div className="text-xs text-beige-muted mt-1">CRITICAL — Without this, the 8% buy/sell tax applies to the V3→V4 transfer, destroying supply.</div>
             </div>
             {step0Done && <span className="text-xs font-bold text-green-400">✓ DONE</span>}
           </div>
           {!step0Done && (
             <button
               onClick={async () => {
-                setPending('Exclude Limits');
+                setPending('Exclude V3 Fees');
                 try {
                   if (chainId !== bsc.id) await switchChainAsync({ chainId: bsc.id });
-                  await writeContractAsync({ address: TOKEN_ADDRESS, abi: TokenABI, functionName: 'setExcludedFromLimits', args: [STAKING_V1_ADDRESS, true] });
-                  toast.success('Step 0 concluído! ✅ Limits removidos.');
+                  await writeContractAsync({ address: TOKEN_ADDRESS, abi: TokenABI, functionName: 'setExcludedFromFees', args: [STAKING_V1_ADDRESS, true] });
+                  toast.success('Step 0 concluído! ✅ V3 isento de taxas.');
                 } catch (e) { toast.error(e instanceof Error ? e.message : 'Failed'); }
                 finally { setPending(null); }
               }}
               disabled={pending !== null}
-              className="w-full sm:w-auto px-6 py-2.5 text-sm font-bold rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/30 hover:bg-amber-500/30 transition-all disabled:opacity-50"
+              className="w-full sm:w-auto px-6 py-2.5 text-sm font-bold rounded-xl bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30 transition-all disabled:opacity-50"
             >
-              {pending === 'Exclude Limits' ? 'Confirming...' : 'Remove Limits'}
+              {pending === 'Exclude V3 Fees' ? 'Confirming...' : 'Exclude V3 from Fees'}
             </button>
           )}
         </div>
 
-        {/* Step 1 */}
-        <div className={`rounded-xl p-4 border ${step1Done ? 'border-green-500/40 bg-green-500/5' : 'border-dark-border bg-dark-elevated'}`}>
+        {/* Step 1: Authorize V4 */}
+        <div className={`rounded-xl p-4 border ${step1Done ? 'border-green-500/40 bg-green-500/5' : step0Done ? 'border-gold/30 bg-dark-elevated' : 'border-dark-border bg-dark-elevated opacity-60'}`}>
           <div className="flex items-center justify-between mb-2">
             <div>
               <div className="text-sm font-bold text-white flex items-center gap-2">
                 {step1Done && <Check className="h-4 w-4 text-green-400" />}
-                Step 1: Authorize V3 Contract
+                Step 1: Authorize V4 Contract
               </div>
-              <div className="text-xs text-beige-muted">Allow V3 to transfer VYR tokens.</div>
+              <div className="text-xs text-beige-muted">Allow V4 to interact with the Token contract.</div>
             </div>
             {step1Done && <span className="text-xs font-bold text-green-400">✓ DONE</span>}
           </div>
           {!step1Done && (
             <button
               onClick={async () => {
-                setPending('Auth V2');
+                setPending('Auth V4');
                 try {
                   if (chainId !== bsc.id) await switchChainAsync({ chainId: bsc.id });
                   await writeContractAsync({ address: TOKEN_ADDRESS, abi: TokenABI, functionName: 'setAuthorized', args: [STAKING_ADDRESS, true] });
-                  toast.success('Step 1 concluído! ✅ V3 autorizado.');
+                  toast.success('Step 1 concluído! ✅ V4 autorizado.');
                 } catch (e) { toast.error(e instanceof Error ? e.message : 'Failed'); }
                 finally { setPending(null); }
               }}
               disabled={pending !== null || !step0Done}
               className="w-full sm:w-auto px-6 py-2.5 text-sm font-bold rounded-xl bg-gradient-to-r from-gold-light to-gold-dark text-dark hover:shadow-lg hover:shadow-gold/40 transition-all disabled:opacity-50"
             >
-              {pending === 'Auth V2' ? 'Confirming...' : 'Authorize V3'}
+              {pending === 'Auth V4' ? 'Confirming...' : 'Authorize V4'}
             </button>
-          )}
-          {step1Done && !step2Done && (
-            <div className="text-xs text-green-400 font-medium mt-1">✅ Step 1 concluído! Siga para o Step 2 →</div>
           )}
         </div>
 
-        {/* Step 2 */}
-        <div className={`rounded-xl p-4 border ${step2Done ? 'border-green-500/40 bg-green-500/5' : step1Done ? 'border-gold/30 bg-dark-elevated' : 'border-dark-border bg-dark-elevated opacity-60'}`}>
+        {/* Step 2: Exclude V4 from FEES (CRITICAL) */}
+        <div className={`rounded-xl p-4 border ${step2Done ? 'border-green-500/40 bg-green-500/5' : step1Done ? 'border-red-500/40 bg-red-500/5' : 'border-dark-border bg-dark-elevated opacity-60'}`}>
           <div className="flex items-center justify-between mb-2">
             <div>
               <div className="text-sm font-bold text-white flex items-center gap-2">
                 {step2Done && <Check className="h-4 w-4 text-green-400" />}
-                Step 2: Transfer 470M VYR (V2 → V3)
+                Step 2: Exclude V4 from Transfer Fees
               </div>
-              <div className="text-xs text-beige-muted">Move reward tokens from V2 to new V3.</div>
+              <div className="text-xs text-beige-muted mt-1">CRITICAL — Without this, V4 loses 8% on every reward payout to stakers.</div>
             </div>
             {step2Done && <span className="text-xs font-bold text-green-400">✓ DONE</span>}
           </div>
-          {!step2Done && (
-            <>
-              <button
-                onClick={async () => {
-                  setPending('Migrate VYR');
-                  try {
-                    if (chainId !== bsc.id) await switchChainAsync({ chainId: bsc.id });
-                    await writeContractAsync({ address: STAKING_V1_ADDRESS, abi: StakingABI, functionName: 'withdrawVYRTokens', args: [STAKING_ADDRESS, parseUnits('470000000', 18)] });
-                    toast.success('Step 2 concluído! ✅ 470M VYR transferidos.');
-                  } catch (e) { toast.error(e instanceof Error ? e.message : 'Failed'); }
-                  finally { setPending(null); }
-                }}
-                disabled={pending !== null || !step1Done}
-                className="w-full sm:w-auto px-6 py-2.5 text-sm font-bold rounded-xl bg-gradient-to-r from-gold-light to-gold-dark text-dark hover:shadow-lg hover:shadow-gold/40 transition-all disabled:opacity-50"
-              >
-                {pending === 'Migrate VYR' ? 'Confirming...' : 'Transfer 470M to V2'}
-              </button>
-              {!step1Done && <p className="text-xs text-amber-400 mt-2">⚠️ Complete Step 1 first.</p>}
-            </>
+          {!step2Done && step1Done && (
+            <button
+              onClick={async () => {
+                setPending('Exclude V4 Fees');
+                try {
+                  if (chainId !== bsc.id) await switchChainAsync({ chainId: bsc.id });
+                  await writeContractAsync({ address: TOKEN_ADDRESS, abi: TokenABI, functionName: 'setExcludedFromFees', args: [STAKING_ADDRESS, true] });
+                  toast.success('Step 2 concluído! ✅ V4 isento de taxas.');
+                } catch (e) { toast.error(e instanceof Error ? e.message : 'Failed'); }
+                finally { setPending(null); }
+              }}
+              disabled={pending !== null}
+              className="w-full sm:w-auto px-6 py-2.5 text-sm font-bold rounded-xl bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30 transition-all disabled:opacity-50"
+            >
+              {pending === 'Exclude V4 Fees' ? 'Confirming...' : 'Exclude V4 from Fees'}
+            </button>
           )}
         </div>
 
-        {/* Step 3: Exclude V3 from limits */}
-        {allDone && !step3Done && (
-          <div className="mt-4 rounded-xl border border-amber-500/40 bg-amber-500/5 p-4">
-            <div className="flex items-center justify-between mb-2">
-              <div>
-                <div className="text-sm font-bold text-amber-400 flex items-center gap-2">Step 3: Remove V3 Token Limits</div>
-                <div className="text-xs text-beige-muted mt-1">Required so V3 can pay out staking rewards without hitting the 10M maxTx limit.</div>
+        {/* Step 3: Exclude V4 from limits */}
+        <div className={`rounded-xl p-4 border ${step3Done ? 'border-green-500/40 bg-green-500/5' : step2Done ? 'border-amber-500/30 bg-dark-elevated' : 'border-dark-border bg-dark-elevated opacity-60'}`}>
+          <div className="flex items-center justify-between mb-2">
+            <div>
+              <div className="text-sm font-bold text-white flex items-center gap-2">
+                {step3Done && <Check className="h-4 w-4 text-green-400" />}
+                Step 3: Exclude V4 from Tx Limits
               </div>
+              <div className="text-xs text-beige-muted">Required so V4 can pay large staking rewards without hitting the 10M maxTx limit.</div>
             </div>
+            {step3Done && <span className="text-xs font-bold text-green-400">✓ DONE</span>}
+          </div>
+          {!step3Done && step2Done && (
             <button
               onClick={async () => {
-                setPending('V3 Limits');
+                setPending('V4 Limits');
                 try {
                   if (chainId !== bsc.id) await switchChainAsync({ chainId: bsc.id });
                   await writeContractAsync({ address: TOKEN_ADDRESS, abi: TokenABI, functionName: 'setExcludedFromLimits', args: [STAKING_ADDRESS, true] });
-                  toast.success('Step 3 concluído! ✅ V3 sem limites.');
+                  toast.success('Step 3 concluído! ✅ V4 sem limites.');
                 } catch (e) { toast.error(e instanceof Error ? e.message : 'Failed'); }
                 finally { setPending(null); }
               }}
               disabled={pending !== null}
               className="w-full sm:w-auto px-6 py-2.5 text-sm font-bold rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/30 hover:bg-amber-500/30 transition-all disabled:opacity-50"
             >
-              {pending === 'V3 Limits' ? 'Confirming...' : 'Exclude V3 from Limits'}
+              {pending === 'V4 Limits' ? 'Confirming...' : 'Exclude V4 from Limits'}
             </button>
+          )}
+        </div>
+
+        {/* Step 4: Transfer VYR */}
+        <div className={`rounded-xl p-4 border ${step4Done ? 'border-green-500/40 bg-green-500/5' : step3Done ? 'border-gold/30 bg-dark-elevated' : 'border-dark-border bg-dark-elevated opacity-60'}`}>
+          <div className="flex items-center justify-between mb-2">
+            <div>
+              <div className="text-sm font-bold text-white flex items-center gap-2">
+                {step4Done && <Check className="h-4 w-4 text-green-400" />}
+                Step 4: Transfer {transferAmount} VYR (V3 → V4)
+              </div>
+              <div className="text-xs text-beige-muted">Move all reward tokens from V3 to V4. Zero supply loss — fees are exempt.</div>
+            </div>
+            {step4Done && <span className="text-xs font-bold text-green-400">✓ DONE</span>}
           </div>
-        )}
+          {!step4Done && step3Done && (
+            <button
+              onClick={async () => {
+                setPending('Migrate VYR');
+                try {
+                  if (chainId !== bsc.id) await switchChainAsync({ chainId: bsc.id });
+                  await writeContractAsync({ address: STAKING_V1_ADDRESS, abi: StakingABI, functionName: 'withdrawVYRTokens', args: [STAKING_ADDRESS, parseUnits(transferAmount, 18)] });
+                  toast.success(`Step 4 concluído! ✅ ${transferAmount} VYR transferidos.`);
+                } catch (e) { toast.error(e instanceof Error ? e.message : 'Failed'); }
+                finally { setPending(null); }
+              }}
+              disabled={pending !== null || !step3Done}
+              className="w-full sm:w-auto px-6 py-2.5 text-sm font-bold rounded-xl bg-gradient-to-r from-gold-light to-gold-dark text-dark hover:shadow-lg hover:shadow-gold/40 transition-all disabled:opacity-50"
+            >
+              {pending === 'Migrate VYR' ? 'Confirming...' : `Transfer ${transferAmount} VYR`}
+            </button>
+          )}
+        </div>
       </div>
     </motion.div>
   );
