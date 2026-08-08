@@ -866,7 +866,7 @@ export default function AdminPage() {
             {/* Transfer Ownership — 3 contracts */}
             <TransferOwnershipCard label="Token" addr={TOKEN_ADDRESS} abi={TokenABI} pending={pending} exec={exec} writeContractAsync={writeContractAsync} />
             <TransferOwnershipCard label="Presale" addr={PRESALE_ADDRESS} abi={PresaleABI} pending={pending} exec={exec} writeContractAsync={writeContractAsync} />
-            <TransferOwnershipCard label="Staking V3" addr={STAKING_ADDRESS} abi={StakingABI} pending={pending} exec={exec} writeContractAsync={writeContractAsync} />
+            <TransferOwnershipCard label="Staking V4" addr={STAKING_ADDRESS} abi={StakingABI} pending={pending} exec={exec} writeContractAsync={writeContractAsync} />
 
             {/* Staking Wallets */}
             <motion.div variants={fadeUp} className="rounded-2xl border border-dark-border bg-dark-card p-6">
