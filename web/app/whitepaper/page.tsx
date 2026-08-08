@@ -268,8 +268,21 @@ export default function WhitepaperPage() {
               <motion.section variants={fadeUp} id="affiliates" className="scroll-mt-24">
                 <h2 className="text-2xl font-bold text-white mb-4">{t('wp.affiliates')}</h2>
                 <p className="text-beige leading-relaxed mb-4">
-                  Residual commissions on <span className="text-gold font-bold">profit</span> (never principal) from your 360-day pool network.
+                  Residual commissions on <span className="text-gold font-bold">daily yield</span> (never principal) from your entire network across <span className="text-gold font-bold">all 4 pools</span>. When a downline member claims daily earnings, the commission is instantly distributed to qualified uplines in VYR.
                 </p>
+                <div className="rounded-xl bg-dark-card border border-gold/30 p-5 mb-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <div className="text-gold font-bold mb-1">How it works</div>
+                      <div className="text-beige-muted">Commissions are calculated on the <span className="text-gold">daily profit</span> of your referrals, not their stake amount. If a referral earns $5/day, you get 7% = $0.35/day.</div>
+                    </div>
+                    <div>
+                      <div className="text-gold font-bold mb-1">Qualification</div>
+                      <div className="text-beige-muted">Only participants with an <span className="text-gold">active Elite (360-day) stake</span> receive affiliate commissions. Downline can be in any pool.</div>
+                    </div>
+                  </div>
+                </div>
+                <p className="text-xs text-beige-muted mb-4">A 4% fee applies to USDT accelerator commissions, split equally between the 4 project wallets (Collaborators, Infrastructure, Development, Marketing).</p>
                 <div className="overflow-x-auto rounded-2xl border border-dark-border bg-dark-card mb-4">
                   <table className="w-full text-sm">
                     <thead>
@@ -277,28 +290,28 @@ export default function WhitepaperPage() {
                         <th className="px-4 py-3 text-left text-xs font-bold uppercase text-gold">Level</th>
                         <th className="px-4 py-3 text-left text-xs font-bold uppercase text-gold">Commission</th>
                         <th className="px-4 py-3 text-left text-xs font-bold uppercase text-gold">Min Stake</th>
-                        <th className="px-4 py-3 text-left text-xs font-bold uppercase text-gold">Direct Refs</th>
+                        <th className="px-4 py-3 text-left text-xs font-bold uppercase text-gold">Min Direct Refs</th>
                       </tr>
                     </thead>
                     <tbody>
                       {[
-                        ['1', '7%', '$100', '—'],
+                        ['1', '7%', '$100', '0'],
                         ['2', '6%', '$200', '2'],
                         ['3', '5%', '$300', '3'],
-                        ['4', '4%', '$400', '4'],
-                        ['5', '3%', '$500', '5'],
-                        ['6', '2%', '$600', '6'],
-                        ['7', '2%', '$700', '7'],
-                        ['8', '2%', '$800', '8'],
-                        ['9', '2%', '$900', '9'],
-                        ['10', '2%', '$1,000', '10'],
-                        ['11', '7%', '$1,100', '11'],
+                        ['4', '4%', '$400', '5'],
+                        ['5', '3%', '$500', '8'],
+                        ['6', '2%', '$600', '12'],
+                        ['7', '2%', '$700', '15'],
+                        ['8', '2%', '$800', '20'],
+                        ['9', '2%', '$900', '25'],
+                        ['10', '2%', '$1,000', '30'],
+                        ['11', '7%', '$1,100', '50'],
                       ].map(([lvl, comm, stake, refs]) => (
                         <tr key={lvl} className="border-b border-dark-border/50 last:border-0 hover:bg-gold/5">
                           <td className="px-4 py-2 text-sm font-bold text-white">Lv {lvl}</td>
                           <td className="px-4 py-2 text-sm font-bold text-gold">{comm}</td>
                           <td className="px-4 py-2 text-sm text-beige">{stake}</td>
-                          <td className="px-4 py-2 text-sm text-beige">{refs} × $100</td>
+                          <td className="px-4 py-2 text-sm text-beige">{refs}</td>
                         </tr>
                       ))}
                     </tbody>

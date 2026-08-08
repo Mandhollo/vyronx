@@ -793,7 +793,12 @@ export default function DashboardPage() {
                   const directsProgress = row.directs === 0 ? 100 : Math.min(100, (directCount / row.directs) * 100);
                   const overallProgress = Math.round((stakeProgress + directsProgress) / 2);
                   const completed = overallProgress >= 100;
-                  const estEarnings = ld.volume > 0 ? (ld.volume * row.pct / 100) : 0;
+                  // V4 FIX: Est. earnings calculated on DAILY YIELD, not volume
+                  // Formula: volume * dailyRate * commission%
+                  const dailyRates = [0.11, 0.23, 0.33, 0.50]; // Starter, Growth, Pro, Elite
+                  // Use average daily rate across pools as estimate
+                  const avgDailyRate = 0.30; // average approximation
+                  const estEarnings = ld.volume > 0 ? (ld.volume * avgDailyRate / 100 * row.pct / 100) : 0;
                   const isElite = row.level === 11;
                   const isTop3 = row.level <= 3;
 

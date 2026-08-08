@@ -888,6 +888,44 @@ export default function AdminPage() {
                 </div>
               </div>
 
+              {/* V4: Configurable accelerator + commission fees */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+                <div className="rounded-xl bg-gold/5 border border-gold/20 p-4">
+                  <label className="text-xs text-gold block mb-1">Accelerator Commission (currently 10%, max 20%)</label>
+                  <div className="flex gap-2">
+                    <input type="number" id="newAccComm" placeholder="e.g. 10 (for 10%)" min="0" max="20"
+                      className="flex-1 bg-dark-elevated border border-dark-border rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-gold/50" />
+                    <button onClick={async () => {
+                      const val = parseFloat((document.getElementById('newAccComm') as HTMLInputElement).value);
+                      if (isNaN(val) || val < 0 || val > 20) return toast.error('Enter 0-20');
+                      await exec('Set Acc Comm', async () => {
+                        await writeContractAsync({ address: STAKING_ADDRESS, abi: StakingABI, functionName: 'setAcceleratorCommBps', args: [BigInt(Math.round(val * 100))] });
+                      });
+                    }} disabled={pending === 'Set Acc Comm'}
+                      className="px-4 py-2 text-sm font-bold rounded-lg bg-gradient-to-r from-gold-light to-gold-dark text-dark disabled:opacity-50">
+                      {pending === 'Set Acc Comm' ? '...' : 'Set Acc %'}
+                    </button>
+                  </div>
+                </div>
+                <div className="rounded-xl bg-gold/5 border border-gold/20 p-4">
+                  <label className="text-xs text-gold block mb-1">Commission Fee (currently 4%, max 10%)</label>
+                  <div className="flex gap-2">
+                    <input type="number" id="newCommFee" placeholder="e.g. 4 (for 4%)" min="0" max="10"
+                      className="flex-1 bg-dark-elevated border border-dark-border rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-gold/50" />
+                    <button onClick={async () => {
+                      const val = parseFloat((document.getElementById('newCommFee') as HTMLInputElement).value);
+                      if (isNaN(val) || val < 0 || val > 10) return toast.error('Enter 0-10');
+                      await exec('Set Comm Fee', async () => {
+                        await writeContractAsync({ address: STAKING_ADDRESS, abi: StakingABI, functionName: 'setCommFeeBps', args: [BigInt(Math.round(val * 100))] });
+                      });
+                    }} disabled={pending === 'Set Comm Fee'}
+                      className="px-4 py-2 text-sm font-bold rounded-lg bg-gradient-to-r from-gold-light to-gold-dark text-dark disabled:opacity-50">
+                      {pending === 'Set Comm Fee' ? '...' : 'Set Comm Fee %'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="text-xs text-beige-muted block mb-1">New Fee Wallet</label>
