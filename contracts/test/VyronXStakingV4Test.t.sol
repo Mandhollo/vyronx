@@ -273,3 +273,92 @@ contract VyronXStakingV4Test is Test {
         assertEq(staking.totalReferralEarnings(promoter), 0, "Promoter without Elite should NOT receive MLM");
     }
 }
+
+contract VyronXStakingV4MigrationTest is Test {
+    VyronXStakingV4 staking;
+    MockERC20 usdt;
+    MockERC20 vyr;
+    address owner = address(0x1111);
+    address promoter = address(0x2222);
+    address investor = address(0x3333);
+
+    function setUp() public {
+        usdt = new MockERC20();
+        vyr = new MockERC20();
+        usdt.mint(investor, 100000e18);
+        vyr.mint(address(this), 500_000_000e18);
+        address collector = address(0xC011);
+        vm.prank(owner);
+        staking = new VyronXStakingV4(address(usdt), address(vyr), collector, owner);
+        vyr.transfer(address(staking), 500_000_000e18);
+        vm.prank(owner);
+        staking.setPoolActive(3, true);
+        vm.startPrank(investor);
+        usdt.approve(address(staking), type(uint256).max);
+        vm.stopPrank();
+    }
+
+    /// @dev Migrated voucher (via migrateVoucher) should receive MLM commissions
+    function test_MigratedVoucher_ReceivesMLM() public {
+        // Step 1: Owner migrates a voucher for promoter
+        vm.prank(owner);
+        staking.migrateVoucher(promoter, 3, 1100e18, owner);
+
+        // Verify migration
+        assertEq(staking.getVoucherCount(), 1, "Voucher should be migrated");
+        assertEq(staking.getUserStakeCount(promoter), 1, "Promoter should have 1 virtual stake");
+        (address ref,,) = staking.getReferralInfo(promoter);
+        assertEq(ref, owner, "Promoter referrer should be owner");
+
+        // Step 2: Investor stakes in Elite, referred by promoter
+        vm.startPrank(investor);
+        staking.setReferrer(promoter);
+        staking.stake(3, 1000e18);
+        vm.stopPrank();
+
+        // Step 3: Fast forward 3 days
+        vm.warp(block.timestamp + 3 days);
+
+        // Step 4: Investor claims daily earnings
+        vm.prank(investor);
+        staking.claimDailyEarnings(0);
+
+        // Step 5: Owner (upline of promoter) should receive MLM commission
+        // Promoter has voucher (Pool 360 active), so qualifies for MLM
+        // But promoter is Level 1 (direct referrer of investor)
+        // Commission: $15 yield * 7% = $1.05
+        assertGt(staking.totalReferralEarnings(promoter), 0, "Migrated voucher holder should receive MLM");
+    }
+
+    /// @dev Migrated voucher with batch should preserve referral chain
+    function test_MigratedVoucherBatch_PreservesChain() public {
+        address[] memory recipients = new address[](2);
+        recipients[0] = promoter;
+        recipients[1] = investor;
+
+        uint256[] memory poolIds = new uint256[](2);
+        poolIds[0] = 3;
+        poolIds[1] = 3;
+
+        uint256[] memory values = new uint256[](2);
+        values[0] = 1100e18;
+        values[1] = 1100e18;
+
+        address[] memory refs = new address[](2);
+        refs[0] = owner;        // promoter referred by owner
+        refs[1] = promoter;     // investor referred by promoter
+
+        vm.prank(owner);
+        staking.migrateVoucherBatch(recipients, poolIds, values, refs);
+
+        // Verify chain: owner → promoter → investor
+        (address pRef,,) = staking.getReferralInfo(promoter);
+        (address iRef,,) = staking.getReferralInfo(investor);
+        assertEq(pRef, owner, "Promoter referrer = owner");
+        assertEq(iRef, promoter, "Investor referrer = promoter");
+
+        // Verify both have virtual stakes
+        assertEq(staking.getUserStakeCount(promoter), 1);
+        assertEq(staking.getUserStakeCount(investor), 1);
+    }
+}

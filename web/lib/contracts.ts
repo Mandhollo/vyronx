@@ -9,9 +9,9 @@ import PresaleReferralABI from './abi/PresaleReferral.json';
 
 export const TOKEN_ADDRESS = process.env.NEXT_PUBLIC_TOKEN_ADDRESS as `0x${string}`;
 export const PRESALE_ADDRESS = process.env.NEXT_PUBLIC_PRESALE_ADDRESS as `0x${string}`;
-export const STAKING_ADDRESS = '0x32fa9BFdD3b8BA0938148A8f0c2DA3C56395EDa6' as `0x${string}`; // Staking V4 — hardcoded
-// V3 address kept for migration (owner needs to transfer 432.4M VYR from V3)
-export const STAKING_V1_ADDRESS = '0x441e8b33Edf2A3E5aaD350B74DE42b366481eaa5';
+export const STAKING_ADDRESS = '0xeAEAd8DAe5234Ef82B40F308006faB2c7FFF3A9A' as `0x${string}`; // Staking V4 (fixed) — hardcoded
+// Previous V4 (0x32fa) holds 432.4M VYR — needs to migrate to new V4 (0xeAEA)
+export const STAKING_V1_ADDRESS = '0x32fa9BFdD3b8BA0938148A8f0c2DA3C56395EDa6';
 export const USDT_ADDRESS = process.env.NEXT_PUBLIC_USDT_ADDRESS as `0x${string}`;
 export const PRESALE_REFERRAL_ADDRESS = (process.env.NEXT_PUBLIC_PRESALE_REFERRAL_ADDRESS || '0xcA7Df2522b08453715372EEc33b40aB499d9B86C') as `0x${string}`;
 

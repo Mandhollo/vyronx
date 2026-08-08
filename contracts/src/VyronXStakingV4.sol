@@ -332,7 +332,7 @@ contract VyronXStakingV4 is ReentrancyGuard {
     function hasActivePool360(address user) public view returns (bool) {
         Stake[] storage stakes = userStakes[user];
         for (uint256 i = 0; i < stakes.length; i++) {
-            if (!stakes[i].withdrawn && stakes[i].poolId == POOL_360_ID && !stakes[i].isVoucher) return true;
+            if (!stakes[i].withdrawn && stakes[i].poolId == POOL_360_ID) return true; // V4: vouchers count too
         }
         return false;
     }
