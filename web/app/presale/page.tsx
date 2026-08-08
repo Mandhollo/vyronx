@@ -11,6 +11,7 @@ import {
 import { PRESALE_ADDRESS, USDT_ADDRESS, PRESALE_REFERRAL_ADDRESS, PresaleABI, ReferralABI } from '@/lib/contracts';
 import ContractAddress from '@/components/web3/ContractAddress';
 import { parseUnits, formatUnits } from 'viem';
+import { publicClient } from '@/components/web3/Web3Provider';
 import { bsc } from 'wagmi/chains';
 import toast from 'react-hot-toast';
 import { isReferralCode, decodeReferralCode, encodeReferralCode } from '@/lib/referral-code';
@@ -165,14 +166,14 @@ export default function PresalePage() {
   }) as { data: readonly [bigint, bigint] | undefined };
 
   // Read USDT allowance (check BOTH presale and wrapper)
-  const { data: allowancePresale } = useReadContract({
+  const { data: allowancePresale, refetch: refetchAllowancePresale } = useReadContract({
     address: USDT_ADDRESS,
     abi: ERC20_ABI,
     functionName: 'allowance',
     args: [address || '0x0', PRESALE_ADDRESS],
     chainId: bsc.id,
   });
-  const { data: allowanceWrapper } = useReadContract({
+  const { data: allowanceWrapper, refetch: refetchAllowanceWrapper } = useReadContract({
     address: USDT_ADDRESS,
     abi: ERC20_ABI,
     functionName: 'allowance',
@@ -218,13 +219,19 @@ export default function PresalePage() {
         await switchChainAsync({ chainId: bsc.id });
         toast.loading('Approving USDT spending...', { id: toastId });
       }
-      await writeContractAsync({
+      const txHash = await writeContractAsync({
         address: USDT_ADDRESS,
         abi: ERC20_ABI,
         functionName: 'approve',
         args: [buyTarget, MAX_UINT256],
       });
-      toast.success('USDT approved! You can now buy VYR without approving again.', { id: toastId });
+      // Wait for transaction to be mined then auto-refetch allowance
+      toast.loading('Waiting for confirmation...', { id: toastId });
+      await publicClient.waitForTransactionReceipt({ hash: txHash });
+      toast.success('USDT approved! You can now buy VYR.', { id: toastId });
+      // Force re-read allowance (wagmi auto-refetches on block)
+      refetchAllowancePresale?.();
+      refetchAllowanceWrapper?.();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Approval failed', { id: toastId });
     } finally {
