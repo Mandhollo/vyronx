@@ -175,13 +175,16 @@ export default function DashboardPage() {
               result[level].count += directCount;
 
               if (directCount > 0) {
-                // Read each direct referral's stake volume
-                const directsList = await publicClient.readContract({
-                  address: STAKING, abi: StakingABI,
-                  functionName: 'directReferrals', args: [addr as `0x${string}`],
-                }) as readonly `0x${string}`[];
-
-                for (const direct of directsList) {
+                // Read each direct referral individually (mapping(address => address[]))
+                for (let d = 0; d < directCount; d++) {
+                  let direct: string = '';
+                  try {
+                    direct = await publicClient.readContract({
+                      address: STAKING, abi: StakingABI,
+                      functionName: 'directReferrals', args: [addr as `0x${string}`, BigInt(d)],
+                    }) as `0x${string}`;
+                  } catch { continue; }
+                  if (!direct || direct === '0x0000000000000000000000000000000000000000') continue;
                   if (visited.has(direct.toLowerCase())) continue;
                   visited.add(direct.toLowerCase());
                   nextLevelAddresses.push(direct);
