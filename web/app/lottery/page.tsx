@@ -275,7 +275,7 @@ export default function LotteryPage() {
     { label: 'Winner 2', bps: w2, color: 'from-gray-300 to-gray-500', text: 'text-silver', icon: Medal },
     { label: 'Winner 3', bps: w3, color: 'from-orange-400 to-orange-600', text: 'text-orange-400', icon: Award },
     { label: 'Buy-Back', bps: bb, color: 'from-blue-400 to-blue-600', text: 'text-blue-400', icon: TrendingUp },
-    { label: '4 Wallets', bps: wl, color: 'from-purple-400 to-purple-600', text: 'text-purple-400', icon: Wallet },
+    { label: 'Project', bps: wl, color: 'from-purple-400 to-purple-600', text: 'text-purple-400', icon: Wallet },
   ];
 
   return (
