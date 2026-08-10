@@ -752,6 +752,9 @@ export default function AdminPage() {
               <h3 className="text-lg font-bold text-white mb-2 flex items-center gap-2"><Zap className="h-5 w-5 text-gold" /> Presale Referral System</h3>
               <p className="text-sm text-beige-muted mb-4">Manage the 10% referral bonus wrapper. Buyers who enter via a referral link get 100% of their tokens, and the referrer earns 10% bonus in VYR from the reserve.</p>
 
+              {/* CRITICAL: Wrapper Tax Exemption */}
+              <WrapperFeeFix />
+
               {/* Wrapper Info */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
                 <div className="rounded-xl bg-dark-elevated p-4">
@@ -1506,5 +1509,74 @@ function VoucherMigration({ pending, setPending }: { pending: string | null; set
         {pending === 'Migrate Vouchers' ? 'Confirming...' : 'Migrate 7 Vouchers'}
       </button>
     </motion.div>
+  );
+}
+
+// ═══ WRAPPER FEE FIX COMPONENT ═══
+function WrapperFeeFix() {
+  const { chainId } = useAccount();
+  const { switchChainAsync } = useSwitchChain();
+  const { writeContractAsync } = useWriteContract();
+
+  const { data: feeExcluded } = useReadContract({
+    address: TOKEN_ADDRESS, abi: TokenABI, functionName: 'isExcludedFromFees', args: [PRESALE_REFERRAL_ADDRESS], chainId: bsc.id,
+  });
+  const { data: limitExcluded } = useReadContract({
+    address: TOKEN_ADDRESS, abi: TokenABI, functionName: 'isExcludedFromLimits', args: [PRESALE_REFERRAL_ADDRESS], chainId: bsc.id,
+  });
+
+  const feeDone = feeExcluded === true;
+  const limitDone = limitExcluded === true;
+  const allDone = feeDone && limitDone;
+
+  if (allDone) {
+    return (
+      <div className="mb-6 rounded-xl border border-green-500/30 bg-green-500/5 p-4 flex items-center gap-3">
+        <Check className="h-5 w-5 text-green-400" />
+        <span className="text-sm font-medium text-green-400">Wrapper is fee-exempt. Referral purchases deliver 100% tokens.</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mb-6 rounded-xl border border-red-500/40 bg-red-500/5 p-4">
+      <div className="flex items-center gap-2 mb-2">
+        <AlertTriangle className="h-5 w-5 text-red-400" />
+        <span className="text-sm font-bold text-red-400">Critical: Wrapper Tax Exemption Required</span>
+      </div>
+      <p className="text-xs text-beige-muted mb-3">
+        Without this, every referral purchase loses 8% to buy/sell tax. Buyer and referrer receive less tokens than expected.
+      </p>
+      <div className="space-y-2">
+        {!feeDone && (
+          <button
+            onClick={async () => {
+              try {
+                if (chainId !== bsc.id) await switchChainAsync({ chainId: bsc.id });
+                await writeContractAsync({ address: TOKEN_ADDRESS, abi: TokenABI, functionName: 'setExcludedFromFees', args: [PRESALE_REFERRAL_ADDRESS, true] });
+                toast.success('Wrapper fee exemption set! ✅');
+              } catch (e) { toast.error(e instanceof Error ? e.message : 'Failed'); }
+            }}
+            className="w-full sm:w-auto px-4 py-2 text-sm font-bold rounded-lg bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30 transition-all"
+          >
+            1. Exempt Wrapper from 8% Tax
+          </button>
+        )}
+        {feeDone && !limitDone && (
+          <button
+            onClick={async () => {
+              try {
+                if (chainId !== bsc.id) await switchChainAsync({ chainId: bsc.id });
+                await writeContractAsync({ address: TOKEN_ADDRESS, abi: TokenABI, functionName: 'setExcludedFromLimits', args: [PRESALE_REFERRAL_ADDRESS, true] });
+                toast.success('Wrapper limit exemption set! ✅');
+              } catch (e) { toast.error(e instanceof Error ? e.message : 'Failed'); }
+            }}
+            className="w-full sm:w-auto px-4 py-2 text-sm font-bold rounded-lg bg-amber-500/20 text-amber-400 border border-amber-500/30 hover:bg-amber-500/30 transition-all"
+          >
+            2. Exempt Wrapper from Tx Limits
+          </button>
+        )}
+      </div>
+    </div>
   );
 }
