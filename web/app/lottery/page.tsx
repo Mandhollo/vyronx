@@ -371,7 +371,7 @@ export default function LotteryPage() {
         </motion.div>
 
         {/* User History */}
-        {isConnected && userHistoryData && userHistoryData.length > 0 && (
+        {isConnected && userHistoryData && Array.isArray(userHistoryData) && userHistoryData.length > 0 && (
           <motion.div initial="hidden" animate="visible" variants={fadeUp}
             className="rounded-2xl border border-dark-border bg-dark-card/60 backdrop-blur-sm p-6">
             <h2 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
