@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { Mail, Shield, FileText, Send, MessageCircle } from 'lucide-react';
 import ContractAddress from '@/components/web3/ContractAddress';
-import { TOKEN_ADDRESS, PRESALE_ADDRESS, STAKING_ADDRESS, USDT_ADDRESS } from '@/lib/contracts';
+import { TOKEN_ADDRESS, PRESALE_ADDRESS, STAKING_ADDRESS, USDT_ADDRESS, LOTTERY_ADDRESS } from '@/lib/contracts';
 
 // Custom X icon
 const XIcon = ({ className }: { className?: string }) => (
@@ -49,6 +49,7 @@ export default function Footer() {
             <ul className="space-y-3">
               <li><Link href="/presale" className="text-sm text-beige hover:text-gold transition-colors">{t('nav.presale')}</Link></li>
               <li><Link href="/staking" className="text-sm text-beige hover:text-gold transition-colors">{t('nav.staking')}</Link></li>
+              <li><Link href="/lottery" className="text-sm text-beige hover:text-gold transition-colors">{t('nav.lottery')}</Link></li>
               <li><Link href="/dashboard" className="text-sm text-beige hover:text-gold transition-colors">{t('nav.dashboard')}</Link></li>
               {/* Admin hidden from footer — authorized wallets only */}
             </ul>
@@ -112,6 +113,7 @@ export default function Footer() {
             <ContractAddress address={TOKEN_ADDRESS} label="VYR Token" />
             <ContractAddress address={PRESALE_ADDRESS} label="Presale" />
             <ContractAddress address={STAKING_ADDRESS} label="Staking" />
+            <ContractAddress address={LOTTERY_ADDRESS} label="Lottery" />
             <ContractAddress address={USDT_ADDRESS} label="USDT" showLink={false} />
           </div>
         </div>
