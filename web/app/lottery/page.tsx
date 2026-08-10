@@ -14,6 +14,7 @@ import { parseUnits, formatUnits } from 'viem';
 import { bsc } from 'wagmi/chains';
 import toast from 'react-hot-toast';
 import ParticleField from '@/components/fx/ParticleField';
+import { triggerCoinConfetti } from '@/components/effects/CoinConfetti';
 
 const fadeUp = {
   hidden: { opacity: 0, y: 30 },
@@ -261,7 +262,8 @@ export default function LotteryPage() {
         chainId: bsc.id,
       });
       await waitForTx(tx);
-      toast.success(`Successfully purchased ${ticketCount} ticket(s)!`, { id: toastId, duration: 5000 });
+      toast.success(`Successfully purchased ${ticketCount} ticket(s)! 🎉`, { id: toastId, duration: 5000 });
+      setTimeout(() => triggerCoinConfetti(), 1500);
       reads.forEach((r) => r.refetch());
       refetchAllowance();
     } catch (e: any) {
