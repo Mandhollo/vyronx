@@ -304,7 +304,7 @@ export default function LotteryPage() {
             4 Lotteries. One Ticket Away.
           </motion.h1>
           <motion.p variants={fadeUp} className="text-beige/60 text-lg max-w-2xl mx-auto">
-            Mega, Big, Medium e Small rodando em paralelo. Compre bilhetes com USDT e concorra a prêmios instantâneos.
+            Mega, Big, Medium, and Small running in parallel. Buy tickets with USDT and win instant prizes.
           </motion.p>
         </motion.div>
 
@@ -464,9 +464,54 @@ function LotteryCard({
     } catch {} finally { setTxPending(false); }
   };
 
+  // Vibrant themes per lottery type
+  const themes = [
+    { // Mega — Gold/Amber
+      border: 'border-amber-400/50',
+      bg: 'from-amber-900/30 via-dark-card to-orange-900/20',
+      glow: 'shadow-[0_0_30px_rgba(245,158,11,0.2)]',
+      accent: 'text-amber-400',
+      bar: 'from-amber-400 to-orange-500',
+      btn: 'from-amber-400 to-orange-500',
+      btnText: 'text-black',
+      badge: 'from-amber-400 to-orange-500',
+    },
+    { // Big — Purple/Violet
+      border: 'border-purple-400/40',
+      bg: 'from-purple-900/25 via-dark-card to-fuchsia-900/15',
+      glow: 'shadow-[0_0_25px_rgba(168,85,247,0.15)]',
+      accent: 'text-purple-400',
+      bar: 'from-purple-400 to-fuchsia-500',
+      btn: 'from-purple-500 to-fuchsia-500',
+      btnText: 'text-white',
+      badge: 'from-purple-400 to-fuchsia-500',
+    },
+    { // Medium — Blue/Cyan
+      border: 'border-blue-400/40',
+      bg: 'from-blue-900/25 via-dark-card to-cyan-900/15',
+      glow: 'shadow-[0_0_25px_rgba(59,130,246,0.15)]',
+      accent: 'text-blue-400',
+      bar: 'from-blue-400 to-cyan-500',
+      btn: 'from-blue-500 to-cyan-500',
+      btnText: 'text-white',
+      badge: 'from-blue-400 to-cyan-500',
+    },
+    { // Small — Green/Emerald
+      border: 'border-emerald-400/40',
+      bg: 'from-emerald-900/25 via-dark-card to-teal-900/15',
+      glow: 'shadow-[0_0_25px_rgba(16,185,129,0.15)]',
+      accent: 'text-emerald-400',
+      bar: 'from-emerald-400 to-teal-500',
+      btn: 'from-emerald-500 to-teal-500',
+      btnText: 'text-white',
+      badge: 'from-emerald-400 to-teal-500',
+    },
+  ];
+  const theme = themes[lotteryType] ?? themes[0];
+
   const cardBase = isMega
-    ? 'rounded-3xl border-2 border-gold/60 bg-gradient-to-br from-dark-card via-dark-card to-gold/10 p-6 sm:p-8 shadow-[0_0_40px_rgba(212,175,55,0.25)]'
-    : 'rounded-2xl border border-dark-border bg-dark-card/60 backdrop-blur-sm p-6';
+    ? `rounded-3xl border-2 ${theme.border} bg-gradient-to-br ${theme.bg} p-6 sm:p-8 ${theme.glow}`
+    : `rounded-2xl border ${theme.border} bg-gradient-to-br ${theme.bg} p-6 ${theme.glow}`;
 
   return (
     <div className={cardBase}>
@@ -474,13 +519,13 @@ function LotteryCard({
       <div className="flex items-start justify-between mb-4">
         <div>
           {isMega && (
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-r from-gold-light to-gold-dark text-black text-xs font-bold uppercase tracking-wider mb-2 pulse-scale">
-              <Crown className="w-3.5 h-3.5" /> Prêmio Principal
+            <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-r ${theme.badge} text-black text-xs font-bold uppercase tracking-wider mb-2 pulse-scale`}>
+              <Crown className="w-3.5 h-3.5" /> Jackpot
             </div>
           )}
           <h2 className={`font-bold text-white ${isMega ? 'text-2xl sm:text-3xl' : 'text-xl'}`}>{name}</h2>
           {round && (
-            <div className="text-xs text-beige/40 mt-1">Round #{round.roundId}</div>
+            <div className={`text-xs ${theme.accent} mt-1`}>Round #{round.roundId}</div>
           )}
         </div>
         {round && (
@@ -493,9 +538,9 @@ function LotteryCard({
       {/* Prize target */}
       <div className="flex items-center justify-between mb-3">
         <span className="text-sm text-beige/50 flex items-center gap-1.5">
-          <Trophy className="w-4 h-4 text-gold/70" /> Prize Target
+          <Trophy className={`w-4 h-4 ${theme.accent}`} /> Prize Target
         </span>
-        <span className={`font-bold text-gold ${isMega ? 'text-2xl' : 'text-lg'}`}>
+        <span className={`font-bold ${theme.accent} ${isMega ? 'text-3xl' : 'text-2xl'}`}>
           ${round ? fmtUSDT(round.prizeTarget) : '—'}
         </span>
       </div>
@@ -504,15 +549,15 @@ function LotteryCard({
       {round && (
         <div className="mb-4">
           <div className="flex justify-between text-xs mb-1.5">
-            <span className="text-beige/40">Progresso</span>
-            <span className="text-gold font-medium">{progressPct.toFixed(1)}%</span>
+            <span className="text-beige/40">Progress</span>
+            <span className={`${theme.accent} font-medium`}>{progressPct.toFixed(1)}%</span>
           </div>
-          <div className={`rounded-full bg-dark-elevated overflow-hidden ${isMega ? 'h-3.5' : 'h-2.5'}`}>
+          <div className={`rounded-full bg-dark-elevated overflow-hidden ${isMega ? 'h-4' : 'h-3'}`}>
             <motion.div
               initial={{ width: 0 }}
               animate={{ width: `${progressPct}%` }}
               transition={{ duration: 0.8 }}
-              className="h-full bg-gradient-to-r from-gold to-gold-dark rounded-full"
+              className={`h-full bg-gradient-to-r ${theme.bar} rounded-full`}
             />
           </div>
           <div className="flex justify-between text-xs text-beige/30 mt-1">
@@ -526,19 +571,19 @@ function LotteryCard({
       {round && (
         <div className={`grid grid-cols-3 gap-2 mb-4 ${isMega ? 'sm:grid-cols-3' : ''}`}>
           <div className="rounded-xl bg-dark-elevated p-3 text-center">
-            <Ticket className="w-4 h-4 text-gold/60 mx-auto mb-1" />
+            <Ticket className={`w-4 h-4 ${theme.accent} mx-auto mb-1`} />
             <div className="text-base font-bold text-white">{round.ticketCount.toLocaleString()}</div>
-            <div className="text-[10px] text-beige/40">Bilhetes</div>
+            <div className="text-[10px] text-beige/40">Tickets</div>
           </div>
           <div className="rounded-xl bg-dark-elevated p-3 text-center">
-            <Users className="w-4 h-4 text-gold/60 mx-auto mb-1" />
+            <Users className={`w-4 h-4 ${theme.accent} mx-auto mb-1`} />
             <div className="text-base font-bold text-white">{round.participantCount}</div>
-            <div className="text-[10px] text-beige/40">Participantes</div>
+            <div className="text-[10px] text-beige/40">Players</div>
           </div>
-          <div className="rounded-xl bg-gold/5 border border-gold/20 p-3 text-center">
-            <Ticket className="w-4 h-4 text-gold mx-auto mb-1" />
-            <div className="text-base font-bold text-gold">{Number(userTickets)}</div>
-            <div className="text-[10px] text-beige/40">Seus bilhetes</div>
+          <div className={`rounded-xl bg-gradient-to-br ${theme.bg} border ${theme.border} p-3 text-center`}>
+            <Ticket className={`w-4 h-4 ${theme.accent} mx-auto mb-1`} />
+            <div className={`text-base font-bold ${theme.accent}`}>{Number(userTickets)}</div>
+            <div className="text-[10px] text-beige/40">Your Tickets</div>
           </div>
         </div>
       )}
@@ -585,8 +630,8 @@ function LotteryCard({
       {/* Inactive notice */}
       {isInactive && (
         <div className="text-center py-6 rounded-xl bg-dark-elevated">
-          <Clock className="w-8 h-8 text-beige/30 mx-auto mb-2" />
-          <p className="text-beige/50 text-sm">Aguardando abertura</p>
+          <Clock className={`w-8 h-8 ${theme.accent} opacity-50 mx-auto mb-2`} />
+          <p className="text-beige/50 text-sm">Opening Soon</p>
         </div>
       )}
 
@@ -600,22 +645,22 @@ function LotteryCard({
           </div>
 
           {/* Input */}
-          <label className="block text-xs text-beige/50 mb-1.5">Quantidade de bilhetes</label>
+          <label className="block text-xs text-beige/50 mb-1.5">Number of tickets</label>
           <div className="flex items-center gap-2 mb-3">
             <button
               onClick={() => setTicketCount(String(Math.max(1, numTickets - 1)))}
-              className="w-9 h-9 rounded-lg bg-dark-elevated text-white hover:bg-dark-border transition-colors flex items-center justify-center text-lg"
+              className={`w-9 h-9 rounded-lg bg-dark-elevated ${theme.accent} hover:bg-dark-border transition-colors flex items-center justify-center text-lg font-bold`}
             >−</button>
             <input
               type="number"
               value={ticketCount}
               onChange={(e) => setTicketCount(e.target.value)}
               min="1"
-              className="flex-1 h-9 rounded-lg bg-dark-elevated border border-dark-border text-white text-center text-base font-semibold focus:border-gold/50 outline-none"
+              className={`flex-1 h-9 rounded-lg bg-dark-elevated border border-dark-border text-white text-center text-base font-semibold focus:outline-none ${theme.border.replace('border-', 'focus:border-')}`}
             />
             <button
               onClick={() => setTicketCount(String(numTickets + 1))}
-              className="w-9 h-9 rounded-lg bg-dark-elevated text-white hover:bg-dark-border transition-colors flex items-center justify-center text-lg"
+              className={`w-9 h-9 rounded-lg bg-dark-elevated ${theme.accent} hover:bg-dark-border transition-colors flex items-center justify-center text-lg font-bold`}
             >+</button>
           </div>
 
@@ -625,7 +670,7 @@ function LotteryCard({
               <button key={n} onClick={() => setTicketCount(String(n))}
                 className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${
                   numTickets === n
-                    ? 'bg-gold/20 text-gold border border-gold/30'
+                    ? `bg-gradient-to-r ${theme.badge} text-black border border-transparent`
                     : 'bg-dark-elevated text-beige/60 hover:text-white border border-transparent'
                 }`}>
                 {n}
@@ -636,10 +681,10 @@ function LotteryCard({
           {/* Total + balance */}
           <div className="flex items-center justify-between py-2 border-t border-dark-border text-sm mb-3">
             <span className="text-beige/50">Total</span>
-            <span className="text-white font-bold">${fmtUSDT(totalCost)} USDT</span>
+            <span className={`font-bold ${theme.accent}`}>${fmtUSDT(totalCost)} USDT</span>
           </div>
           <div className="flex items-center justify-between text-xs text-beige/40 mb-3">
-            <span>Seu saldo USDT</span>
+            <span>Your USDT balance</span>
             <span>${fmtUSDT(usdtBalance)}</span>
           </div>
 
@@ -647,37 +692,35 @@ function LotteryCard({
           {!isConnected ? (
             <div className="text-center py-4">
               <Wallet className="w-8 h-8 text-beige/30 mx-auto mb-2" />
-              <p className="text-beige/50 text-sm">Conecte sua carteira</p>
+              <p className="text-beige/50 text-sm">Connect your wallet</p>
             </div>
           ) : !onCorrectChain ? (
             <button onClick={onSwitchChain}
               className="w-full py-3 rounded-xl bg-dark-elevated text-white font-semibold hover:bg-dark-border transition-colors flex items-center justify-center gap-2">
-              <AlertCircle className="w-4 h-4 text-yellow-400" /> Trocar para BNB Smart Chain
+              <AlertCircle className="w-4 h-4 text-yellow-400" /> Switch to BNB Smart Chain
             </button>
           ) : needsApproval ? (
             <button
               onClick={handleApproveClick}
               disabled={txPending || usdtBalance < totalCost}
-              className="w-full py-3 rounded-xl bg-dark-elevated text-white font-semibold hover:bg-dark-border transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className={`w-full py-3 rounded-xl bg-gradient-to-r ${theme.btn} ${theme.btnText} font-bold hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2`}
             >
               {txPending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Check className="w-5 h-5" />}
-              {txPending ? 'Processando...' : 'Approve USDT'}
+              {txPending ? 'Processing...' : 'Approve USDT'}
             </button>
           ) : (
             <button
               onClick={handleBuyClick}
               disabled={txPending || usdtBalance < totalCost}
-              className={`w-full py-3 rounded-xl bg-gradient-to-r from-gold to-gold-dark text-black font-bold hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 ${
-                isMega ? 'shadow-lg shadow-gold/30' : ''
-              }`}
+              className={`w-full py-3 rounded-xl bg-gradient-to-r ${theme.btn} ${theme.btnText} font-bold hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 ${theme.glow}`}
             >
               {txPending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Ticket className="w-5 h-5" />}
-              {txPending ? 'Processando...' : `Comprar ${numTickets} bilhete(s)`}
+              {txPending ? 'Processing...' : `Buy ${numTickets} Ticket${numTickets > 1 ? 's' : ''}`}
             </button>
           )}
 
           {usdtBalance < totalCost && isConnected && onCorrectChain && (
-            <p className="text-center text-xs text-red-400 mt-2">Saldo USDT insuficiente</p>
+            <p className="text-center text-xs text-red-400 mt-2">Insufficient USDT balance</p>
           )}
         </>
       )}
