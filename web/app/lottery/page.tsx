@@ -1,5 +1,7 @@
 'use client';
 
+export const dynamic = 'force-dynamic';
+
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useAccount, useReadContract, useWriteContract, useSwitchChain } from 'wagmi';
@@ -81,25 +83,33 @@ interface ParsedRound {
   prize3: bigint;
 }
 
-function parseRound(d: RoundTuple | undefined): ParsedRound | null {
+function parseRound(d: RoundTuple | undefined | any): ParsedRound | null {
   if (!d) return null;
+  // wagmi may return tuple as array OR as named object — handle both
+  const get = (i: number, key: string) => {
+    if (Array.isArray(d)) return d[i];
+    if (typeof d === 'object' && d[key] !== undefined) return d[key];
+    return undefined;
+  };
+  const r0 = get(0, 'roundId'), r1 = get(1, 'lotteryType'), r2 = get(2, 'status');
+  if (r0 === undefined && r1 === undefined) return null;
   return {
-    roundId: Number(d[0]),
-    lotteryType: Number(d[1]),
-    status: Number(d[2]),
-    prizeTarget: d[3],
-    totalCollected: d[4],
-    ticketCount: Number(d[5]),
-    participantCount: Number(d[6]),
-    startTime: Number(d[7]),
-    endTime: Number(d[8]),
-    closeThreshold: d[9],
-    winner1: d[10] as string,
-    winner2: d[11] as string,
-    winner3: d[12] as string,
-    prize1: d[13],
-    prize2: d[14],
-    prize3: d[15],
+    roundId: Number(r0 ?? 0),
+    lotteryType: Number(r1 ?? 0),
+    status: Number(r2 ?? 0),
+    prizeTarget: BigInt(get(3, 'prizeTarget') ?? 0),
+    totalCollected: BigInt(get(4, 'totalCollected') ?? 0),
+    ticketCount: Number(get(5, 'ticketCount') ?? 0),
+    participantCount: Number(get(6, 'participantCount') ?? 0),
+    startTime: Number(get(7, 'startTime') ?? 0),
+    endTime: Number(get(8, 'endTime') ?? 0),
+    closeThreshold: BigInt(get(9, 'closeThreshold') ?? 0),
+    winner1: String(get(10, 'winner1') ?? '0x0000000000000000000000000000000000000000'),
+    winner2: String(get(11, 'winner2') ?? '0x0000000000000000000000000000000000000000'),
+    winner3: String(get(12, 'winner3') ?? '0x0000000000000000000000000000000000000000'),
+    prize1: BigInt(get(13, 'prize1') ?? 0),
+    prize2: BigInt(get(14, 'prize2') ?? 0),
+    prize3: BigInt(get(15, 'prize3') ?? 0),
   };
 }
 
@@ -184,11 +194,11 @@ export default function LotteryPage() {
     }[] | undefined;
   };
 
-  // Parse rounds — use mock data if contract not deployed
-  const rounds = LOTTERY_NOT_DEPLOYED ? MOCK_ROUNDS : reads.map((r) => parseRound(r.data));
-  const names = LOTTERY_NOT_DEPLOYED ? DEFAULT_NAMES : (namesData ? [namesData[0], namesData[1], namesData[2], namesData[3]] : DEFAULT_NAMES);
-  const prices = LOTTERY_NOT_DEPLOYED ? MOCK_PRICES : (pricesData
-    ? [pricesData[0], pricesData[1], pricesData[2], pricesData[3]]
+  // Parse rounds — use mock data if contract not deployed, null-safe otherwise
+  const rounds = LOTTERY_NOT_DEPLOYED ? MOCK_ROUNDS : reads.map((r) => parseRound(r?.data));
+  const names = LOTTERY_NOT_DEPLOYED ? DEFAULT_NAMES : (namesData && Array.isArray(namesData) ? [namesData[0], namesData[1], namesData[2], namesData[3]] : DEFAULT_NAMES);
+  const prices = LOTTERY_NOT_DEPLOYED ? MOCK_PRICES : (pricesData && Array.isArray(pricesData)
+    ? [pricesData[0] ?? BigInt(0), pricesData[1] ?? BigInt(0), pricesData[2] ?? BigInt(0), pricesData[3] ?? BigInt(0)]
     : [BigInt(0), BigInt(0), BigInt(0), BigInt(0)]);
   const w1 = LOTTERY_NOT_DEPLOYED ? MOCK_W_BPS[0] : (w1Bps ?? BigInt(5000));
   const w2 = LOTTERY_NOT_DEPLOYED ? MOCK_W_BPS[1] : (w2Bps ?? BigInt(3000));
