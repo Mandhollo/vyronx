@@ -295,7 +295,7 @@ export default function LotteryPage() {
         )}
 
         {/* Header */}
-        <motion.div initial="hidden" animate="visible" variants={stagger} className="text-center mb-12">
+        <motion.div initial="hidden" animate="visible" variants={stagger} className="text-center mb-8">
           <motion.div variants={fadeUp} className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gold/10 border border-gold/20 mb-4">
             <Sparkles className="w-4 h-4 text-gold" />
             <span className="text-sm text-gold font-medium">VyronX Lottery</span>
@@ -306,6 +306,11 @@ export default function LotteryPage() {
           <motion.p variants={fadeUp} className="text-beige/60 text-lg max-w-2xl mx-auto">
             Mega, Big, Medium e Small rodando em paralelo. Compre bilhetes com USDT e concorra a prêmios instantâneos.
           </motion.p>
+        </motion.div>
+
+        {/* Banner Image */}
+        <motion.div variants={fadeUp} className="mb-12 relative rounded-2xl overflow-hidden border border-gold/20">
+          <img src="/lottery-banner.jpg" alt="VyronX Lottery — 4 Lotteries, One Ticket Away" className="w-full h-auto" />
         </motion.div>
 
         {/* Mega card (type 0) — full width, featured */}
