@@ -13,7 +13,8 @@ import {
 } from 'lucide-react';
 import {
   TOKEN_ADDRESS, STAKING_ADDRESS, USDT_ADDRESS,
-  PresaleABI, StakingABI, TokenABI, STAKING_POOLS
+  PresaleABI, StakingABI, TokenABI, STAKING_POOLS,
+  LOTTERY_ADDRESS, LotteryABI
 } from '@/lib/contracts';
 import { triggerCoinConfetti } from '@/components/effects/CoinConfetti';
 import ContractAddress from '@/components/web3/ContractAddress';
@@ -958,6 +959,9 @@ export default function DashboardPage() {
           </div>
         </motion.div>
 
+        {/* Lottery Info */}
+        <LotteryDashboardSection address={address} />
+
         {/* Contract Addresses */}
         <div className="rounded-xl border border-dark-border bg-dark-card p-4 mb-8">
           <div className="text-xs text-beige-muted uppercase tracking-wider mb-3">Verified Contracts</div>
@@ -986,5 +990,92 @@ export default function DashboardPage() {
         </motion.div>
       </div>
     </div>
+  );
+}
+
+// ═══ LOTTERY DASHBOARD SECTION ═══
+function LotteryDashboardSection({ address }: { address: `0x${string}` | undefined }) {
+  const { data: megaRound } = useReadContract({
+    address: LOTTERY_ADDRESS, abi: LotteryABI, functionName: 'getCurrentRound', args: [0], chainId: bsc.id,
+  }) as { data: readonly bigint[] | undefined };
+  const { data: bigRound } = useReadContract({
+    address: LOTTERY_ADDRESS, abi: LotteryABI, functionName: 'getCurrentRound', args: [1], chainId: bsc.id,
+  }) as { data: readonly bigint[] | undefined };
+  const { data: medRound } = useReadContract({
+    address: LOTTERY_ADDRESS, abi: LotteryABI, functionName: 'getCurrentRound', args: [2], chainId: bsc.id,
+  }) as { data: readonly bigint[] | undefined };
+  const { data: smallRound } = useReadContract({
+    address: LOTTERY_ADDRESS, abi: LotteryABI, functionName: 'getCurrentRound', args: [3], chainId: bsc.id,
+  }) as { data: readonly bigint[] | undefined };
+  const { data: userHistory } = useReadContract({
+    address: LOTTERY_ADDRESS, abi: LotteryABI, functionName: 'getUserHistory', args: [address || '0x0'], chainId: bsc.id,
+  }) as { data: readonly { roundId: bigint; lotteryType: number; ticketCount: bigint; totalPaid: bigint; timestamp: bigint }[] | undefined };
+
+  const parseR = (d: readonly bigint[] | undefined) => {
+    if (!d) return null;
+    return { status: Number(d[2] ?? 0), collected: BigInt(d[4] ?? 0), tickets: Number(d[5] ?? 0), target: BigInt(d[3] ?? 0) };
+  };
+  const mega = parseR(megaRound);
+  const big = parseR(bigRound);
+  const med = parseR(medRound);
+  const small = parseR(smallRound);
+  const activeCount = [mega, big, med, small].filter(r => r?.status === 1).length;
+
+  const totalTickets = userHistory ? userHistory.reduce((s, h) => s + Number(h.ticketCount), 0) : 0;
+  const totalSpent = userHistory ? userHistory.reduce((s, h) => s + BigInt(h.totalPaid), BigInt(0)) : BigInt(0);
+
+  return (
+    <motion.div variants={fadeUp} className="rounded-2xl border border-gold/30 bg-gradient-to-b from-dark-card to-gold/5 p-6 mb-8">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <Ticket className="h-5 w-5 text-gold" />
+          <h3 className="text-lg font-bold text-white">Lottery</h3>
+          {activeCount > 0 && (
+            <span className="text-xs px-2 py-0.5 rounded-full bg-green-500/20 text-green-400 border border-green-500/30 font-medium">
+              {activeCount} Active
+            </span>
+          )}
+        </div>
+        <Link href="/lottery" className="text-xs text-gold hover:underline flex items-center gap-1">
+          Play <ArrowRight className="w-3 h-3" />
+        </Link>
+      </div>
+
+      {/* Active Rounds Preview */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+        {[
+          { name: 'Mega', r: mega },
+          { name: 'Big', r: big },
+          { name: 'Medium', r: med },
+          { name: 'Small', r: small },
+        ].map(({ name, r }) => (
+          <div key={name} className={`rounded-xl p-3 text-center ${r?.status === 1 ? 'bg-gold/10 border border-gold/30' : 'bg-dark-elevated border border-dark-border'}`}>
+            <div className="text-xs font-bold text-white mb-1">{name}</div>
+            <div className={`text-lg font-bold ${r?.status === 1 ? 'text-gold' : 'text-beige-muted'}`}>
+              {r?.status === 1 ? `$${Number(formatUnits(r.collected, 18)).toLocaleString('en-US', { maximumFractionDigits: 0 })}` : '—'}
+            </div>
+            <div className="text-[10px] text-beige-muted">{r?.status === 1 ? `${r.tickets} tickets` : 'Inactive'}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* User Stats */}
+      {totalTickets > 0 && (
+        <div className="grid grid-cols-2 gap-3">
+          <div className="rounded-lg bg-dark-elevated p-3 text-center">
+            <div className="text-xl font-bold text-gold">{totalTickets}</div>
+            <div className="text-xs text-beige-muted">Total Tickets</div>
+          </div>
+          <div className="rounded-lg bg-dark-elevated p-3 text-center">
+            <div className="text-xl font-bold text-white">${Number(formatUnits(totalSpent, 18)).toLocaleString('en-US', { maximumFractionDigits: 2 })}</div>
+            <div className="text-xs text-beige-muted">Total Spent</div>
+          </div>
+        </div>
+      )}
+
+      {activeCount === 0 && (
+        <p className="text-xs text-beige-muted text-center mt-2">No active rounds yet. Check back soon!</p>
+      )}
+    </motion.div>
   );
 }
