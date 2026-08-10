@@ -1,13 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useAccount, useReadContract, useWriteContract, useSwitchChain } from 'wagmi';
 import { publicClient } from '@/components/web3/Web3Provider';
 import { encodeReferralCode, decodeReferralCode, isReferralCode } from '@/lib/referral-code';
 import {
-  Wallet, TrendingUp, Lock, Unlock, Users, Award, Clock,
+  Wallet, TrendingUp, Lock, Unlock, Users, Award, Clock, Crown, Medal, Trophy,
   ArrowRight, Loader2, AlertCircle, Coins, Gift, Zap, ExternalLink,
   ChevronRight, Copy, Check, Ticket
 } from 'lucide-react';
@@ -1011,6 +1011,18 @@ function LotteryDashboardSection({ address }: { address: `0x${string}` | undefin
     address: LOTTERY_ADDRESS, abi: LotteryABI, functionName: 'getUserHistory', args: [address || '0x0'], chainId: bsc.id,
   }) as { data: readonly { roundId: bigint; lotteryType: number; ticketCount: bigint; totalPaid: bigint; timestamp: bigint }[] | undefined };
 
+  // Completed rounds to check for wins
+  const { data: totalRoundsCompleted } = useReadContract({
+    address: LOTTERY_ADDRESS, abi: LotteryABI, functionName: 'totalRoundsCompleted', chainId: bsc.id,
+  }) as { data: bigint | undefined };
+  const lastCompletedId = totalRoundsCompleted ? Number(totalRoundsCompleted) : 0;
+
+  // Fetch last 4 completed rounds to check winners
+  const { data: r1 } = useReadContract({ address: LOTTERY_ADDRESS, abi: LotteryABI, functionName: 'getRound', args: [BigInt(Math.max(1, lastCompletedId))], chainId: bsc.id, query: { enabled: lastCompletedId >= 1 } }) as { data: readonly bigint[] | undefined };
+  const { data: r2 } = useReadContract({ address: LOTTERY_ADDRESS, abi: LotteryABI, functionName: 'getRound', args: [BigInt(Math.max(1, lastCompletedId - 1))], chainId: bsc.id, query: { enabled: lastCompletedId >= 2 } }) as { data: readonly bigint[] | undefined };
+  const { data: r3 } = useReadContract({ address: LOTTERY_ADDRESS, abi: LotteryABI, functionName: 'getRound', args: [BigInt(Math.max(1, lastCompletedId - 2))], chainId: bsc.id, query: { enabled: lastCompletedId >= 3 } }) as { data: readonly bigint[] | undefined };
+  const { data: r4 } = useReadContract({ address: LOTTERY_ADDRESS, abi: LotteryABI, functionName: 'getRound', args: [BigInt(Math.max(1, lastCompletedId - 3))], chainId: bsc.id, query: { enabled: lastCompletedId >= 4 } }) as { data: readonly bigint[] | undefined };
+
   const parseR = (d: readonly bigint[] | undefined) => {
     if (!d) return null;
     return { status: Number(d[2] ?? 0), collected: BigInt(d[4] ?? 0), tickets: Number(d[5] ?? 0), target: BigInt(d[3] ?? 0) };
@@ -1024,58 +1036,124 @@ function LotteryDashboardSection({ address }: { address: `0x${string}` | undefin
   const totalTickets = userHistory ? userHistory.reduce((s, h) => s + Number(h.ticketCount), 0) : 0;
   const totalSpent = userHistory ? userHistory.reduce((s, h) => s + BigInt(h.totalPaid), BigInt(0)) : BigInt(0);
 
+  // Check if user is a winner in any recent completed round
+  const recentRounds = [r1, r2, r3, r4].filter(Boolean);
+  const userWins: { roundId: number; place: number; prize: bigint; lotteryType: number }[] = [];
+  if (address && recentRounds.length > 0) {
+    const addrLower = address.toLowerCase();
+    for (const rd of recentRounds) {
+      if (!rd) continue;
+      const roundId = Number(rd[0]);
+      const lotteryType = Number(rd[1]);
+      const status = Number(rd[2]);
+      if (status !== 3) continue; // only completed
+      const w1 = String(rd[10] ?? '0x0').toLowerCase();
+      const w2 = String(rd[11] ?? '0x0').toLowerCase();
+      const w3 = String(rd[12] ?? '0x0').toLowerCase();
+      const prize1 = BigInt(rd[13] ?? 0);
+      const prize2 = BigInt(rd[14] ?? 0);
+      const prize3 = BigInt(rd[15] ?? 0);
+      if (w1 === addrLower && prize1 > 0) userWins.push({ roundId, place: 1, prize: prize1, lotteryType });
+      if (w2 === addrLower && prize2 > 0) userWins.push({ roundId, place: 2, prize: prize2, lotteryType });
+      if (w3 === addrLower && prize3 > 0) userWins.push({ roundId, place: 3, prize: prize3, lotteryType });
+    }
+  }
+
+  // Fire confetti when user has wins and hasn't celebrated yet
+  const celebratedRef = useRef(false);
+  useEffect(() => {
+    if (userWins.length > 0 && !celebratedRef.current) {
+      celebratedRef.current = true;
+      setTimeout(() => triggerCoinConfetti(), 500);
+    }
+  }, [userWins.length]);
+
+  const lotteryNames = ['Mega', 'Big', 'Medium', 'Small'];
+
   return (
-    <motion.div variants={fadeUp} className="rounded-2xl border border-gold/30 bg-gradient-to-b from-dark-card to-gold/5 p-6 mb-8">
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <Ticket className="h-5 w-5 text-gold" />
-          <h3 className="text-lg font-bold text-white">Lottery</h3>
-          {activeCount > 0 && (
-            <span className="text-xs px-2 py-0.5 rounded-full bg-green-500/20 text-green-400 border border-green-500/30 font-medium">
-              {activeCount} Active
-            </span>
-          )}
-        </div>
-        <Link href="/lottery" className="text-xs text-gold hover:underline flex items-center gap-1">
-          Play <ArrowRight className="w-3 h-3" />
-        </Link>
-      </div>
-
-      {/* Active Rounds Preview */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
-        {[
-          { name: 'Mega', r: mega },
-          { name: 'Big', r: big },
-          { name: 'Medium', r: med },
-          { name: 'Small', r: small },
-        ].map(({ name, r }) => (
-          <div key={name} className={`rounded-xl p-3 text-center ${r?.status === 1 ? 'bg-gold/10 border border-gold/30' : 'bg-dark-elevated border border-dark-border'}`}>
-            <div className="text-xs font-bold text-white mb-1">{name}</div>
-            <div className={`text-lg font-bold ${r?.status === 1 ? 'text-gold' : 'text-beige-muted'}`}>
-              {r?.status === 1 ? `$${Number(formatUnits(r.collected, 18)).toLocaleString('en-US', { maximumFractionDigits: 0 })}` : '—'}
+    <>
+      {/* Winner Banner */}
+      {userWins.length > 0 && (
+        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
+          className="rounded-2xl border-2 border-amber-400/50 bg-gradient-to-r from-amber-500/10 via-yellow-500/10 to-orange-500/10 p-6 mb-6 shadow-[0_0_40px_rgba(245,158,11,0.25)]">
+          <div className="flex items-center gap-3 mb-3">
+            <Trophy className="h-8 w-8 text-amber-400 animate-pulse" />
+            <div>
+              <h3 className="text-xl font-bold text-amber-400">Congratulations! You Won! 🎉</h3>
+              <p className="text-xs text-beige-muted">You are a winner in {userWins.length} recent round(s).</p>
             </div>
-            <div className="text-[10px] text-beige-muted">{r?.status === 1 ? `${r.tickets} tickets` : 'Inactive'}</div>
           </div>
-        ))}
-      </div>
+          <div className="space-y-2">
+            {userWins.map((w, i) => (
+              <div key={i} className="flex items-center justify-between rounded-lg bg-dark-elevated px-4 py-3">
+                <div className="flex items-center gap-3">
+                  {w.place === 1 && <Crown className="w-5 h-5 text-amber-400" />}
+                  {w.place === 2 && <Medal className="w-5 h-5 text-gray-300" />}
+                  {w.place === 3 && <Award className="w-5 h-5 text-orange-400" />}
+                  <div>
+                    <span className="text-sm text-white font-bold">{lotteryNames[w.lotteryType] ?? 'Unknown'} · Round #{w.roundId}</span>
+                    <span className="text-xs text-beige-muted ml-2">Place #{w.place}</span>
+                  </div>
+                </div>
+                <span className="text-lg font-bold text-amber-400">${Number(formatUnits(w.prize, 18)).toLocaleString('en-US', { maximumFractionDigits: 2 })}</span>
+              </div>
+            ))}
+          </div>
+        </motion.div>
+      )}
 
-      {/* User Stats */}
-      {totalTickets > 0 && (
-        <div className="grid grid-cols-2 gap-3">
-          <div className="rounded-lg bg-dark-elevated p-3 text-center">
-            <div className="text-xl font-bold text-gold">{totalTickets}</div>
-            <div className="text-xs text-beige-muted">Total Tickets</div>
+      <motion.div variants={fadeUp} className="rounded-2xl border border-gold/30 bg-gradient-to-b from-dark-card to-gold/5 p-6 mb-8">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <Ticket className="h-5 w-5 text-gold" />
+            <h3 className="text-lg font-bold text-white">Lottery</h3>
+            {activeCount > 0 && (
+              <span className="text-xs px-2 py-0.5 rounded-full bg-green-500/20 text-green-400 border border-green-500/30 font-medium">
+                {activeCount} Active
+              </span>
+            )}
           </div>
-          <div className="rounded-lg bg-dark-elevated p-3 text-center">
-            <div className="text-xl font-bold text-white">${Number(formatUnits(totalSpent, 18)).toLocaleString('en-US', { maximumFractionDigits: 2 })}</div>
-            <div className="text-xs text-beige-muted">Total Spent</div>
-          </div>
+          <Link href="/lottery" className="text-xs text-gold hover:underline flex items-center gap-1">
+            Play <ArrowRight className="w-3 h-3" />
+          </Link>
         </div>
-      )}
 
-      {activeCount === 0 && (
-        <p className="text-xs text-beige-muted text-center mt-2">No active rounds yet. Check back soon!</p>
-      )}
-    </motion.div>
+        {/* Active Rounds Preview */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+          {[
+            { name: 'Mega', r: mega },
+            { name: 'Big', r: big },
+            { name: 'Medium', r: med },
+            { name: 'Small', r: small },
+          ].map(({ name, r }) => (
+            <div key={name} className={`rounded-xl p-3 text-center ${r?.status === 1 ? 'bg-gold/10 border border-gold/30' : 'bg-dark-elevated border border-dark-border'}`}>
+              <div className="text-xs font-bold text-white mb-1">{name}</div>
+              <div className={`text-lg font-bold ${r?.status === 1 ? 'text-gold' : 'text-beige-muted'}`}>
+                {r?.status === 1 ? `$${Number(formatUnits(r.collected, 18)).toLocaleString('en-US', { maximumFractionDigits: 0 })}` : '—'}
+              </div>
+              <div className="text-[10px] text-beige-muted">{r?.status === 1 ? `${r.tickets} tickets` : 'Inactive'}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* User Stats */}
+        {totalTickets > 0 && (
+          <div className="grid grid-cols-2 gap-3">
+            <div className="rounded-lg bg-dark-elevated p-3 text-center">
+              <div className="text-xl font-bold text-gold">{totalTickets}</div>
+              <div className="text-xs text-beige-muted">Total Tickets</div>
+            </div>
+            <div className="rounded-lg bg-dark-elevated p-3 text-center">
+              <div className="text-xl font-bold text-white">${Number(formatUnits(totalSpent, 18)).toLocaleString('en-US', { maximumFractionDigits: 2 })}</div>
+              <div className="text-xs text-beige-muted">Total Spent</div>
+            </div>
+          </div>
+        )}
+
+        {activeCount === 0 && (
+          <p className="text-xs text-beige-muted text-center mt-2">No active rounds yet. Check back soon!</p>
+        )}
+      </motion.div>
+    </>
   );
 }
