@@ -11,18 +11,20 @@ import {
 import {
   TOKEN_ADDRESS, STAKING_ADDRESS, USDT_ADDRESS,
   PRESALE_ADDRESS, PresaleABI, StakingABI, TokenABI, STAKING_POOLS,
-  PRESALE_REFERRAL_ADDRESS, ReferralABI, STAKING_V1_ADDRESS
+  PRESALE_REFERRAL_ADDRESS, ReferralABI, STAKING_V1_ADDRESS,
+  LOTTERY_ADDRESS, LotteryABI
 } from '@/lib/contracts';
 import { formatUnits, parseUnits } from 'viem';
 import { bsc } from 'wagmi/chains';
 import toast from 'react-hot-toast';
 import ParticleField from '@/components/fx/ParticleField';
 import { isAdminWallet } from '@/lib/admin-wallets';
+import LotteryAdminSection from './LotteryAdminSection';
 
 const fadeUp = { hidden: { opacity: 0, y: 30 }, visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: 'easeOut' as const } } };
 const stagger = { hidden: { opacity: 0 }, visible: { opacity: 1, transition: { staggerChildren: 0.08 } } };
 
-type TabId = 'overview' | 'token' | 'presale' | 'staking' | 'vouchers' | 'referral' | 'ownership';
+type TabId = 'overview' | 'token' | 'presale' | 'staking' | 'vouchers' | 'referral' | 'lottery' | 'ownership';
 
 export default function AdminPage() {
   const { address, isConnected, chainId } = useAccount();
@@ -185,6 +187,7 @@ export default function AdminPage() {
     { id: 'staking', label: 'Staking Pools', icon: TrendingUp },
     { id: 'vouchers', label: 'Vouchers', icon: Users },
     { id: 'referral', label: 'Referral', icon: Zap },
+    { id: 'lottery', label: 'Lottery', icon: Gift },
     { id: 'ownership', label: 'Ownership', icon: Shield },
   ];
 
@@ -853,6 +856,16 @@ export default function AdminPage() {
           </motion.div>
         )}
 
+        {/* ══ LOTTERY TAB ══ */}
+        {activeTab === 'lottery' && (
+          <motion.div variants={stagger} initial="hidden" animate="visible" className="space-y-6">
+            <LotteryAdminSection
+              writeContractAsync={writeContractAsync}
+              pending={pending}
+              setPending={setPending}
+            />
+          </motion.div>
+        )}
         {/* ══ OWNERSHIP TAB ══ */}
         {activeTab === 'ownership' && (
           <motion.div variants={stagger} initial="hidden" animate="visible" className="space-y-6">

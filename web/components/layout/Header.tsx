@@ -16,7 +16,8 @@ import { bsc } from 'wagmi/chains';
 const NAV_ITEMS = [
   { labelKey: 'nav.home', href: '/' },
   { labelKey: 'nav.presale', href: '/presale' },
-  { labelKey: 'nav.staking', href: '/staking', soon: true },
+  { labelKey: 'nav.staking', href: '/staking' },
+  { labelKey: 'nav.lottery', href: '/lottery' },
   { labelKey: 'nav.dashboard', href: '/dashboard' },
   // Admin is hidden from nav — only accessible via direct URL for authorized wallets
   { labelKey: 'nav.whitepaper', href: '/whitepaper' },
@@ -83,7 +84,7 @@ export default function Header() {
                   }`}
                 >
                   {t(item.labelKey)}
-                  {'soon' in item && item.soon && !stakingLive && (
+                  {'soon' in item && item.soon === true && !stakingLive && (
                     <span className="absolute -top-1 -right-1 px-1.5 py-0.5 text-[9px] font-black uppercase rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30">Soon</span>
                   )}
                 </Link>
@@ -135,7 +136,7 @@ export default function Header() {
                   }`}
                 >
                   {t(item.labelKey)}
-                  {'soon' in item && item.soon && !stakingLive && (
+                  {'soon' in item && item.soon === true && !stakingLive && (
                     <span className="px-1.5 py-0.5 text-[10px] font-black uppercase rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30">Soon</span>
                   )}
                 </Link>
