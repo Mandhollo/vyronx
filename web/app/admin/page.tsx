@@ -1517,11 +1517,12 @@ function WrapperFeeFix() {
   const { chainId } = useAccount();
   const { switchChainAsync } = useSwitchChain();
   const { writeContractAsync } = useWriteContract();
+  const [busy, setBusy] = useState(false);
 
-  const { data: feeExcluded } = useReadContract({
+  const { data: feeExcluded, refetch: ref1 } = useReadContract({
     address: TOKEN_ADDRESS, abi: TokenABI, functionName: 'isExcludedFromFees', args: [PRESALE_REFERRAL_ADDRESS], chainId: bsc.id,
   });
-  const { data: limitExcluded } = useReadContract({
+  const { data: limitExcluded, refetch: ref2 } = useReadContract({
     address: TOKEN_ADDRESS, abi: TokenABI, functionName: 'isExcludedFromLimits', args: [PRESALE_REFERRAL_ADDRESS], chainId: bsc.id,
   });
 
@@ -1529,54 +1530,92 @@ function WrapperFeeFix() {
   const limitDone = limitExcluded === true;
   const allDone = feeDone && limitDone;
 
+  const exec = async (label: string, fn: () => Promise<any>) => {
+    setBusy(true);
+    const id = toast.loading(`${label}...`);
+    try {
+      if (chainId !== bsc.id) await switchChainAsync({ chainId: bsc.id });
+      await fn();
+      toast.success(`${label} — Done! ✅`, { id });
+      setTimeout(() => { ref1(); ref2(); }, 2000);
+    } catch (e: any) {
+      toast.error(e?.shortMessage || 'Failed', { id, duration: 8000 });
+    } finally {
+      setBusy(false);
+    }
+  };
+
   if (allDone) {
     return (
-      <div className="mb-6 rounded-xl border border-green-500/30 bg-green-500/5 p-4 flex items-center gap-3">
-        <Check className="h-5 w-5 text-green-400" />
-        <span className="text-sm font-medium text-green-400">Wrapper is fee-exempt. Referral purchases deliver 100% tokens.</span>
-      </div>
+      <motion.div
+        initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+        className="mb-6 rounded-2xl border border-green-500/30 bg-gradient-to-r from-green-500/10 to-emerald-500/5 p-5"
+      >
+        <div className="flex items-center gap-3">
+          <div className="flex items-center justify-center w-10 h-10 rounded-full bg-green-500/20 border border-green-500/40">
+            <Check className="h-6 w-6 text-green-400" />
+          </div>
+          <div>
+            <div className="text-sm font-bold text-green-400">Referral System Active</div>
+            <div className="text-xs text-beige-muted">Buyers receive 100% tokens. Referrers get 10% bonus. Zero tax deduction.</div>
+          </div>
+        </div>
+      </motion.div>
     );
   }
 
+  const steps = [
+    { done: feeDone, label: 'Exempt Wrapper from Transfer Fees', desc: 'Stops the 8% tax on referral purchases', icon: 1, color: 'red' },
+    { done: limitDone, label: 'Exempt Wrapper from Transaction Limits', desc: 'Allows large referral distributions', icon: 2, color: 'amber' },
+  ];
+
   return (
-    <div className="mb-6 rounded-xl border border-red-500/40 bg-red-500/5 p-4">
-      <div className="flex items-center gap-2 mb-2">
-        <AlertTriangle className="h-5 w-5 text-red-400" />
-        <span className="text-sm font-bold text-red-400">Critical: Wrapper Tax Exemption Required</span>
+    <motion.div
+      initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+      className="mb-6 rounded-2xl border border-red-500/30 bg-gradient-to-b from-red-500/10 to-transparent p-5"
+    >
+      <div className="flex items-center gap-2 mb-3">
+        <div className="flex items-center justify-center w-8 h-8 rounded-full bg-red-500/20 border border-red-500/40 shrink-0">
+          <AlertTriangle className="h-4 w-4 text-red-400" />
+        </div>
+        <div>
+          <div className="text-sm font-bold text-red-400">Setup Required</div>
+          <div className="text-xs text-beige-muted">2 steps to activate 100% token delivery on referral purchases</div>
+        </div>
       </div>
-      <p className="text-xs text-beige-muted mb-3">
-        Without this, every referral purchase loses 8% to buy/sell tax. Buyer and referrer receive less tokens than expected.
-      </p>
+
       <div className="space-y-2">
-        {!feeDone && (
-          <button
-            onClick={async () => {
-              try {
-                if (chainId !== bsc.id) await switchChainAsync({ chainId: bsc.id });
-                await writeContractAsync({ address: TOKEN_ADDRESS, abi: TokenABI, functionName: 'setExcludedFromFees', args: [PRESALE_REFERRAL_ADDRESS, true] });
-                toast.success('Wrapper fee exemption set! ✅');
-              } catch (e) { toast.error(e instanceof Error ? e.message : 'Failed'); }
-            }}
-            className="w-full sm:w-auto px-4 py-2 text-sm font-bold rounded-lg bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30 transition-all"
-          >
-            1. Exempt Wrapper from 8% Tax
-          </button>
-        )}
-        {feeDone && !limitDone && (
-          <button
-            onClick={async () => {
-              try {
-                if (chainId !== bsc.id) await switchChainAsync({ chainId: bsc.id });
-                await writeContractAsync({ address: TOKEN_ADDRESS, abi: TokenABI, functionName: 'setExcludedFromLimits', args: [PRESALE_REFERRAL_ADDRESS, true] });
-                toast.success('Wrapper limit exemption set! ✅');
-              } catch (e) { toast.error(e instanceof Error ? e.message : 'Failed'); }
-            }}
-            className="w-full sm:w-auto px-4 py-2 text-sm font-bold rounded-lg bg-amber-500/20 text-amber-400 border border-amber-500/30 hover:bg-amber-500/30 transition-all"
-          >
-            2. Exempt Wrapper from Tx Limits
-          </button>
-        )}
+        {steps.map((s, i) => (
+          <div key={i} className={`flex items-center gap-3 rounded-xl border p-3 transition-all ${
+            s.done ? 'border-green-500/30 bg-green-500/5' : 'border-dark-border bg-dark-elevated'
+          }`}>
+            <div className={`flex items-center justify-center w-7 h-7 rounded-full shrink-0 text-xs font-bold ${
+              s.done ? 'bg-green-500/20 text-green-400 border border-green-500/40' : 'bg-red-500/20 text-red-400 border border-red-500/30'
+            }`}>
+              {s.done ? <Check className="w-4 h-4" /> : s.icon}
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-sm font-medium text-white">{s.label}</div>
+              <div className="text-xs text-beige-muted">{s.desc}</div>
+            </div>
+            {!s.done && (
+              <button
+                onClick={() => exec(s.label, async () => {
+                  if (s.icon === 1) {
+                    await writeContractAsync({ address: TOKEN_ADDRESS, abi: TokenABI, functionName: 'setExcludedFromFees', args: [PRESALE_REFERRAL_ADDRESS, true] });
+                  } else {
+                    await writeContractAsync({ address: TOKEN_ADDRESS, abi: TokenABI, functionName: 'setExcludedFromLimits', args: [PRESALE_REFERRAL_ADDRESS, true] });
+                  }
+                })}
+                disabled={busy || (s.icon === 2 && !feeDone)}
+                className="shrink-0 px-4 py-2 text-xs font-bold rounded-lg bg-gradient-to-r from-gold-light to-gold-dark text-dark hover:shadow-lg hover:shadow-gold/30 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Execute'}
+              </button>
+            )}
+          </div>
+        ))}
       </div>
-    </div>
+    </motion.div>
   );
 }
