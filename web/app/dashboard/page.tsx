@@ -657,6 +657,9 @@ export default function DashboardPage() {
           )}
         </motion.div>
 
+        {/* Lottery Info */}
+        <LotteryDashboardSection address={address} />
+
         {/* Referral & Affiliate */}
         <motion.div variants={stagger} initial="hidden" animate="visible" className="mb-12">
           <div className="rounded-2xl border border-gold/20 bg-gradient-to-br from-dark-card via-dark to-green-moss-dark/20 p-6 sm:p-8">
@@ -958,9 +961,6 @@ export default function DashboardPage() {
             )}
           </div>
         </motion.div>
-
-        {/* Lottery Info */}
-        <LotteryDashboardSection address={address} />
 
         {/* Contract Addresses */}
         <div className="rounded-xl border border-dark-border bg-dark-card p-4 mb-8">
