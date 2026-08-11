@@ -175,7 +175,7 @@ function Hero() {
           <motion.div variants={fadeUp} className="mb-8 relative">
             <div className="absolute inset-0 bg-gold/10 blur-[80px] rounded-full" />
             <img
-              src="/hero-robots-v5.jpg"
+              src="/hero-robots-v6.jpg"
               alt="VyronX — Vision • Innovation • Freedom • Purpose"
               className="relative max-w-full sm:max-w-3xl lg:max-w-5xl mx-auto"
               style={{ maxHeight: '92vh', width: 'auto' }}
