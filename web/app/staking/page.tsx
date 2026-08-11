@@ -240,6 +240,11 @@ function StakingPageContent() {
           )}
         </motion.div>
 
+        {/* Staking Banner Image */}
+        <motion.div variants={fadeUp} className="mb-16 relative rounded-2xl overflow-hidden border border-gold/20">
+          <img src="/staking-banner.jpg" alt="VyronX Staking — Secure your VYR" className="w-full h-auto" />
+        </motion.div>
+
         {/* Wrong network */}
         {isConnected && chainId && chainId !== bsc.id && (
           <div className="mb-8 mx-auto max-w-2xl rounded-xl bg-red-500/10 border border-red-500/30 p-4 flex items-center gap-3">
