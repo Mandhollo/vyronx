@@ -313,6 +313,11 @@ export default function PresalePage() {
           </motion.p>
         </motion.div>
 
+        {/* Presale Banner Image */}
+        <motion.div variants={fadeUp} className="mb-16 relative rounded-2xl overflow-hidden border border-gold/20">
+          <img src="/presale-banner.jpg" alt="VyronX Presale — Buy $VYR at the best price" className="w-full h-auto" />
+        </motion.div>
+
         {''}
         <motion.div
           variants={fadeUp}
