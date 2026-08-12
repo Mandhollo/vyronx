@@ -517,6 +517,18 @@ export default function DashboardPage() {
           </motion.div>
         )}
 
+        {/* AI Arbitrage Live Feed — 3 panels only */}
+        <motion.div variants={fadeUp} className="mb-8">
+          <div className="flex items-center gap-2 mb-4">
+            <TrendingUp className="h-5 w-5 text-cyan-400" />
+            <h3 className="text-lg font-bold text-white">AI Arbitrage</h3>
+            <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-green-500/20 text-green-400 border border-green-500/30 font-medium">
+              <span className="h-1.5 w-1.5 rounded-full bg-green-400 animate-pulse" /> LIVE
+            </span>
+          </div>
+          <ArbPanels />
+        </motion.div>
+
         {/* Stakes */}
         <motion.div variants={stagger} initial="hidden" animate="visible" className="mb-12">
           <div className="flex items-center justify-between mb-6">
@@ -961,18 +973,6 @@ export default function DashboardPage() {
             </div>
             )}
           </div>
-        </motion.div>
-
-        {/* AI Arbitrage Live Feed — 3 panels only */}
-        <motion.div variants={fadeUp} className="mb-8">
-          <div className="flex items-center gap-2 mb-4">
-            <TrendingUp className="h-5 w-5 text-cyan-400" />
-            <h3 className="text-lg font-bold text-white">AI Arbitrage</h3>
-            <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-green-500/20 text-green-400 border border-green-500/30 font-medium">
-              <span className="h-1.5 w-1.5 rounded-full bg-green-400 animate-pulse" /> LIVE
-            </span>
-          </div>
-          <ArbPanels />
         </motion.div>
 
         {/* Contract Addresses */}
