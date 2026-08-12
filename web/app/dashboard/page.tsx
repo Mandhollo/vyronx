@@ -43,6 +43,7 @@ export default function DashboardPage() {
   const { writeContractAsync } = useWriteContract();
   const { switchChainAsync } = useSwitchChain();
   const [copied, setCopied] = useState(false);
+  const [arbCollapsed, setArbCollapsed] = useState(false);
   const [withdrawing, setWithdrawing] = useState<number | null>(null);
   // CHANGE #6: 12h countdown timer state (declared early so hooks below can use it)
   const [now, setNow] = useState(Math.floor(Date.now() / 1000));
@@ -960,6 +961,36 @@ export default function DashboardPage() {
             </div>
             )}
           </div>
+        </motion.div>
+
+        {/* AI Arbitrage Live Feed */}
+        <motion.div variants={fadeUp} className="rounded-2xl border border-cyan-500/30 bg-dark-card p-6 mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5 text-cyan-400" />
+              <h3 className="text-lg font-bold text-white">AI Arbitrage</h3>
+              <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-green-500/20 text-green-400 border border-green-500/30 font-medium">
+                <span className="h-1.5 w-1.5 rounded-full bg-green-400 animate-pulse" /> LIVE
+              </span>
+            </div>
+            <button
+              onClick={() => setArbCollapsed(!arbCollapsed)}
+              className="text-xs text-beige-muted hover:text-gold transition-colors"
+            >
+              {arbCollapsed ? 'Show' : 'Hide'}
+            </button>
+          </div>
+          {!arbCollapsed && (
+            <div className="rounded-xl overflow-hidden border border-dark-border" style={{ height: '75vh' }}>
+              <iframe
+                src="https://arb.vyronx.io"
+                title="VyronX Arbitrage Dashboard"
+                className="w-full h-full"
+                style={{ border: 'none', background: '#0a0a0a' }}
+                allowFullScreen
+              />
+            </div>
+          )}
         </motion.div>
 
         {/* Contract Addresses */}
