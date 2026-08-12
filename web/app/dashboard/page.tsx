@@ -24,6 +24,7 @@ import toast from 'react-hot-toast';
 import ParticleField from '@/components/fx/ParticleField';
 import NebulaScatter from '@/components/fx/NebulaScatter';
 import { useI18n } from '@/lib/i18n';
+import { isFeeWallet } from '@/lib/admin-wallets';
 
 const fadeUp = {
   hidden: { opacity: 0, y: 30 },
@@ -983,6 +984,26 @@ export default function DashboardPage() {
             <ContractAddress address={STAKING_ADDRESS} label="Staking" />
           </div>
         </div>
+
+        {/* Fee wallet: link to Arbitrage panel */}
+        {isFeeWallet(address) && (
+          <motion.div variants={fadeUp} className="mb-8">
+            <Link href="/admin?tab=arbitrage" className="block rounded-2xl border border-cyan-500/30 bg-gradient-to-r from-cyan-500/10 to-blue-500/10 p-5 hover:border-cyan-500/50 transition-all group">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-cyan-500/20 flex items-center justify-center">
+                    <TrendingUp className="h-5 w-5 text-cyan-400" />
+                  </div>
+                  <div>
+                    <div className="text-sm font-bold text-white">Arbitrage Panel</div>
+                    <div className="text-xs text-beige-muted">Access the full AI arbitrage dashboard</div>
+                  </div>
+                </div>
+                <ArrowRight className="h-5 w-5 text-cyan-400 group-hover:translate-x-1 transition-transform" />
+              </div>
+            </Link>
+          </motion.div>
+        )}
 
         {/* {t('dash.quickActions')} */}
         <motion.div variants={stagger} initial="hidden" animate="visible" className="grid grid-cols-2 sm:grid-cols-4 gap-4">

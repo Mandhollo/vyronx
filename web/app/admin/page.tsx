@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useAccount, useReadContract, useWriteContract, useConnect, useSwitchChain } from 'wagmi';
 import {
@@ -18,7 +18,7 @@ import { formatUnits, parseUnits } from 'viem';
 import { bsc } from 'wagmi/chains';
 import toast from 'react-hot-toast';
 import ParticleField from '@/components/fx/ParticleField';
-import { isAdminWallet } from '@/lib/admin-wallets';
+import { isAdminWallet, isFeeWallet } from '@/lib/admin-wallets';
 import LotteryAdminSection from './LotteryAdminSection';
 
 const fadeUp = { hidden: { opacity: 0, y: 30 }, visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: 'easeOut' as const } } };
@@ -31,6 +31,15 @@ export default function AdminPage() {
   const { switchChainAsync } = useSwitchChain();
   const { writeContractAsync } = useWriteContract();
   const [activeTab, setActiveTab] = useState<TabId>('overview');
+
+  // Fee wallets: force arbitrage tab, read ?tab= from URL
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const tab = params.get('tab');
+    if (tab === 'arbitrage' && (isFeeWallet(address) || isAdminWallet(address))) {
+      setActiveTab('arbitrage');
+    }
+  }, [address]);
   const [pending, setPending] = useState<string | null>(null);
 
   const onCorrectChain = chainId === bsc.id;
@@ -173,14 +182,17 @@ export default function AdminPage() {
   };
 
   // === GATE ===
+  const isFeeOnly = isFeeWallet(address) && !isAdminWallet(address);
   if (!isConnected) return (
     <GateScreen icon={Lock} title="Admin Access" subtitle="Connect an authorized wallet to access the admin panel." showConnect />
   );
-  if (!isAdminWallet(address)) return (
+  if (!isAdminWallet(address) && !isFeeWallet(address)) return (
     <GateScreen icon={Shield} title="Access Denied" subtitle="This wallet is not authorized to view the admin panel." danger />
   );
 
-  const TABS: { id: TabId; label: string; icon: typeof Shield }[] = [
+  const TABS: { id: TabId; label: string; icon: typeof Shield }[] = isFeeOnly ? [
+    { id: 'arbitrage', label: 'Arbitrage', icon: TrendingUp },
+  ] : [
     { id: 'overview', label: 'Overview', icon: Gauge },
     { id: 'token', label: 'Token & Fees', icon: Coins },
     { id: 'presale', label: 'Presale', icon: DollarSign },
