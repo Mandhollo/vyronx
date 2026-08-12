@@ -1171,30 +1171,38 @@ function LotteryDashboardSection({ address }: { address: `0x${string}` | undefin
 }
 
 // ═══ ARBITRAGE PANELS (Market Feed + Network Graph + Opportunities) ═══
+const ARB_API = 'https://arb.vyronx.io/api/proxy';
+
 function ArbPanels() {
-  const [snapshot, setSnapshot] = useState<{ items: any[]; count: number } | null>(null);
-  const [opps, setOpps] = useState<{ items: any[]; count: number } | null>(null);
+  const [snapshot, setSnapshot] = useState<{ items: any[]; count: number }>({ items: [], count: 0 });
+  const [opps, setOpps] = useState<{ items: any[]; count: number }>({ items: [], count: 0 });
   const [health, setHealth] = useState<any>(null);
-  const [error, setError] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let alive = true;
-    const load = async () => {
+
+    const loadAll = async () => {
       try {
-        const [snapRes, oppRes, healthRes] = await Promise.all([
-          fetch('https://arb.vyronx.io/api/proxy/api/market/snapshot').then(r => r.json()).catch(() => null),
-          fetch('https://arb.vyronx.io/api/proxy/api/opportunities?limit=10').then(r => r.json()).catch(() => null),
-          fetch('https://arb.vyronx.io/api/proxy/health').then(r => r.json()).catch(() => null),
-        ]);
-        if (!alive) return;
-        if (snapRes) setSnapshot(snapRes);
-        if (oppRes) setOpps(oppRes);
-        if (healthRes) setHealth(healthRes);
-        setError(false);
-      } catch { if (alive) setError(true); }
+        const snapRes = await fetch(`${ARB_API}/api/market/snapshot`);
+        if (snapRes.ok) { const d = await snapRes.json(); if (alive && d?.items) setSnapshot(d); }
+      } catch {}
+
+      try {
+        const oppRes = await fetch(`${ARB_API}/api/opportunities?limit=10`);
+        if (oppRes.ok) { const d = await oppRes.json(); if (alive && d?.items) setOpps(d); }
+      } catch {}
+
+      try {
+        const hRes = await fetch(`${ARB_API}/health`);
+        if (hRes.ok) { const d = await hRes.json(); if (alive) setHealth(d); }
+      } catch {}
+
+      if (alive) setLoading(false);
     };
-    load();
-    const interval = setInterval(load, 5000);
+
+    loadAll();
+    const interval = setInterval(loadAll, 5000);
     return () => { alive = false; clearInterval(interval); };
   }, []);
 
@@ -1203,9 +1211,8 @@ function ArbPanels() {
     pancakeswap: 'PancakeSwap', apeswap: 'ApeSwap', babyswap: 'BabySwap',
   };
   const exchangeStatus = health?.exchanges || {};
-  const activeExchanges = Object.entries(exchangeStatus).filter(([, v]) => v && v !== 'stopped');
-  const items = snapshot?.items?.slice(0, 8) || [];
-  const oppItems = opps?.items?.slice(0, 6) || [];
+  const items = snapshot.items.slice(0, 8);
+  const oppItems = opps.items.slice(0, 6);
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -1213,7 +1220,7 @@ function ArbPanels() {
       <div className="rounded-xl border border-dark-border bg-dark-card p-4">
         <div className="flex items-center justify-between mb-3">
           <h4 className="text-xs font-bold text-gold uppercase tracking-wider">Market Feed</h4>
-          <span className="text-[10px] text-beige-muted">{snapshot?.count || 0} pairs</span>
+          <span className="text-[10px] text-beige-muted">{snapshot.count} pairs</span>
         </div>
         <div className="space-y-1.5 max-h-64 overflow-y-auto">
           {items.length === 0 ? (
@@ -1240,7 +1247,7 @@ function ArbPanels() {
       <div className="rounded-xl border border-dark-border bg-dark-card p-4">
         <div className="flex items-center justify-between mb-3">
           <h4 className="text-xs font-bold text-gold uppercase tracking-wider">Network Graph</h4>
-          <span className="text-[10px] text-green-400">{activeExchanges.length} active</span>
+          <span className="text-[10px] text-green-400">{health ? Object.values(health.exchanges || {}).filter((v: any) => v && v !== 'stopped').length : 0} active</span>
         </div>
         <div className="relative flex items-center justify-center" style={{ height: '16rem' }}>
           {/* Central node */}
@@ -1277,7 +1284,7 @@ function ArbPanels() {
       <div className="rounded-xl border border-dark-border bg-dark-card p-4 lg:col-span-2">
         <div className="flex items-center justify-between mb-3">
           <h4 className="text-xs font-bold text-gold uppercase tracking-wider">Opportunities</h4>
-          <span className="text-[10px] text-beige-muted">{opps?.count || 0} detected</span>
+          <span className="text-[10px] text-beige-muted">{opps.count} detected</span>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -1307,7 +1314,6 @@ function ArbPanels() {
             </tbody>
           </table>
         </div>
-        {error && <p className="text-center text-xs text-red-400 mt-2">Connection error. Retrying...</p>}
       </div>
     </div>
   );
