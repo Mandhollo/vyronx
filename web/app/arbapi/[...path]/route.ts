@@ -12,16 +12,18 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ path
       headers: { 'Accept': req.headers.get('accept') || '*/*' },
     });
 
+    const contentType = resp.headers.get('content-type') || 'application/json';
     const body = await resp.arrayBuffer();
+
     return new NextResponse(body, {
       headers: {
-        'content-type': resp.headers.get('content-type') || 'application/json',
+        'content-type': contentType,
         'access-control-allow-origin': '*',
         'cache-control': 'no-cache',
       },
     });
   } catch {
-    return new NextResponse(JSON.stringify({ error: 'Arbitrage API unavailable' }), {
+    return new NextResponse(JSON.stringify({ error: 'offline', status: 'offline' }), {
       status: 502,
       headers: { 'content-type': 'application/json', 'access-control-allow-origin': '*' },
     });
@@ -34,10 +36,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pat
   const targetUrl = `${ARB_API}/${path.join('/')}${search}`;
 
   try {
-    const body = await req.text();
+    const bodyText = await req.text();
     const resp = await fetch(targetUrl, {
       method: 'POST',
-      body,
+      body: bodyText,
       headers: {
         'Content-Type': req.headers.get('content-type') || 'application/json',
         'Accept': req.headers.get('accept') || '*/*',
@@ -53,7 +55,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pat
       },
     });
   } catch {
-    return new NextResponse(JSON.stringify({ error: 'Arbitrage API unavailable' }), {
+    return new NextResponse(JSON.stringify({ error: 'offline' }), {
       status: 502,
       headers: { 'content-type': 'application/json', 'access-control-allow-origin': '*' },
     });

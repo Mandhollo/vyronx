@@ -7,7 +7,6 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ path
   const { path } = await params;
   const search = req.nextUrl.search || '';
 
-  // Route API calls to port 8000, everything else to port 3001
   const pathStr = path.join('/');
   const isApi = pathStr.startsWith('api/') || pathStr.startsWith('health');
   const origin = isApi ? ARB_API : ARB_ORIGIN;
@@ -23,14 +22,30 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ path
 
     const contentType = resp.headers.get('content-type') || '';
 
-    // Rewrite webpack runtime JS to change the chunk prefix
+    // Rewrite JavaScript
     if (contentType.includes('javascript') || pathStr.endsWith('.js')) {
       let js = await resp.text();
-      // Change webpack public path from /_next/ to /arb/_next/
+
+      // 1. Change webpack public path
       js = js.replace(/=["']\/_next\/["']/g, '="/arb/_next/"');
-      // CRITICAL: Replace hardcoded API URL from IP:8000 to our proxy
+
+      // 2. Replace API base URL: let d="http://2.25.102.234:8000"
+      js = js.replace(/let d="http:\/\/2\.25\.102\.234:8000"/g, 'let d="/arbapi"');
+
+      // 3. Replace any remaining hardcoded URLs
       js = js.replace(/http:\/\/2\.25\.102\.234:8000/g, '/arbapi');
       js = js.replace(/http:\/\/2\.25\.102\.234:3001/g, '/arb');
+
+      // 4. Replace WebSocket with polling-based mock.
+      // The app does: x=new WebSocket("ws://".concat(h,"/ws"))
+      //              x.onopen=..., x.onmessage=..., x.onclose=...
+      // We can't proxy WS on Vercel serverless. Replace with a polling fallback
+      // that fetches /arbapi/api/market/snapshot every 3s and dispatches MessageEvents.
+      js = js.replace(
+        /new WebSocket\("ws:\/\/"\.concat\(([a-zA-Z]),"\/ws"\)\)/g,
+        '(function(){var ws={readyState:1,send:function(){},close:function(){}};var poll=function(){fetch("/arbapi/api/market/snapshot").then(function(r){return r.json()}).then(function(data){if(ws.onmessage)ws.onmessage({data:JSON.stringify({type:"snapshot",data:data})})}).catch(function(){})};setTimeout(poll,500);setInterval(poll,3000);setTimeout(function(){if(ws.onopen)ws.onopen()},100);return ws})()'
+      );
+
       return new NextResponse(js, {
         headers: {
           'content-type': 'application/javascript; charset=utf-8',
@@ -48,13 +63,12 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ path
       });
     }
 
-    // Pass through JSON API responses and other content
+    // Pass through everything else
     const body = await resp.arrayBuffer();
     const headers: Record<string, string> = {
       'content-type': contentType,
       'cache-control': resp.headers.get('cache-control') || 'no-cache',
     };
-    // Add CORS headers for API responses
     if (isApi) {
       headers['access-control-allow-origin'] = '*';
     }
