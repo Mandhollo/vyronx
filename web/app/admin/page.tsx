@@ -878,21 +878,14 @@ export default function AdminPage() {
                 <TrendingUp className="h-5 w-5 text-gold" /> Arbitrage Platform
               </h3>
               <p className="text-sm text-beige-muted mb-4">Real-time AI arbitrage monitoring dashboard.</p>
-
-              {/* Mixed content: HTTPS site can't embed HTTP iframe. Open in new tab. */}
-              <div className="rounded-xl bg-dark-elevated border border-dark-border p-8 text-center">
-                <TrendingUp className="h-12 w-12 text-gold mx-auto mb-4" />
-                <p className="text-beige-muted text-sm mb-4">
-                  The arbitrage dashboard runs on a dedicated server. Click below to open it in a new tab.
-                </p>
-                <a
-                  href="/arb"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-6 py-3 text-sm font-bold rounded-xl bg-gradient-to-r from-gold-light to-gold-dark text-dark hover:shadow-lg hover:shadow-gold/40 transition-all"
-                >
-                  <ExternalLink className="h-4 w-4" /> Open Arbitrage Dashboard
-                </a>
+              <div className="rounded-xl overflow-hidden border border-dark-border" style={{ height: '80vh' }}>
+                <iframe
+                  src="/arb"
+                  title="VyronX Arbitrage Dashboard"
+                  className="w-full h-full"
+                  style={{ border: 'none', background: '#0a0a0a' }}
+                  allowFullScreen
+                />
               </div>
             </motion.div>
           </motion.div>
