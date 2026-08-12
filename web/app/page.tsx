@@ -52,9 +52,9 @@ const STAKING_POOLS = [
 ];
 
 const ROADMAP = [
-  { phaseKey: 'rm.phase1', titleKey: 'rm.title1', status: 'active' },
-  { phaseKey: 'rm.phase2', titleKey: 'rm.title2', status: 'upcoming' },
-  { phaseKey: 'rm.phase3', titleKey: 'rm.title3', status: 'upcoming' },
+  { phaseKey: 'rm.phase1', titleKey: 'rm.title1', status: 'done' },
+  { phaseKey: 'rm.phase2', titleKey: 'rm.title2', status: 'done' },
+  { phaseKey: 'rm.phase3', titleKey: 'rm.title3', status: 'done' },
   { phaseKey: 'rm.phase4', titleKey: 'rm.title4', status: 'upcoming' },
   { phaseKey: 'rm.phase5', titleKey: 'rm.title5', status: 'upcoming' },
   { phaseKey: 'rm.phase6', titleKey: 'rm.title6', status: 'upcoming' },
@@ -476,11 +476,13 @@ function RoadmapSection() {
             >
               {/* Dot */}
               <div className={`absolute left-4 sm:left-1/2 -translate-x-1/2 z-10 flex items-center justify-center h-8 w-8 rounded-full border-2 ${
-                phase.status === 'active'
+                phase.status === 'done'
+                  ? 'border-green-500 bg-green-500 text-dark'
+                  : phase.status === 'active'
                   ? 'border-gold bg-gold text-dark pulse-glow'
                   : 'border-dark-border bg-dark-card text-beige-muted'
               }`}>
-                {idx + 1}
+                {phase.status === 'done' ? '✓' : idx + 1}
               </div>
 
               {/* Card */}
@@ -488,11 +490,29 @@ function RoadmapSection() {
                 <div className="rounded-2xl border border-dark-border bg-dark-card p-5 hover:border-gold/30 transition-colors">
                   <div className="flex items-center justify-between mb-3">
                     <span className="text-xs font-bold uppercase tracking-wider text-gold">{t(phase.phaseKey)}</span>
+                    {phase.status === 'done' && (
+                      <span className="px-2 py-0.5 text-xs font-bold rounded-full bg-green-500/20 text-green-400 border border-green-500/30">✓ Completed</span>
+                    )}
                     {phase.status === 'active' && (
                       <span className="px-2 py-0.5 text-xs font-bold rounded-full bg-gold/20 text-gold border border-gold/30">{t('rm.inProgress')}</span>
                     )}
                   </div>
                   <h3 className="text-lg font-bold text-white mb-3">{t(phase.titleKey)}</h3>
+                  <ul className="space-y-1.5">
+                    {[1, 2, 3, 4, 5, 6].map((n) => {
+                      const itemKey = `${phase.phaseKey}.item${n}`;
+                      const text = t(itemKey);
+                      if (!text || text === itemKey) return null;
+                      return (
+                        <li key={n} className="flex items-start gap-2 text-xs text-beige-muted">
+                          {phase.status === 'done'
+                            ? <Check className="h-3 w-3 text-green-400 mt-0.5 shrink-0" />
+                            : <span className="w-1 h-1 rounded-full bg-gold/50 mt-1.5 shrink-0" />}
+                          <span>{text}</span>
+                        </li>
+                      );
+                    })}
+                  </ul>
                 </div>
               </div>
             </motion.div>
