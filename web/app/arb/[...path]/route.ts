@@ -36,14 +36,16 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ path
       js = js.replace(/http:\/\/2\.25\.102\.234:8000/g, '/arbapi');
       js = js.replace(/http:\/\/2\.25\.102\.234:3001/g, '/arb');
 
-      // 4. Replace WebSocket with polling-based mock.
-      // The app does: x=new WebSocket("ws://".concat(h,"/ws"))
-      //              x.onopen=..., x.onmessage=..., x.onclose=...
-      // We can't proxy WS on Vercel serverless. Replace with a polling fallback
-      // that fetches /arbapi/api/market/snapshot every 3s and dispatches MessageEvents.
+      // 4. Replace WebSocket with polling-based mock (Vercel can't proxy WS)
       js = js.replace(
         /new WebSocket\("ws:\/\/"\.concat\(([a-zA-Z]),"\/ws"\)\)/g,
         '(function(){var ws={readyState:1,send:function(){},close:function(){}};var poll=function(){fetch("/arbapi/api/market/snapshot").then(function(r){return r.json()}).then(function(data){if(ws.onmessage)ws.onmessage({data:JSON.stringify({type:"snapshot",data:data})})}).catch(function(){})};setTimeout(poll,500);setInterval(poll,3000);setTimeout(function(){if(ws.onopen)ws.onopen()},100);return ws})()'
+      );
+
+      // 5. Remove trustedTypes policy creation (breaks in iframes without CSP header)
+      js = js.replace(
+        /f\.tt=function\(\)\{[^}]+trustedTypes[^}]+\}/g,
+        'f.tt=function(){return{createScriptURL:function(e){return e}}}'
       );
 
       return new NextResponse(js, {
