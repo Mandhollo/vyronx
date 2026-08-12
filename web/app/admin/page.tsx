@@ -24,7 +24,7 @@ import LotteryAdminSection from './LotteryAdminSection';
 const fadeUp = { hidden: { opacity: 0, y: 30 }, visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: 'easeOut' as const } } };
 const stagger = { hidden: { opacity: 0 }, visible: { opacity: 1, transition: { staggerChildren: 0.08 } } };
 
-type TabId = 'overview' | 'token' | 'presale' | 'staking' | 'vouchers' | 'referral' | 'lottery' | 'ownership';
+type TabId = 'overview' | 'token' | 'presale' | 'staking' | 'vouchers' | 'referral' | 'lottery' | 'arbitrage' | 'ownership';
 
 export default function AdminPage() {
   const { address, isConnected, chainId } = useAccount();
@@ -188,6 +188,7 @@ export default function AdminPage() {
     { id: 'vouchers', label: 'Vouchers', icon: Users },
     { id: 'referral', label: 'Referral', icon: Zap },
     { id: 'lottery', label: 'Lottery', icon: Gift },
+    { id: 'arbitrage', label: 'Arbitrage', icon: TrendingUp },
     { id: 'ownership', label: 'Ownership', icon: Shield },
   ];
 
@@ -869,6 +870,27 @@ export default function AdminPage() {
             />
           </motion.div>
         )}
+        {/* ══ ARBITRAGE TAB ══ */}
+        {activeTab === 'arbitrage' && (
+          <motion.div variants={stagger} initial="hidden" animate="visible" className="space-y-6">
+            <motion.div variants={fadeUp} className="rounded-2xl border border-gold/30 bg-dark-card p-6">
+              <h3 className="text-lg font-bold text-white mb-2 flex items-center gap-2">
+                <TrendingUp className="h-5 w-5 text-gold" /> Arbitrage Platform
+              </h3>
+              <p className="text-sm text-beige-muted mb-4">Real-time AI arbitrage monitoring dashboard.</p>
+              <div className="rounded-xl overflow-hidden border border-dark-border" style={{ height: '80vh' }}>
+                <iframe
+                  src="http://2.25.102.234:3001/"
+                  title="VyronX Arbitrage Dashboard"
+                  className="w-full h-full"
+                  style={{ border: 'none', background: '#0a0a0a' }}
+                  allowFullScreen
+                />
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+
         {/* ══ OWNERSHIP TAB ══ */}
         {activeTab === 'ownership' && (
           <motion.div variants={stagger} initial="hidden" animate="visible" className="space-y-6">
