@@ -43,8 +43,9 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ path
       );
 
       // 5. Remove trustedTypes policy creation (breaks in iframes without CSP header)
+      // Original: f.tt=function(){return void 0===r&&(r={createScriptURL:function(e){return e}},"undefined"!=typeof trustedTypes&&trustedTypes.createPolicy&&(r=trustedTypes.createPolicy("nextjs#bundler",r))),r}
       js = js.replace(
-        /f\.tt=function\(\)\{[^}]+trustedTypes[^}]+\}/g,
+        /f\.tt=function\(\)\{return void 0===r&&\(r=\{createScriptURL:function\(e\)\{return e\}\},"undefined"!=typeof trustedTypes&&trustedTypes\.createPolicy&&\(r=trustedTypes\.createPolicy\("nextjs#bundler",r\)\)\),r\}/g,
         'f.tt=function(){return{createScriptURL:function(e){return e}}}'
       );
 
