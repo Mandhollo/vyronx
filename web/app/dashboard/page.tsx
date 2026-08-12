@@ -22,6 +22,7 @@ import { formatUnits, parseUnits } from 'viem';
 import { bsc } from 'wagmi/chains';
 import toast from 'react-hot-toast';
 import ParticleField from '@/components/fx/ParticleField';
+import NebulaScatter from '@/components/fx/NebulaScatter';
 import { useI18n } from '@/lib/i18n';
 
 const fadeUp = {
@@ -1206,13 +1207,12 @@ function ArbPanels() {
     return () => { alive = false; clearInterval(interval); };
   }, []);
 
-  const exchanges: Record<string, string> = {
+  const items = snapshot.items.slice(0, 8);
+  const oppItems = opps.items.slice(0, 6);
+  const exchName: Record<string, string> = {
     binance: 'Binance', bybit: 'Bybit', okx: 'OKX', kucoin: 'KuCoin',
     pancakeswap: 'PancakeSwap', apeswap: 'ApeSwap', babyswap: 'BabySwap',
   };
-  const exchangeStatus = health?.exchanges || {};
-  const items = snapshot.items.slice(0, 8);
-  const oppItems = opps.items.slice(0, 6);
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -1230,7 +1230,7 @@ function ArbPanels() {
           ) : items.map((item: any, i: number) => (
             <div key={i} className="flex items-center justify-between text-xs py-1 px-2 rounded hover:bg-dark-elevated transition-colors">
               <div className="flex items-center gap-2">
-                <span className="text-beige-muted font-medium" style={{ fontSize: '9px' }}>{exchanges[item.exchange] || item.exchange}</span>
+                <span className="text-beige-muted font-medium" style={{ fontSize: '9px' }}>{exchName[item.exchange] || item.exchange}</span>
                 <span className="text-white font-medium">{item.symbol}</span>
               </div>
               <div className="flex items-center gap-2 font-mono">
@@ -1243,41 +1243,13 @@ function ArbPanels() {
         </div>
       </div>
 
-      {/* Panel 2: Network Graph (exchange status) */}
+      {/* Panel 2: Network Graph (animated nebula — same as original) */}
       <div className="rounded-xl border border-dark-border bg-dark-card p-4">
         <div className="flex items-center justify-between mb-3">
           <h4 className="text-xs font-bold text-gold uppercase tracking-wider">Network Graph</h4>
           <span className="text-[10px] text-green-400">{health ? Object.values(health.exchanges || {}).filter((v: any) => v && v !== 'stopped').length : 0} active</span>
         </div>
-        <div className="relative flex items-center justify-center" style={{ height: '16rem' }}>
-          {/* Central node */}
-          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
-            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-gold to-gold-dark flex items-center justify-center text-black font-bold text-xs shadow-lg shadow-gold/30">
-              VXR
-            </div>
-          </div>
-          {/* Exchange nodes in circle */}
-          {Object.entries(exchanges).map(([key, label], i) => {
-            const total = Object.keys(exchanges).length;
-            const angle = (i / total) * 2 * Math.PI - Math.PI / 2;
-            const radius = 100;
-            const x = Math.cos(angle) * radius;
-            const y = Math.sin(angle) * radius;
-            const active = exchangeStatus[key] && exchangeStatus[key] !== 'stopped';
-            return (
-              <div key={key} className="absolute" style={{ transform: `translate(${x}px, ${y}px)` }}>
-                {/* Connection line */}
-                <svg className="absolute pointer-events-none" style={{ width: '120px', height: '120px', left: '-60px', top: '-60px' }}>
-                  <line x1="60" y1="60" x2={60 - x} y2={60 - y} stroke={active ? 'rgba(74,222,128,0.3)' : 'rgba(100,100,100,0.15)'} strokeWidth="1" strokeDasharray="3,3" />
-                </svg>
-                <div className={`relative w-10 h-10 rounded-full flex items-center justify-center text-[8px] font-bold border-2 transition-all ${active ? 'bg-green-500/20 border-green-500/50 text-green-400' : 'bg-dark-elevated border-dark-border text-beige-muted'}`}>
-                  <span className="relative">{label.slice(0, 4)}</span>
-                  {active && <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-green-400 animate-pulse" />}
-                </div>
-              </div>
-            );
-          })}
-        </div>
+        <NebulaScatter items={snapshot.items} opportunities={opps.items} height={250} />
       </div>
 
       {/* Panel 3: Opportunities */}
@@ -1305,7 +1277,7 @@ function ArbPanels() {
               ) : oppItems.map((opp: any, i: number) => (
                 <tr key={i} className="text-xs border-t border-dark-border/50 hover:bg-dark-elevated/50 transition-colors">
                   <td className="py-2 text-white font-medium">{opp.symbol}</td>
-                  <td className="py-2 text-beige-muted">{exchanges[opp.buy_exchange] || opp.buy_exchange} → {exchanges[opp.sell_exchange] || opp.sell_exchange}</td>
+                  <td className="py-2 text-beige-muted">{exchName[opp.buy_exchange] || opp.buy_exchange} → {exchName[opp.sell_exchange] || opp.sell_exchange}</td>
                   <td className="py-2 text-right font-mono text-cyan-400">${Number(opp.spread).toFixed(4)}</td>
                   <td className="py-2 text-right font-mono text-beige-muted hidden sm:table-cell">{Number(opp.spread_bps).toFixed(1)} bps</td>
                   <td className="py-2 text-right font-mono text-green-400">${Number(opp.estimated_profit_usdt).toFixed(4)}</td>
