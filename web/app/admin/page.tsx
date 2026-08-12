@@ -880,7 +880,7 @@ export default function AdminPage() {
               <p className="text-sm text-beige-muted mb-4">Real-time AI arbitrage monitoring dashboard.</p>
               <div className="rounded-xl overflow-hidden border border-dark-border" style={{ height: '80vh' }}>
                 <iframe
-                  src="/arb"
+                  src="https://arb.vyronx.io"
                   title="VyronX Arbitrage Dashboard"
                   className="w-full h-full"
                   style={{ border: 'none', background: '#0a0a0a' }}
