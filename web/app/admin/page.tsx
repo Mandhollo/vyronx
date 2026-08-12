@@ -886,7 +886,7 @@ export default function AdminPage() {
                   The arbitrage dashboard runs on a dedicated server. Click below to open it in a new tab.
                 </p>
                 <a
-                  href="http://2.25.102.234:3001/"
+                  href="http://arb.vyronx.io:3001/"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 px-6 py-3 text-sm font-bold rounded-xl bg-gradient-to-r from-gold-light to-gold-dark text-dark hover:shadow-lg hover:shadow-gold/40 transition-all"
