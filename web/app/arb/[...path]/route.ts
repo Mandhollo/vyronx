@@ -13,25 +13,33 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ path
     });
 
     const contentType = resp.headers.get('content-type') || '';
+    const url = path.join('/');
 
-    // Rewrite HTML to fix asset paths
-    if (contentType.includes('text/html')) {
-      let html = await resp.text();
-      // Replace absolute asset paths to route through our proxy
-      html = html.replace(/href="\/_next\//g, 'href="/arb/_next/');
-      html = html.replace(/src="\/_next\//g, 'src="/arb/_next/');
-      html = html.replace(/href="\/([^"]+)"/g, (m, p1) => {
-        if (p1.startsWith('_next') || p1.startsWith('/')) return m;
-        return `href="/arb/${p1}"`;
-      });
-      return new NextResponse(html, {
+    // Rewrite webpack runtime JS to change the chunk prefix
+    if (contentType.includes('javascript') || url.endsWith('.js')) {
+      let js = await resp.text();
+      // Change webpack public path from /_next/ to /arb/_next/
+      js = js.replace(/=["']\/_next\/["']/g, '="/arb/_next/"');
+      // Also fix any hardcoded _next paths in chunks
+      js = js.replace(/"\.\/_next\//g, '"./arb/_next/');
+      return new NextResponse(js, {
         headers: {
-          'content-type': 'text/html; charset=utf-8',
+          'content-type': 'application/javascript; charset=utf-8',
+          'cache-control': 'public, max-age=3600',
         },
       });
     }
 
-    // Pass through all other content (JS, CSS, images, fonts)
+    // Rewrite HTML
+    if (contentType.includes('text/html')) {
+      let html = await resp.text();
+      html = html.replace(/\/_next\//g, '/arb/_next/');
+      return new NextResponse(html, {
+        headers: { 'content-type': 'text/html; charset=utf-8' },
+      });
+    }
+
+    // Pass through all other content (CSS, images, fonts)
     const body = await resp.arrayBuffer();
     return new NextResponse(body, {
       headers: {
