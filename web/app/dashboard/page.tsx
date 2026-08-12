@@ -43,7 +43,6 @@ export default function DashboardPage() {
   const { writeContractAsync } = useWriteContract();
   const { switchChainAsync } = useSwitchChain();
   const [copied, setCopied] = useState(false);
-  const [arbCollapsed, setArbCollapsed] = useState(false);
   const [withdrawing, setWithdrawing] = useState<number | null>(null);
   // CHANGE #6: 12h countdown timer state (declared early so hooks below can use it)
   const [now, setNow] = useState(Math.floor(Date.now() / 1000));
@@ -963,34 +962,16 @@ export default function DashboardPage() {
           </div>
         </motion.div>
 
-        {/* AI Arbitrage Live Feed */}
-        <motion.div variants={fadeUp} className="rounded-2xl border border-cyan-500/30 bg-dark-card p-6 mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-cyan-400" />
-              <h3 className="text-lg font-bold text-white">AI Arbitrage</h3>
-              <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-green-500/20 text-green-400 border border-green-500/30 font-medium">
-                <span className="h-1.5 w-1.5 rounded-full bg-green-400 animate-pulse" /> LIVE
-              </span>
-            </div>
-            <button
-              onClick={() => setArbCollapsed(!arbCollapsed)}
-              className="text-xs text-beige-muted hover:text-gold transition-colors"
-            >
-              {arbCollapsed ? 'Show' : 'Hide'}
-            </button>
+        {/* AI Arbitrage Live Feed — 3 panels only */}
+        <motion.div variants={fadeUp} className="mb-8">
+          <div className="flex items-center gap-2 mb-4">
+            <TrendingUp className="h-5 w-5 text-cyan-400" />
+            <h3 className="text-lg font-bold text-white">AI Arbitrage</h3>
+            <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-green-500/20 text-green-400 border border-green-500/30 font-medium">
+              <span className="h-1.5 w-1.5 rounded-full bg-green-400 animate-pulse" /> LIVE
+            </span>
           </div>
-          {!arbCollapsed && (
-            <div className="rounded-xl overflow-hidden border border-dark-border" style={{ height: '75vh' }}>
-              <iframe
-                src="https://arb.vyronx.io"
-                title="VyronX Arbitrage Dashboard"
-                className="w-full h-full"
-                style={{ border: 'none', background: '#0a0a0a' }}
-                allowFullScreen
-              />
-            </div>
-          )}
+          <ArbPanels />
         </motion.div>
 
         {/* Contract Addresses */}
@@ -1186,5 +1167,148 @@ function LotteryDashboardSection({ address }: { address: `0x${string}` | undefin
         )}
       </motion.div>
     </>
+  );
+}
+
+// ═══ ARBITRAGE PANELS (Market Feed + Network Graph + Opportunities) ═══
+function ArbPanels() {
+  const [snapshot, setSnapshot] = useState<{ items: any[]; count: number } | null>(null);
+  const [opps, setOpps] = useState<{ items: any[]; count: number } | null>(null);
+  const [health, setHealth] = useState<any>(null);
+  const [error, setError] = useState(false);
+
+  useEffect(() => {
+    let alive = true;
+    const load = async () => {
+      try {
+        const [snapRes, oppRes, healthRes] = await Promise.all([
+          fetch('https://arb.vyronx.io/api/proxy/api/market/snapshot').then(r => r.json()).catch(() => null),
+          fetch('https://arb.vyronx.io/api/proxy/api/opportunities?limit=10').then(r => r.json()).catch(() => null),
+          fetch('https://arb.vyronx.io/api/proxy/health').then(r => r.json()).catch(() => null),
+        ]);
+        if (!alive) return;
+        if (snapRes) setSnapshot(snapRes);
+        if (oppRes) setOpps(oppRes);
+        if (healthRes) setHealth(healthRes);
+        setError(false);
+      } catch { if (alive) setError(true); }
+    };
+    load();
+    const interval = setInterval(load, 5000);
+    return () => { alive = false; clearInterval(interval); };
+  }, []);
+
+  const exchanges: Record<string, string> = {
+    binance: 'Binance', bybit: 'Bybit', okx: 'OKX', kucoin: 'KuCoin',
+    pancakeswap: 'PancakeSwap', apeswap: 'ApeSwap', babyswap: 'BabySwap',
+  };
+  const exchangeStatus = health?.exchanges || {};
+  const activeExchanges = Object.entries(exchangeStatus).filter(([, v]) => v && v !== 'stopped');
+  const items = snapshot?.items?.slice(0, 8) || [];
+  const oppItems = opps?.items?.slice(0, 6) || [];
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      {/* Panel 1: Market Feed */}
+      <div className="rounded-xl border border-dark-border bg-dark-card p-4">
+        <div className="flex items-center justify-between mb-3">
+          <h4 className="text-xs font-bold text-gold uppercase tracking-wider">Market Feed</h4>
+          <span className="text-[10px] text-beige-muted">{snapshot?.count || 0} pairs</span>
+        </div>
+        <div className="space-y-1.5 max-h-64 overflow-y-auto">
+          {items.length === 0 ? (
+            <div className="text-center py-8">
+              <div className="inline-block h-5 w-5 border-2 border-gold/20 border-t-gold rounded-full animate-spin" />
+            </div>
+          ) : items.map((item: any, i: number) => (
+            <div key={i} className="flex items-center justify-between text-xs py-1 px-2 rounded hover:bg-dark-elevated transition-colors">
+              <div className="flex items-center gap-2">
+                <span className="text-beige-muted font-medium" style={{ fontSize: '9px' }}>{exchanges[item.exchange] || item.exchange}</span>
+                <span className="text-white font-medium">{item.symbol}</span>
+              </div>
+              <div className="flex items-center gap-2 font-mono">
+                <span className="text-green-400">{Number(item.best_bid).toFixed(2)}</span>
+                <span className="text-beige-muted">/</span>
+                <span className="text-red-400">{Number(item.best_ask).toFixed(2)}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Panel 2: Network Graph (exchange status) */}
+      <div className="rounded-xl border border-dark-border bg-dark-card p-4">
+        <div className="flex items-center justify-between mb-3">
+          <h4 className="text-xs font-bold text-gold uppercase tracking-wider">Network Graph</h4>
+          <span className="text-[10px] text-green-400">{activeExchanges.length} active</span>
+        </div>
+        <div className="relative flex items-center justify-center" style={{ height: '16rem' }}>
+          {/* Central node */}
+          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
+            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-gold to-gold-dark flex items-center justify-center text-black font-bold text-xs shadow-lg shadow-gold/30">
+              VXR
+            </div>
+          </div>
+          {/* Exchange nodes in circle */}
+          {Object.entries(exchanges).map(([key, label], i) => {
+            const total = Object.keys(exchanges).length;
+            const angle = (i / total) * 2 * Math.PI - Math.PI / 2;
+            const radius = 100;
+            const x = Math.cos(angle) * radius;
+            const y = Math.sin(angle) * radius;
+            const active = exchangeStatus[key] && exchangeStatus[key] !== 'stopped';
+            return (
+              <div key={key} className="absolute" style={{ transform: `translate(${x}px, ${y}px)` }}>
+                {/* Connection line */}
+                <svg className="absolute pointer-events-none" style={{ width: '120px', height: '120px', left: '-60px', top: '-60px' }}>
+                  <line x1="60" y1="60" x2={60 - x} y2={60 - y} stroke={active ? 'rgba(74,222,128,0.3)' : 'rgba(100,100,100,0.15)'} strokeWidth="1" strokeDasharray="3,3" />
+                </svg>
+                <div className={`relative w-10 h-10 rounded-full flex items-center justify-center text-[8px] font-bold border-2 transition-all ${active ? 'bg-green-500/20 border-green-500/50 text-green-400' : 'bg-dark-elevated border-dark-border text-beige-muted'}`}>
+                  <span className="relative">{label.slice(0, 4)}</span>
+                  {active && <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-green-400 animate-pulse" />}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Panel 3: Opportunities */}
+      <div className="rounded-xl border border-dark-border bg-dark-card p-4 lg:col-span-2">
+        <div className="flex items-center justify-between mb-3">
+          <h4 className="text-xs font-bold text-gold uppercase tracking-wider">Opportunities</h4>
+          <span className="text-[10px] text-beige-muted">{opps?.count || 0} detected</span>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="text-[10px] text-beige-muted uppercase tracking-wider">
+                <th className="text-left pb-2 font-medium">Symbol</th>
+                <th className="text-left pb-2 font-medium">Buy → Sell</th>
+                <th className="text-right pb-2 font-medium">Spread</th>
+                <th className="text-right pb-2 font-medium hidden sm:table-cell">Spread bps</th>
+                <th className="text-right pb-2 font-medium">Est. Profit</th>
+              </tr>
+            </thead>
+            <tbody>
+              {oppItems.length === 0 ? (
+                <tr><td colSpan={5} className="text-center py-6">
+                  <div className="inline-block h-5 w-5 border-2 border-gold/20 border-t-gold rounded-full animate-spin" />
+                </td></tr>
+              ) : oppItems.map((opp: any, i: number) => (
+                <tr key={i} className="text-xs border-t border-dark-border/50 hover:bg-dark-elevated/50 transition-colors">
+                  <td className="py-2 text-white font-medium">{opp.symbol}</td>
+                  <td className="py-2 text-beige-muted">{exchanges[opp.buy_exchange] || opp.buy_exchange} → {exchanges[opp.sell_exchange] || opp.sell_exchange}</td>
+                  <td className="py-2 text-right font-mono text-cyan-400">${Number(opp.spread).toFixed(4)}</td>
+                  <td className="py-2 text-right font-mono text-beige-muted hidden sm:table-cell">{Number(opp.spread_bps).toFixed(1)} bps</td>
+                  <td className="py-2 text-right font-mono text-green-400">${Number(opp.estimated_profit_usdt).toFixed(4)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        {error && <p className="text-center text-xs text-red-400 mt-2">Connection error. Retrying...</p>}
+      </div>
+    </div>
   );
 }
