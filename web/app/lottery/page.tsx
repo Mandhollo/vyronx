@@ -642,7 +642,7 @@ function LotteryCard({
         <>
           {/* Ticket price */}
           <div className="flex items-center justify-between mb-3 text-sm">
-            <span className="text-beige/50">Preço por bilhete</span>
+            <span className="text-beige/50">Ticket Price</span>
             <span className="text-white font-medium">${fmtUSDT(ticketPrice)} USDT</span>
           </div>
 

@@ -479,8 +479,8 @@ function BuybackSettings({ writeContractAsync, pending, setPending }: {
             <div className="text-sm font-semibold text-white">Swap USDT → VYR + Burn</div>
             <div className="text-xs text-beige/40 mt-1">
               {autoEnabled
-                ? '✅ Ativo — Compra VYR no PancakeSwap e queima automaticamente a cada sorteio'
-                : '⚠️ Desativado — USDT do buy-back vai direto para a carteira de fallback'}
+                ? '✅ Active — Buys VYR on PancakeSwap and burns automatically after each draw'
+                : '⚠️ Disabled — Buy-back USDT goes directly to fallback wallet'}
             </div>
           </div>
           <button
@@ -492,13 +492,13 @@ function BuybackSettings({ writeContractAsync, pending, setPending }: {
                 : 'bg-green-600/20 text-green-400 border border-green-500/30 hover:bg-green-600/30'
             }`}
           >
-            {pending === 'Toggle Buyback' ? <Loader2 className="w-4 h-4 animate-spin" /> : autoEnabled ? 'DESATIVAR' : 'ATIVAR'}
+            {pending === 'Toggle Buyback' ? <Loader2 className="w-4 h-4 animate-spin" /> : autoEnabled ? 'DISABLE' : 'ENABLE'}
           </button>
         </div>
         <div className="text-xs text-beige/30 leading-relaxed">
-          <strong className="text-beige/50">Como funciona:</strong> Quando uma loteria fecha, 20% da arrecadação é enviada
-          para o PancakeSwap V2, compra $VYR com USDT, e os tokens comprados são <strong className="text-red-400">queimados permanentemente</strong> (burn).
-          Isso reduz a oferta circulante e sustenta o preço do gráfico. Se o swap falhar (baixa liquidez), o USDT vai para a carteira de fallback.
+          <strong className="text-beige/50">How it works:</strong> When a lottery closes, 20% of the pool is sent
+          to PancakeSwap V2, buys $VYR with USDT, and the purchased tokens are <strong className="text-red-400">permanently burned</strong>.
+          This reduces circulating supply and supports the chart price. If the swap fails (low liquidity), USDT goes to the fallback wallet.
         </div>
       </div>
     </motion.div>
@@ -631,19 +631,19 @@ function FeeExclusionSection({ writeContractAsync, pending, setPending }: {
 
       {allConfigured && (
         <div className="text-center text-sm text-green-400 font-semibold py-2">
-          ✅ Loteria configurada corretamente! Todas as taxas e limites estão isentos.
+          ✅ Lottery configured correctly! All fees and limits are exempt.
         </div>
       )}
 
-      {/* Exclusão manual de outro endereço */}
+      {/* Manual fee exclusion */}
       <div className="mt-4 pt-4 border-t border-dark-border">
-        <div className="text-xs text-beige/50 mb-2">Excluir outro endereço de taxas (opcional):</div>
+        <div className="text-xs text-beige/50 mb-2">Exclude another address from fees (optional):</div>
         <div className="flex gap-2">
           <input
             type="text"
             value={customAddr}
             onChange={(e) => setCustomAddr(e.target.value)}
-            placeholder="0x... endereço da carteira ou contrato"
+            placeholder="0x... wallet or contract address"
             className="flex-1 h-9 rounded-lg bg-dark-elevated border border-dark-border text-white px-3 text-xs font-mono focus:border-gold/50 outline-none"
           />
           <button
