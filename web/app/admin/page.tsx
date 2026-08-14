@@ -6,7 +6,7 @@ import { useAccount, useReadContract, useWriteContract, useConnect, useSwitchCha
 import {
   Settings, Lock, Coins, Users, TrendingUp, Power, Gauge,
   Loader2, DollarSign, Wallet, Banknote, Shield, Flame,
-  Percent, Clock, Check, ExternalLink, AlertTriangle, ArrowRight, Zap, Gift
+  Percent, Clock, Check, ExternalLink, AlertTriangle, ArrowRight, Zap, Gift, Gavel
 } from 'lucide-react';
 import {
   TOKEN_ADDRESS, STAKING_ADDRESS, USDT_ADDRESS,
@@ -20,11 +20,12 @@ import toast from 'react-hot-toast';
 import ParticleField from '@/components/fx/ParticleField';
 import { isAdminWallet, isFeeWallet } from '@/lib/admin-wallets';
 import LotteryAdminSection from './LotteryAdminSection';
+import AuctionAdminSection from './AuctionAdminSection';
 
 const fadeUp = { hidden: { opacity: 0, y: 30 }, visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: 'easeOut' as const } } };
 const stagger = { hidden: { opacity: 0 }, visible: { opacity: 1, transition: { staggerChildren: 0.08 } } };
 
-type TabId = 'overview' | 'token' | 'presale' | 'staking' | 'vouchers' | 'referral' | 'lottery' | 'arbitrage' | 'ownership';
+type TabId = 'overview' | 'token' | 'presale' | 'staking' | 'vouchers' | 'referral' | 'lottery' | 'auction' | 'arbitrage' | 'ownership';
 
 export default function AdminPage() {
   const { address, isConnected, chainId } = useAccount();
@@ -200,6 +201,7 @@ export default function AdminPage() {
     { id: 'vouchers', label: 'Vouchers', icon: Users },
     { id: 'referral', label: 'Referral', icon: Zap },
     { id: 'lottery', label: 'Lottery', icon: Gift },
+    { id: 'auction', label: 'Auction', icon: Gavel },
     { id: 'arbitrage', label: 'Arbitrage', icon: TrendingUp },
     { id: 'ownership', label: 'Ownership', icon: Shield },
   ];
@@ -876,6 +878,16 @@ export default function AdminPage() {
         {activeTab === 'lottery' && (
           <motion.div variants={stagger} initial="hidden" animate="visible" className="space-y-6">
             <LotteryAdminSection
+              writeContractAsync={writeContractAsync}
+              pending={pending}
+              setPending={setPending}
+            />
+          </motion.div>
+        )}
+        {/* ══ AUCTION TAB ══ */}
+        {activeTab === 'auction' && (
+          <motion.div variants={stagger} initial="hidden" animate="visible" className="space-y-6">
+            <AuctionAdminSection
               writeContractAsync={writeContractAsync}
               pending={pending}
               setPending={setPending}

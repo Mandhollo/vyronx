@@ -50,6 +50,7 @@ export default function Footer() {
               <li><Link href="/presale" className="text-sm text-beige hover:text-gold transition-colors">{t('nav.presale')}</Link></li>
               <li><Link href="/staking" className="text-sm text-beige hover:text-gold transition-colors">{t('nav.staking')}</Link></li>
               <li><Link href="/lottery" className="text-sm text-beige hover:text-gold transition-colors">{t('nav.lottery')}</Link></li>
+              <li><Link href="/auction" className="text-sm text-beige hover:text-gold transition-colors">{t('nav.auction')}</Link></li>
               <li><Link href="/dashboard" className="text-sm text-beige hover:text-gold transition-colors">{t('nav.dashboard')}</Link></li>
               {/* Admin hidden from footer — authorized wallets only */}
             </ul>

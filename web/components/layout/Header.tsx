@@ -18,6 +18,7 @@ const NAV_ITEMS = [
   { labelKey: 'nav.presale', href: '/presale' },
   { labelKey: 'nav.staking', href: '/staking', soon: true },
   { labelKey: 'nav.lottery', href: '/lottery', soon: true },
+  { labelKey: 'nav.auction', href: '/auction', soon: true },
   { labelKey: 'nav.dashboard', href: '/dashboard' },
   // Admin is hidden from nav — only accessible via direct URL for authorized wallets
   { labelKey: 'nav.whitepaper', href: '/whitepaper' },

@@ -64,6 +64,7 @@ contract MockRouter {
         address to,
         uint256
     ) external {
+        require(!failMode, "MockRouter: forced fail");
         require(path[0] == usdt && path[1] == vyr, "Bad path");
         // Pull USDT from caller (the lottery contract already approved)
         // Simple transfer since mock USDT has no restriction
@@ -73,4 +74,8 @@ contract MockRouter {
     }
 
     function setRate(uint256 _rate) external { rate = _rate; }
+
+    /// @notice Fail mode: reverts the swap to test try/catch fallback paths
+    bool public failMode;
+    function setFailMode(bool _fail) external { failMode = _fail; }
 }
