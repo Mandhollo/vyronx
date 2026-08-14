@@ -1203,29 +1203,38 @@ function ArbPanels() {
 
   useEffect(() => {
     let alive = true;
+    let timer: ReturnType<typeof setTimeout>;
 
     const loadAll = async () => {
-      try {
-        const snapRes = await fetch(`${ARB_API}/api/market/snapshot`);
-        if (snapRes.ok) { const d = await snapRes.json(); if (alive && d?.items) setSnapshot(d); }
-      } catch {}
+      await Promise.all([
+        (async () => {
+          try {
+            const snapRes = await fetch(`${ARB_API}/api/market/snapshot`, { cache: 'no-store' });
+            if (snapRes.ok) { const d = await snapRes.json(); if (alive && d?.items) setSnapshot(d); }
+          } catch {}
+        })(),
+        (async () => {
+          try {
+            const oppRes = await fetch(`${ARB_API}/api/opportunities?limit=10`, { cache: 'no-store' });
+            if (oppRes.ok) { const d = await oppRes.json(); if (alive && d?.items) setOpps(d); }
+          } catch {}
+        })(),
+        (async () => {
+          try {
+            const hRes = await fetch(`${ARB_API}/health`, { cache: 'no-store' });
+            if (hRes.ok) { const d = await hRes.json(); if (alive) setHealth(d); }
+          } catch {}
+        })(),
+      ]);
 
-      try {
-        const oppRes = await fetch(`${ARB_API}/api/opportunities?limit=10`);
-        if (oppRes.ok) { const d = await oppRes.json(); if (alive && d?.items) setOpps(d); }
-      } catch {}
-
-      try {
-        const hRes = await fetch(`${ARB_API}/health`);
-        if (hRes.ok) { const d = await hRes.json(); if (alive) setHealth(d); }
-      } catch {}
-
-      if (alive) setLoading(false);
+      if (alive) {
+        setLoading(false);
+        timer = setTimeout(loadAll, 2000);
+      }
     };
 
     loadAll();
-    const interval = setInterval(loadAll, 5000);
-    return () => { alive = false; clearInterval(interval); };
+    return () => { alive = false; clearTimeout(timer); };
   }, []);
 
   const items = snapshot.items.slice(0, 8);
