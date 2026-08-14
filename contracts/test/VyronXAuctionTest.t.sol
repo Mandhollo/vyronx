@@ -68,7 +68,7 @@ contract VyronXAuctionTest is Test {
     //  helpers 
     function _open(uint256 prize, uint256 delay) internal returns (uint256 id) {
         vm.prank(owner);
-        auction.openAuction(prize, delay);
+        auction.openAuction(prize, block.timestamp, delay);
         return auction.nextAuctionId();
     }
 
@@ -150,18 +150,85 @@ contract VyronXAuctionTest is Test {
     // 
 
     function test_BuyBidPack_VYR_BonusAndBurn() public {
-        // oracle 1:1 -> 10 VYR = $10 = 10 bids + 10% bonus = 11 bids
+        // oracle 1:1 → 10 VYR = $10 = 10 bids + 10% bonus = 11 bids
+        // burnShareBps default 10000 → ALL VYR burned
         uint256 supplyBefore = vyr.totalSupply();
         uint256 treasuryBefore = vyr.balanceOf(treasuryWallet);
         vm.prank(alice);
         auction.buyBidPackWithVYR(10e18);
         assertEq(auction.bidBalance(alice), 11, "10 + 10% bonus");
-        // 50% burned
-        assertEq(supplyBefore - vyr.totalSupply(), 5e18, "half burned");
-        // 50% treasury
-        assertEq(vyr.balanceOf(treasuryWallet) - treasuryBefore, 5e18, "half treasury");
-        assertEq(auction.totalVyrBurned(), 5e18);
+        assertEq(supplyBefore - vyr.totalSupply(), 10e18, "100% burned (default)");
+        assertEq(vyr.balanceOf(treasuryWallet) - treasuryBefore, 0, "nothing to treasury");
+        assertEq(auction.totalVyrBurned(), 10e18);
         assertEq(vyr.balanceOf(alice), 1_000_000e18 - 10e18);
+    }
+
+    function test_BuyBidPack_VYR_BurnShare50() public {
+        // owner sets 50% burn → half burned, half treasury
+        vm.prank(owner);
+        auction.setBurnShareBps(5000);
+        uint256 supplyBefore = vyr.totalSupply();
+        uint256 treasuryBefore = vyr.balanceOf(treasuryWallet);
+        vm.prank(alice);
+        auction.buyBidPackWithVYR(10e18);
+        assertEq(supplyBefore - vyr.totalSupply(), 5e18, "half burned");
+        assertEq(vyr.balanceOf(treasuryWallet) - treasuryBefore, 5e18, "half treasury");
+    }
+
+    function test_BurnShare_Bounds() public {
+        vm.prank(owner);
+        vm.expectRevert("Max 10000");
+        auction.setBurnShareBps(10001);
+        vm.prank(alice);
+        vm.expectRevert("Not owner");
+        auction.setBurnShareBps(5000);
+    }
+
+    // ════════════════════════════════════════════════════
+    // SCHEDULED START (data e horário)
+    // ════════════════════════════════════════════════════
+
+    function test_ScheduledStart_BidBeforeStart_Reverts() public {
+        vm.prank(owner);
+        auction.openAuction(PRIZE, block.timestamp + 1 days, 3600); // starts tomorrow
+        uint256 id = auction.nextAuctionId();
+        _buy(alice, 5);
+        vm.prank(alice);
+        vm.expectRevert("Not started yet");
+        auction.placeBid(id);
+    }
+
+    function test_ScheduledStart_BidAfterStart_Works() public {
+        vm.prank(owner);
+        auction.openAuction(PRIZE, block.timestamp + 1 days, 3600);
+        uint256 id = auction.nextAuctionId();
+        _buy(alice, 5);
+        vm.warp(block.timestamp + 1 days); // reached start
+        vm.prank(alice);
+        auction.placeBid(id);
+        (,, uint256 bc,,,,,,,,) = auction.getAuction(id);
+        assertEq(bc, 1);
+    }
+
+    function test_ScheduledStart_FinalizeBeforeStart_Reverts() public {
+        vm.prank(owner);
+        auction.openAuction(PRIZE, block.timestamp + 1 days, 3600);
+        uint256 id = auction.nextAuctionId();
+        vm.warp(block.timestamp + 2 hours);
+        vm.expectRevert("Not started yet");
+        auction.finalize(id);
+    }
+
+    function test_ScheduledStart_StartInPast_Reverts() public {
+        vm.prank(owner);
+        vm.expectRevert("Start in the past");
+        auction.openAuction(PRIZE, block.timestamp - 1, 3600);
+    }
+
+    function test_ScheduledStart_TooFarAhead_Reverts() public {
+        vm.prank(owner);
+        vm.expectRevert("Start max 30d ahead");
+        auction.openAuction(PRIZE, block.timestamp + 31 days, 3600);
     }
 
     function test_BuyBidPack_VYR_DifferentPrice() public {
@@ -199,7 +266,7 @@ contract VyronXAuctionTest is Test {
     function test_OpenAuction_Unfunded_Reverts() public {
         vm.prank(owner);
         vm.expectRevert("Fund prize pool first");
-        auction.openAuction(999_999_999e18, 3600);
+        auction.openAuction(999_999_999e18, block.timestamp, 3600);
     }
 
     function test_CancelAuction_PrizeReturns() public {
@@ -428,12 +495,29 @@ contract VyronXAuctionTest is Test {
 
         auction.finalize(id);
 
-        // 40 USDT x rate 1000 = 40000 VYR out; half burned, half treasury
+        // 40 USDT × rate 1000 = 40000 VYR out; burnShareBps=10000 → ALL burned
         assertEq(auction.totalBuybackUsdt(), 40e18, "40% swapped");
-        assertEq(auction.totalVyrBurned(), 20_000e18, "half of 40k burned");
-        assertEq(vyr.balanceOf(treasuryWallet) - treasuryBefore, 20_000e18, "half treasury");
-        // burned reduces supply: minted 40k, burned 20k -> net supply +20k
-        assertEq(vyr.totalSupply() - supplyBefore, 20_000e18);
+        assertEq(auction.totalVyrBurned(), 40_000e18, "100% of 40k burned");
+        assertEq(vyr.balanceOf(treasuryWallet) - treasuryBefore, 0, "nothing to treasury");
+        // burned reduces supply: minted 40k, burned 40k → net supply unchanged
+        assertEq(vyr.totalSupply() - supplyBefore, 0);
+        assertEq(vyr.balanceOf(address(auction)), 0, "no VYR stuck");
+    }
+
+    function test_Finalize_Buyback_BurnShare25() public {
+        vm.prank(owner);
+        auction.setBurnShareBps(2500); // 25% burned / 75% treasury
+        uint256 id = _open(PRIZE, 3600);
+        _buy(alice, 100);
+        for (uint256 i = 0; i < 100; i++) _bid(alice, id);
+        vm.warp(_endTime(id) + 1);
+
+        uint256 treasuryBefore = vyr.balanceOf(treasuryWallet);
+        auction.finalize(id);
+
+        // 40k VYR out → 10k burned / 30k treasury
+        assertEq(auction.totalVyrBurned(), 10_000e18, "25% burned");
+        assertEq(vyr.balanceOf(treasuryWallet) - treasuryBefore, 30_000e18, "75% treasury");
         assertEq(vyr.balanceOf(address(auction)), 0, "no VYR stuck");
     }
 
@@ -551,7 +635,7 @@ contract VyronXAuctionTest is Test {
     function test_OnlyOwner_Guards() public {
         vm.prank(alice);
         vm.expectRevert("Not owner");
-        auction.openAuction(PRIZE, 3600);
+        auction.openAuction(PRIZE, block.timestamp, 3600);
         vm.prank(alice);
         vm.expectRevert("Not owner");
         auction.setBidPrice(2e18);

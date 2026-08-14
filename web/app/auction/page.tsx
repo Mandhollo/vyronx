@@ -487,6 +487,7 @@ function AuctionCard({ info, tick, address, isConnected, bidBal, winLimited, pau
 }) {
   const fmt = (val: bigint, display = 2) => parseFloat(formatUnits(val, 18)).toLocaleString('en-US', { maximumFractionDigits: display });
   const expired = Math.floor(Date.now() / 1000) > Number(info.endTime);
+  const notStarted = Math.floor(Date.now() / 1000) < Number(info.startTime);
   const isWinner = address && info.winner && info.winner.toLowerCase() === address.toLowerCase() && !info.prizeClaimed;
   const progress = info.prize > BigInt(0)
     ? Math.min(100, Number((info.bidCount * BigInt(1e18) * BigInt(100)) / info.prize))
@@ -571,7 +572,16 @@ function AuctionCard({ info, tick, address, isConnected, bidBal, winLimited, pau
 
         {/* Actions */}
         <div className="mt-auto space-y-2 pt-1">
-          {info.status === 0 && !expired && (
+          {notStarted && (
+            <div className="w-full py-3 rounded-xl bg-gold/10 border border-gold/30 text-center">
+              <div className="text-[10px] text-gold uppercase tracking-wide mb-0.5">Começa em</div>
+              <div className="text-sm font-bold text-white">
+                {new Date(Number(info.startTime) * 1000).toLocaleString('pt-BR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+              </div>
+              <Countdown endTime={info.startTime} tick={tick} />
+            </div>
+          )}
+          {info.status === 0 && !expired && !notStarted && (
             <button onClick={onBid} disabled={pending !== null || !isConnected || paused || (bidBal === BigInt(0)) || winLimited}
               className="w-full py-3.5 rounded-xl bg-gradient-to-r from-gold-light to-gold-dark text-dark font-black text-base hover:opacity-90 active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2 transition-transform">
               {pending === 'Bid' ? <Loader2 className="w-5 h-5 animate-spin" /> : <Gavel className="w-5 h-5" />}

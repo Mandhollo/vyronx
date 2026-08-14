@@ -286,6 +286,19 @@
   },
   {
     "type": "function",
+    "name": "burnShareBps",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "buyBidPackUSDT",
     "inputs": [
       {
@@ -686,7 +699,12 @@
         "internalType": "uint256"
       },
       {
-        "name": "startDelay",
+        "name": "startAt",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "startDelaySeconds",
         "type": "uint256",
         "internalType": "uint256"
       }
@@ -801,6 +819,19 @@
     "inputs": [
       {
         "name": "_price",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "setBurnShareBps",
+    "inputs": [
+      {
+        "name": "_bps",
         "type": "uint256",
         "internalType": "uint256"
       }

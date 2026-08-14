@@ -64,6 +64,7 @@ export default function AuctionAdminSection({ writeContractAsync, pending, setPe
 
   // ── Form state ──
   const [newPrize, setNewPrize] = useState('1000');
+  const [newStartAt, setNewStartAt] = useState('');
   const [newDelay, setNewDelay] = useState('3600');
   const [newTitle, setNewTitle] = useState('');
   const [newImage, setNewImage] = useState('');
@@ -73,6 +74,7 @@ export default function AuctionAdminSection({ writeContractAsync, pending, setPe
   const [timerInputs, setTimerInputs] = useState<string[]>(['20', '15', '10', '7', '5', '3']);
   const [winLimitInput, setWinLimitInput] = useState('3');
   const [vyBonusInput, setVyBonusInput] = useState('10');
+  const [burnShareInput, setBurnShareInput] = useState('100');
   const [splitInputs, setSplitInputs] = useState({ bb: '40', pool: '25', wl: '20', mlm: '15' });
 
   // ── Reads (config + stats) ──
@@ -83,6 +85,7 @@ export default function AuctionAdminSection({ writeContractAsync, pending, setPe
   const { data: timers } = useReadContract({ address: AUCTION_ADDRESS as `0x${string}`, abi: AuctionABI, functionName: 'getTimerSeconds', chainId: bsc.id, query: { enabled: !NOT_DEPLOYED  }}) as { data: readonly [bigint, bigint, bigint, bigint, bigint, bigint] | undefined };
   const { data: winLimit } = cfg('weeklyWinLimit');
   const { data: vyBonus } = cfg('vyBonusBps');
+  const { data: burnShare } = cfg('burnShareBps');
   const { data: bbBps } = cfg('buybackShareBps');
   const { data: poolBps } = cfg('prizePoolShareBps');
   const { data: wlBps } = cfg('walletShareBps');
@@ -123,9 +126,15 @@ export default function AuctionAdminSection({ writeContractAsync, pending, setPe
   // ── Handlers ──
   const handleOpen = async () => {
     if (parseFloat(newPrize) <= 0) return toast.error('Invalid prize');
+    // datetime-local → unix timestamp (interpreted as local time)
+    let startAt = Math.floor(Date.now() / 1000);
+    if (newStartAt) {
+      startAt = Math.floor(new Date(newStartAt).getTime() / 1000);
+      if (isNaN(startAt)) return toast.error('Invalid date/time');
+    }
     const opened = await doTx('Open Auction', () => writeContractAsync({
       address: AUCTION_ADDRESS as `0x${string}`, abi: AuctionABI,
-      functionName: 'openAuction', args: [parseUnits(newPrize, 18), BigInt(newDelay)], chainId: bsc.id,
+      functionName: 'openAuction', args: [parseUnits(newPrize, 18), BigInt(startAt), BigInt(newDelay)], chainId: bsc.id,
     }));
     // set metadata on the just-opened auction (highest id)
     if (opened && (newTitle || newImage)) {
@@ -207,6 +216,15 @@ export default function AuctionAdminSection({ writeContractAsync, pending, setPe
     }));
   };
 
+  const handleSetBurnShare = async () => {
+    const pct = parseFloat(burnShareInput);
+    if (isNaN(pct) || pct < 0 || pct > 100) return toast.error('0-100');
+    await doTx('Set Burn %', () => writeContractAsync({
+      address: AUCTION_ADDRESS as `0x${string}`, abi: AuctionABI,
+      functionName: 'setBurnShareBps', args: [BigInt(Math.round(pct * 100))], chainId: bsc.id,
+    }));
+  };
+
   const handleSetSplit = async () => {
     const bb = Math.round(parseFloat(splitInputs.bb) * 100);
     const pool = Math.round(parseFloat(splitInputs.pool) * 100);
@@ -281,17 +299,22 @@ export default function AuctionAdminSection({ writeContractAsync, pending, setPe
               className="w-full h-10 rounded-lg bg-dark-elevated border border-dark-border text-white px-3 focus:border-gold/50 outline-none" />
           </div>
           <div>
-            <label className="block text-xs text-beige/50 mb-1">Start delay (seconds until first expiry)</label>
+            <label className="block text-xs text-beige/50 mb-1">📅 Data e hora do início (vazio = agora)</label>
+            <input type="datetime-local" value={newStartAt} onChange={(e) => setNewStartAt(e.target.value)}
+              className="w-full h-10 rounded-lg bg-dark-elevated border border-dark-border text-white px-3 focus:border-gold/50 outline-none [color-scheme:dark]" />
+          </div>
+          <div>
+            <label className="block text-xs text-beige/50 mb-1">Countdown inicial (segundos até 1ª expiração sem lances)</label>
             <input type="number" value={newDelay} onChange={(e) => setNewDelay(e.target.value)}
               className="w-full h-10 rounded-lg bg-dark-elevated border border-dark-border text-white px-3 focus:border-gold/50 outline-none" />
           </div>
-          <div className="flex items-end">
-            <button onClick={handleOpen} disabled={pending !== null}
-              className="w-full px-4 py-2.5 rounded-xl bg-gradient-to-r from-gold to-gold-dark text-black font-bold hover:opacity-90 disabled:opacity-50 flex items-center justify-center gap-2">
-              {pending === 'Open Auction' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Gavel className="w-4 h-4" />}
-              Open Auction
-            </button>
-          </div>
+        </div>
+        <div className="mt-3">
+          <button onClick={handleOpen} disabled={pending !== null}
+            className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-gradient-to-r from-gold to-gold-dark text-black font-bold hover:opacity-90 disabled:opacity-50 flex items-center justify-center gap-2">
+            {pending === 'Open Auction' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Gavel className="w-4 h-4" />}
+            Open Auction
+          </button>
         </div>
         {/* Image + title (illustrative) */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-3">
@@ -479,6 +502,16 @@ export default function AuctionAdminSection({ writeContractAsync, pending, setPe
               <button onClick={handleSetVyBonus} disabled={pending !== null}
                 className="px-4 py-2 rounded-lg bg-dark-elevated text-white font-bold text-sm hover:bg-dark-border disabled:opacity-50">Set</button>
             </div>
+          </div>
+          <div className="rounded-xl bg-red-500/5 border border-red-500/25 p-4 sm:col-span-2">
+            <label className="block text-xs text-red-300 mb-1">🔥 % de QUEIMA do VYR comprado no buyback + lances VYR (atual: {Number(burnShare ?? 10000) / 100}% — resto vai pro treasury)</label>
+            <div className="flex gap-2">
+              <input type="number" min="0" max="100" value={burnShareInput} onChange={(e) => setBurnShareInput(e.target.value)}
+                className="flex-1 h-9 rounded-lg bg-dark-elevated border border-dark-border text-white px-3 text-sm focus:border-red-400/50 outline-none" />
+              <button onClick={handleSetBurnShare} disabled={pending !== null}
+                className="px-4 py-2 rounded-lg bg-red-600/20 text-red-300 border border-red-500/30 font-bold text-sm hover:bg-red-600/30 disabled:opacity-50">Set</button>
+            </div>
+            <p className="text-[10px] text-beige/30 mt-1">100% = tudo queimado (padrão). Ex: 50 = metade queimada, metade no treasury.</p>
           </div>
         </div>
       </motion.div>

@@ -42,7 +42,7 @@ interface IPriceOracle {
 ///         · Timer zera sem novo lance → último lanceiro GANHA:
 ///           paga o preço final (centavos) e recebe o prêmio em USDT
 ///         · Sem Buy It Now — lances perdedores são consumidos
-///         · Split da receita: 40% buyback VYR (swap+burn metade) / 25% reposição prêmios /
+///         · Split da receita: 40% buyback VYR (swap + queima conforme burnShareBps) / 25% reposição /
 ///           20% operação (4 wallets) / 15% rede MLM
 ///         · Limite de vitórias por wallet/semana
 contract VyronXAuction is ReentrancyGuard {
@@ -76,14 +76,18 @@ contract VyronXAuction is ReentrancyGuard {
     uint16[6] public timerSeconds = [20, 15, 10, 7, 5, 3];
 
     // ── Revenue split (bps, must sum 10000) ──
-    uint256 public buybackShareBps = 4000;  // 40% — swap USDT→VYR, burn half, half to treasury
+    uint256 public buybackShareBps = 4000;  // 40% — swap USDT→VYR, burn per burnShareBps, rest treasury
     uint256 public prizePoolShareBps = 2500; // 25% — stays in contract to fund future prizes
     uint256 public walletShareBps = 2000;   // 20% — 4 fee wallets (5% each)
     uint256 public mlmShareBps = 1500;      // 15% — network rewards wallet
 
     address payable[4] public feeWallets;   // Collaborators / Infrastructure / Development / Marketing
     address payable public mlmWallet;       // rede MLM (cashback/acelerador)
-    address payable public treasuryWallet;  // receives half of bought-back VYR + half of VYR bid-packs
+    address payable public treasuryWallet;  // receives the non-burned share of buyback VYR + VYR bid-packs
+
+    /// @notice Share of buyback-VYR and VYR-bid-packs that is BURNED (rest goes to treasury).
+    ///         Default 100% — owner can reduce any time via admin panel.
+    uint256 public burnShareBps = 10000;
 
     // ── Anti-abuse ──
     /// @notice Max auction wins per wallet per week. 0 = unlimited.
@@ -252,17 +256,12 @@ contract VyronXAuction is ReentrancyGuard {
         require(bids > 0, "Dust VYR");
         require(vyrToken.transferFrom(msg.sender, address(this), vyrAmount), "VYR transfer failed");
 
-        // 50% burn / 50% treasury
-        uint256 half = vyrAmount / 2;
-        if (half > 0) {
-            vyrBurner.burn(half);
-            totalVyrBurned += half;
-        }
-        uint256 rest = vyrAmount - half;
-        if (rest > 0) require(vyrToken.transfer(treasuryWallet, rest), "Treasury transfer failed");
+        // burn per burnShareBps / rest to treasury
+        uint256 burnAmt = (vyrAmount * burnShareBps) / 10000;
+        _burnOrTreasury(vyrAmount);
 
         bidBalance[msg.sender] += bids;
-        emit BidPackBoughtVYR(msg.sender, vyrAmount, bids, half);
+        emit BidPackBoughtVYR(msg.sender, vyrAmount, bids, burnAmt);
     }
 
     // ════════════════════════════════════════════════════════════
@@ -273,6 +272,7 @@ contract VyronXAuction is ReentrancyGuard {
         require(!paused, "Paused");
         Auction storage a = auctions[auctionId];
         require(a.status == Status.Active && a.endTime > 0, "Not active");
+        require(block.timestamp >= a.startTime, "Not started yet");
         require(block.timestamp <= a.endTime, "Expired");
         require(bidBalance[msg.sender] >= 1, "No bid credits");
         if (weeklyWinLimit > 0) {
@@ -300,6 +300,7 @@ contract VyronXAuction is ReentrancyGuard {
         Auction storage a = auctions[auctionId];
         require(a.status == Status.Active, "Not active");
         require(a.endTime > 0, "Not active");
+        require(block.timestamp >= a.startTime, "Not started yet");
         require(block.timestamp > a.endTime, "Not expired");
 
         a.status = Status.Completed;
@@ -340,7 +341,7 @@ contract VyronXAuction is ReentrancyGuard {
         // 25% — stays inside the contract funding future prizes
         availablePrizeFunds += poolAmt;
 
-        // 40% — buyback VYR (swap + burn half, half treasury) with fallback
+        // 40% — buyback VYR (swap + burn per burnShareBps, rest treasury) with fallback
         _executeBuyback(auctionId, buybackAmt);
 
         emit AuctionFinalized(auctionId, a.winner, a.bidCount, revenue);
@@ -381,8 +382,20 @@ contract VyronXAuction is ReentrancyGuard {
         emit PrizeExpired(auctionId, a.prizeUsdt);
     }
 
+    /// @notice Split incoming VYR between burn and treasury according to burnShareBps.
+    function _burnOrTreasury(uint256 vyrAmount) internal {
+        if (vyrAmount == 0) return;
+        uint256 burnAmt = (vyrAmount * burnShareBps) / 10000;
+        if (burnAmt > 0) {
+            vyrBurner.burn(burnAmt);
+            totalVyrBurned += burnAmt;
+        }
+        uint256 rest = vyrAmount - burnAmt;
+        if (rest > 0) require(vyrToken.transfer(treasuryWallet, rest), "Treasury transfer failed");
+    }
+
     // ════════════════════════════════════════════════════════════
-    // Buyback (padrão loteria: swap + burn half, half treasury, fallback)
+    // Buyback (padrão loteria: swap + burn per burnShareBps, rest treasury, fallback)
     // ════════════════════════════════════════════════════════════
 
     function _executeBuyback(uint256 auctionId, uint256 usdtAmount) internal {
@@ -404,14 +417,9 @@ contract VyronXAuction is ReentrancyGuard {
         ) {
             uint256 vyrOut = vyrToken.balanceOf(address(this)) - vyrBefore;
             totalBuybackUsdt += usdtAmount;
-            uint256 half = vyrOut / 2;
-            if (half > 0) {
-                vyrBurner.burn(half);
-                totalVyrBurned += half;
-            }
-            uint256 rest = vyrOut - half;
-            if (rest > 0) require(vyrToken.transfer(treasuryWallet, rest), "Treasury VYR failed");
-            emit BuybackSwappedAndBurned(auctionId, usdtAmount, vyrOut, half);
+            uint256 burnAmt = (vyrOut * burnShareBps) / 10000;
+            _burnOrTreasury(vyrOut);
+            emit BuybackSwappedAndBurned(auctionId, usdtAmount, vyrOut, burnAmt);
         } catch {
             require(usdt.transfer(buybackFallbackWallet, usdtAmount), "Buyback fallback failed");
             emit BuybackFallback(auctionId, usdtAmount);
@@ -430,12 +438,17 @@ contract VyronXAuction is ReentrancyGuard {
         emit PrizePoolFunded(msg.sender, amount);
     }
 
-    /// @notice Open a new auction. startDelay = seconds until countdown ends
-    ///         if nobody bids (viewing window before the first bid).
-    function openAuction(uint256 prizeUsdt, uint256 startDelay) external onlyOwner {
+    /// @notice Open a new auction.
+    /// @param prizeUsdt prize value in USDT (= goal)
+    /// @param startAt unix timestamp when bidding OPENS (must be now or future, max 30d ahead).
+    ///         Before startAt the auction is visible but bids are rejected.
+    ///         endTime = startAt + startDelaySeconds (first countdown target if nobody bids).
+    function openAuction(uint256 prizeUsdt, uint256 startAt, uint256 startDelaySeconds) external onlyOwner {
         require(prizeUsdt > 0, "Prize zero");
         require(availablePrizeFunds >= prizeUsdt, "Fund prize pool first");
-        require(startDelay >= 60 && startDelay <= 30 days, "Delay 60s-30d");
+        require(startAt >= block.timestamp, "Start in the past");
+        require(startAt <= block.timestamp + 30 days, "Start max 30d ahead");
+        require(startDelaySeconds >= 60 && startDelaySeconds <= 30 days, "Delay 60s-30d");
 
         availablePrizeFunds -= prizeUsdt;
         lockedPrizeFunds += prizeUsdt;
@@ -445,8 +458,8 @@ contract VyronXAuction is ReentrancyGuard {
         Auction storage a = auctions[id];
         a.prizeUsdt = prizeUsdt;
         a.currentPrice = START_PRICE;
-        a.startTime = block.timestamp;
-        a.endTime = block.timestamp + startDelay;
+        a.startTime = startAt;
+        a.endTime = startAt + startDelaySeconds;
         a.status = Status.Active;
         activeAuctionIds.push(id);
 
@@ -583,6 +596,14 @@ contract VyronXAuction is ReentrancyGuard {
     function setAutoBuyback(bool _enabled) external onlyOwner {
         autoBuybackEnabled = _enabled;
         emit ConfigUpdated("autoBuyback");
+    }
+
+    /// @notice Burn share of buyback-VYR and VYR-bid-packs, in bps (10000 = 100% burned).
+    ///         Rest goes to treasuryWallet. Default 10000.
+    function setBurnShareBps(uint256 _bps) external onlyOwner {
+        require(_bps <= 10000, "Max 10000");
+        burnShareBps = _bps;
+        emit ConfigUpdated("burnShareBps");
     }
 
     function setDexRouter(address _router) external onlyOwner {
