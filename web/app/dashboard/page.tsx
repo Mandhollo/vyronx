@@ -1193,7 +1193,7 @@ function LotteryDashboardSection({ address }: { address: `0x${string}` | undefin
 }
 
 // ═══ ARBITRAGE PANELS (Market Feed + Network Graph + Opportunities) ═══
-const ARB_API = 'https://arb.vyronx.io/api/proxy';
+const ARB_API = 'https://arb.vyronx.io';
 
 function ArbPanels() {
   const [snapshot, setSnapshot] = useState<{ items: any[]; count: number }>({ items: [], count: 0 });
