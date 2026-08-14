@@ -1,11 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useId } from 'react';
 import { motion } from 'framer-motion';
 import { useAccount, useReadContract, useSwitchChain } from 'wagmi';
 import {
   Gavel, Loader2, Play, Power, DollarSign, Percent, Timer,
-  Check, AlertCircle, Settings, Flame, Coins, Trophy, Ban, PauseCircle, Wallet, Image as ImageIcon,
+  Check, AlertCircle, Settings, Flame, Coins, Trophy, Ban, PauseCircle, Wallet, Image as ImageIcon, Upload,
 } from 'lucide-react';
 import { AUCTION_ADDRESS, AuctionABI, TOKEN_ADDRESS, TokenABI } from '@/lib/contracts';
 import { formatUnits, parseUnits } from 'viem';
@@ -42,6 +42,19 @@ const waitForTx = async (txHash: string) => {
     } catch {}
     await new Promise(r => setTimeout(r, 2000));
   }
+};
+
+/// @notice Upload an image file to the VyronX image service (VPS) → returns public URL
+const uploadImage = async (file: File): Promise<string> => {
+  const fd = new FormData();
+  fd.append('file', file);
+  const res = await fetch('https://arb.vyronx.io/auction-img/upload', { method: 'POST', body: fd });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: 'Upload failed' }));
+    throw new Error(err.detail || `Upload failed (${res.status})`);
+  }
+  const data = await res.json();
+  return data.url as string;
 };
 
 export default function AuctionAdminSection({ writeContractAsync, pending, setPending }: Props) {
@@ -283,10 +296,8 @@ export default function AuctionAdminSection({ writeContractAsync, pending, setPe
         {/* Image + title (illustrative) */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-3">
           <div className="sm:col-span-2">
-            <label className="block text-xs text-beige/50 mb-1">Illustrative image URL (https://... — max 256 chars)</label>
-            <input type="text" value={newImage} onChange={(e) => setNewImage(e.target.value)}
-              placeholder="https://vyronx.io/img/prizes/iphone.png"
-              className="w-full h-10 rounded-lg bg-dark-elevated border border-dark-border text-white px-3 text-sm focus:border-gold/50 outline-none" />
+            <label className="block text-xs text-beige/50 mb-1">Imagem ilustrativa (upload do computador ou URL — máx 5MB)</label>
+            <ImageUploader value={newImage} onChange={setNewImage} />
           </div>
           <div>
             <label className="block text-xs text-beige/50 mb-1">Prize title (e.g. iPhone 17 Pro)</label>
@@ -295,13 +306,6 @@ export default function AuctionAdminSection({ writeContractAsync, pending, setPe
               className="w-full h-10 rounded-lg bg-dark-elevated border border-dark-border text-white px-3 text-sm focus:border-gold/50 outline-none" />
           </div>
         </div>
-        {newImage && (
-          <div className="mt-3 flex items-center gap-3">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={newImage} alt="preview" className="h-16 w-24 object-cover rounded-lg border border-gold/30" />
-            <span className="text-xs text-beige/30">Preview</span>
-          </div>
-        )}
         <p className="text-xs text-beige/30 mt-2">Available pool: ${fmt(availFunds, 0)} — fund below if needed.</p>
       </motion.div>
 
@@ -544,20 +548,55 @@ function AuctionMetaEditor({ auctionId, onSave, pending }: {
       <div className="text-xs text-beige/50 mb-2 flex items-center gap-1">
         <ImageIcon className="w-3.5 h-3.5 text-gold" /> Imagem ilustrativa + título (editável a qualquer momento)
       </div>
-      <div className="flex flex-col sm:flex-row gap-2">
+      <ImageUploader value={image} onChange={setImage} />
+      <div className="flex flex-col sm:flex-row gap-2 mt-2">
         <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Título do prêmio"
           className="flex-1 h-9 rounded-lg bg-dark border border-dark-border text-white px-3 text-xs focus:border-gold/50 outline-none" />
-        <input type="text" value={image} onChange={(e) => setImage(e.target.value)} placeholder="https://... imagem"
-          className="flex-[2] h-9 rounded-lg bg-dark border border-dark-border text-white px-3 text-xs font-mono focus:border-gold/50 outline-none" />
         <button onClick={() => onSave(auctionId, title, image)} disabled={pending !== null}
           className="px-4 py-2 rounded-lg bg-dark-elevated text-gold border border-gold/30 text-xs font-bold hover:bg-gold/10 disabled:opacity-50 flex items-center gap-1 justify-center">
           <Check className="w-3.5 h-3.5" /> Salvar
         </button>
       </div>
-      {image && (
-        <div className="mt-2 flex items-center gap-2">
+    </div>
+  );
+}
+
+/// @notice File-upload picker (VPS image service) + manual URL fallback + preview
+function ImageUploader({ value, onChange }: { value: string; onChange: (url: string) => void }) {
+  const [uploading, setUploading] = useState(false);
+  const inputId = useId();
+
+  const handleFile = async (file: File | undefined) => {
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) { toast.error('Max 5MB'); return; }
+    setUploading(true);
+    const tid = toast.loading('Enviando imagem...');
+    try {
+      const url = await uploadImage(file);
+      onChange(url);
+      toast.success('Imagem enviada!', { id: tid });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Upload failed', { id: tid });
+    } finally { setUploading(false); }
+  };
+
+  return (
+    <div className="space-y-2">
+      <div className="flex flex-col sm:flex-row gap-2">
+        <label htmlFor={inputId}
+          className="flex-1 h-9 rounded-lg border border-dashed border-gold/40 bg-gold/5 text-gold text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer hover:bg-gold/10">
+          {uploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
+          {uploading ? 'Enviando...' : 'Enviar imagem do computador'}
+          <input id={inputId} type="file" accept="image/png,image/jpeg,image/webp,image/gif" className="hidden"
+            onChange={(e) => handleFile(e.target.files?.[0])} disabled={uploading} />
+        </label>
+        <input type="text" value={value} onChange={(e) => onChange(e.target.value)} placeholder="ou cole uma URL https://..."
+          className="flex-1 h-9 rounded-lg bg-dark border border-dark-border text-white px-3 text-xs font-mono focus:border-gold/50 outline-none" />
+      </div>
+      {value && (
+        <div className="flex items-center gap-2">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={image} alt="preview" className="h-12 w-20 object-cover rounded border border-gold/30" />
+          <img src={value} alt="preview" className="h-14 w-24 object-cover rounded-lg border border-gold/30" />
           <span className="text-[10px] text-beige/30">Preview (aparece no card público)</span>
         </div>
       )}

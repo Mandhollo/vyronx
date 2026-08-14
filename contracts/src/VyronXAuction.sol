@@ -479,6 +479,35 @@ contract VyronXAuction is ReentrancyGuard {
         return (auctionTitle[auctionId], auctionImage[auctionId]);
     }
 
+    /// @notice Last completed auctions with winners (newest first) — powers the winners wall.
+    function getRecentWinners(uint256 count) external view returns (
+        uint256[] memory ids, address[] memory winners, uint256[] memory prizes, uint256[] memory finalPrices
+    ) {
+        uint256 total = nextAuctionId;
+        uint256 n = 0;
+        for (uint256 id = total; id >= 1; id--) {
+            if (n >= count) break;
+            Auction storage a = auctions[id];
+            if (a.status == Status.Completed && a.winner != address(0)) n++;
+        }
+        ids = new uint256[](n);
+        winners = new address[](n);
+        prizes = new uint256[](n);
+        finalPrices = new uint256[](n);
+        uint256 j = 0;
+        for (uint256 id = total; id >= 1; id--) {
+            if (j >= n) break;
+            Auction storage a = auctions[id];
+            if (a.status == Status.Completed && a.winner != address(0)) {
+                ids[j] = id;
+                winners[j] = a.winner;
+                prizes[j] = a.prizeUsdt;
+                finalPrices[j] = a.currentPrice;
+                j++;
+            }
+        }
+    }
+
     // ════════════════════════════════════════════════════════════
     // Admin — configuration
     // ════════════════════════════════════════════════════════════
