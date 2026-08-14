@@ -17,8 +17,8 @@ export const STAKING_V1_ADDRESS = '0x32fa9BFdD3b8BA0938148A8f0c2DA3C56395EDa6';
 export const USDT_ADDRESS = process.env.NEXT_PUBLIC_USDT_ADDRESS as `0x${string}`;
 export const PRESALE_REFERRAL_ADDRESS = (process.env.NEXT_PUBLIC_PRESALE_REFERRAL_ADDRESS || '0xcA7Df2522b08453715372EEc33b40aB499d9B86C') as `0x${string}`;
 export const LOTTERY_ADDRESS = (process.env.NEXT_PUBLIC_LOTTERY_ADDRESS || '0x22293B30effD86A99A173314914454CaD95AA992') as `0x${string}`;
-// Penny auction — deploy pending; placeholder until mainnet address exists
-export const AUCTION_ADDRESS = (process.env.NEXT_PUBLIC_AUCTION_ADDRESS || '0x0000000000000000000000000000000000000000') as `0x${string}`;
+// Penny auction — DEPLOYED on BSC mainnet
+export const AUCTION_ADDRESS = (process.env.NEXT_PUBLIC_AUCTION_ADDRESS || '0xDB266a8f6E3FACa62F396Ad91bc8b54075eC8536') as `0x${string}`;
 
 export const TokenABI = VyronXTokenABI;
 export const PresaleABI = VyronXPresaleABI;
