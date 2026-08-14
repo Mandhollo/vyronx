@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import { useAccount, useReadContract, useSwitchChain } from 'wagmi';
 import {
   Gavel, Loader2, Play, Power, DollarSign, Percent, Timer,
-  Check, AlertCircle, Settings, Flame, Coins, Trophy, Ban, PauseCircle, Wallet,
+  Check, AlertCircle, Settings, Flame, Coins, Trophy, Ban, PauseCircle, Wallet, Image as ImageIcon,
 } from 'lucide-react';
 import { AUCTION_ADDRESS, AuctionABI, TOKEN_ADDRESS, TokenABI } from '@/lib/contracts';
 import { formatUnits, parseUnits } from 'viem';
@@ -52,6 +52,8 @@ export default function AuctionAdminSection({ writeContractAsync, pending, setPe
   // ── Form state ──
   const [newPrize, setNewPrize] = useState('1000');
   const [newDelay, setNewDelay] = useState('3600');
+  const [newTitle, setNewTitle] = useState('');
+  const [newImage, setNewImage] = useState('');
   const [fundAmount, setFundAmount] = useState('5000');
   const [bidPriceInput, setBidPriceInput] = useState('1');
   const [incInput, setIncInput] = useState('0.01');
@@ -108,11 +110,34 @@ export default function AuctionAdminSection({ writeContractAsync, pending, setPe
   // ── Handlers ──
   const handleOpen = async () => {
     if (parseFloat(newPrize) <= 0) return toast.error('Invalid prize');
-    await doTx('Open Auction', () => writeContractAsync({
+    const opened = await doTx('Open Auction', () => writeContractAsync({
       address: AUCTION_ADDRESS as `0x${string}`, abi: AuctionABI,
       functionName: 'openAuction', args: [parseUnits(newPrize, 18), BigInt(newDelay)], chainId: bsc.id,
     }));
+    // set metadata on the just-opened auction (highest id)
+    if (opened && (newTitle || newImage)) {
+      await doTx('Set Image/Title', () => writeContractAsync({
+        address: AUCTION_ADDRESS as `0x${string}`, abi: AuctionABI,
+        functionName: 'setAuctionMeta', args: [nextIdRef.current, newTitle, newImage], chainId: bsc.id,
+      }));
+    }
     refetchActive();
+  };
+
+  // track next auction id for meta-setting right after open
+  const nextIdRef = { current: 0 };
+  const { data: nextId_ } = useReadContract({
+    address: AUCTION_ADDRESS as `0x${string}`, abi: AuctionABI,
+    functionName: 'nextAuctionId', chainId: bsc.id, query: { enabled: !NOT_DEPLOYED },
+  }) as { data: bigint | undefined };
+  nextIdRef.current = Number(nextId_ ?? 0) + 1;
+
+  const handleSetMeta: (id: number, title: string, image: string) => Promise<boolean | void> = async (id, title, image) => {
+    if (image && image.length > 256) { toast.error('URL too long (max 256)'); return; }
+    await doTx(`Set Image/Title #${id}`, () => writeContractAsync({
+      address: AUCTION_ADDRESS as `0x${string}`, abi: AuctionABI,
+      functionName: 'setAuctionMeta', args: [BigInt(id), title, image], chainId: bsc.id,
+    }));
   };
 
   const handleFund = async () => {
@@ -255,6 +280,28 @@ export default function AuctionAdminSection({ writeContractAsync, pending, setPe
             </button>
           </div>
         </div>
+        {/* Image + title (illustrative) */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-3">
+          <div className="sm:col-span-2">
+            <label className="block text-xs text-beige/50 mb-1">Illustrative image URL (https://... — max 256 chars)</label>
+            <input type="text" value={newImage} onChange={(e) => setNewImage(e.target.value)}
+              placeholder="https://vyronx.io/img/prizes/iphone.png"
+              className="w-full h-10 rounded-lg bg-dark-elevated border border-dark-border text-white px-3 text-sm focus:border-gold/50 outline-none" />
+          </div>
+          <div>
+            <label className="block text-xs text-beige/50 mb-1">Prize title (e.g. iPhone 17 Pro)</label>
+            <input type="text" value={newTitle} onChange={(e) => setNewTitle(e.target.value)}
+              placeholder="iPhone 17 Pro"
+              className="w-full h-10 rounded-lg bg-dark-elevated border border-dark-border text-white px-3 text-sm focus:border-gold/50 outline-none" />
+          </div>
+        </div>
+        {newImage && (
+          <div className="mt-3 flex items-center gap-3">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={newImage} alt="preview" className="h-16 w-24 object-cover rounded-lg border border-gold/30" />
+            <span className="text-xs text-beige/30">Preview</span>
+          </div>
+        )}
         <p className="text-xs text-beige/30 mt-2">Available pool: ${fmt(availFunds, 0)} — fund below if needed.</p>
       </motion.div>
 
@@ -307,6 +354,7 @@ export default function AuctionAdminSection({ writeContractAsync, pending, setPe
                       <Ban className="w-4 h-4" /> {a.bidCount > BigInt(0) ? 'Cancel only before first bid' : 'Cancel (prize returns to pool)'}
                     </button>
                   )}
+                  <AuctionMetaEditor auctionId={a.id} onSave={handleSetMeta} pending={pending} />
                 </div>
               );
             })}
@@ -468,6 +516,53 @@ export default function AuctionAdminSection({ writeContractAsync, pending, setPe
 interface AuctionDetail {
   id: number; prize: bigint; price: bigint; bidCount: bigint;
   lastBidder: string; endTime: bigint; status: number;
+}
+
+/// @notice Inline image/title editor for each active auction (reads current on-chain meta)
+function AuctionMetaEditor({ auctionId, onSave, pending }: {
+  auctionId: number;
+  onSave: (id: number, title: string, image: string) => Promise<boolean | void>;
+  pending: string | null;
+}) {
+  const { data: meta } = useReadContract({
+    address: AUCTION_ADDRESS as `0x${string}`, abi: AuctionABI,
+    functionName: 'getAuctionMeta', args: [BigInt(auctionId)], chainId: bsc.id,
+  }) as { data: readonly [string, string] | undefined };
+
+  const [title, setTitle] = useState('');
+  const [image, setImage] = useState('');
+  const [loaded, setLoaded] = useState(false);
+
+  if (meta && !loaded) {
+    setTitle(meta[0]);
+    setImage(meta[1]);
+    setLoaded(true);
+  }
+
+  return (
+    <div className="mt-3 pt-3 border-t border-dark-border">
+      <div className="text-xs text-beige/50 mb-2 flex items-center gap-1">
+        <ImageIcon className="w-3.5 h-3.5 text-gold" /> Imagem ilustrativa + título (editável a qualquer momento)
+      </div>
+      <div className="flex flex-col sm:flex-row gap-2">
+        <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Título do prêmio"
+          className="flex-1 h-9 rounded-lg bg-dark border border-dark-border text-white px-3 text-xs focus:border-gold/50 outline-none" />
+        <input type="text" value={image} onChange={(e) => setImage(e.target.value)} placeholder="https://... imagem"
+          className="flex-[2] h-9 rounded-lg bg-dark border border-dark-border text-white px-3 text-xs font-mono focus:border-gold/50 outline-none" />
+        <button onClick={() => onSave(auctionId, title, image)} disabled={pending !== null}
+          className="px-4 py-2 rounded-lg bg-dark-elevated text-gold border border-gold/30 text-xs font-bold hover:bg-gold/10 disabled:opacity-50 flex items-center gap-1 justify-center">
+          <Check className="w-3.5 h-3.5" /> Salvar
+        </button>
+      </div>
+      {image && (
+        <div className="mt-2 flex items-center gap-2">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={image} alt="preview" className="h-12 w-20 object-cover rounded border border-gold/30" />
+          <span className="text-[10px] text-beige/30">Preview (aparece no card público)</span>
+        </div>
+      )}
+    </div>
+  );
 }
 
 function useAuctionDetail(id: bigint | undefined): AuctionDetail | null {

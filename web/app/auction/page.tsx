@@ -110,12 +110,15 @@ export default function AuctionPage() {
     chainId: bsc.id, query: { enabled: !PREVIEW_MODE && !!address },
   }) as { data: bigint | undefined };
 
-  // first 4 auctions detail (inline hooks)
+  // 6 auction slots (fixed grid layout)
   const a0 = useAuction(PREVIEW_MODE, activeIds?.[0]);
   const a1 = useAuction(PREVIEW_MODE, activeIds?.[1]);
   const a2 = useAuction(PREVIEW_MODE, activeIds?.[2]);
   const a3 = useAuction(PREVIEW_MODE, activeIds?.[3]);
-  const auctions = [a0, a1, a2, a3].filter((a) => a !== null) as AuctionInfo[];
+  const a4 = useAuction(PREVIEW_MODE, activeIds?.[4]);
+  const a5 = useAuction(PREVIEW_MODE, activeIds?.[5]);
+  const auctions = [a0, a1, a2, a3, a4, a5].filter((a) => a !== null) as AuctionInfo[];
+  const emptySlots = Math.max(0, 6 - auctions.length);
 
   // ── Actions ──
   const ensureChain = async () => {
@@ -234,31 +237,41 @@ export default function AuctionPage() {
           </h2>
 
           {PREVIEW_MODE ? (
-            <PreviewCard t={t} />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[0, 1, 2, 3, 4, 5].map((i) => <PreviewCard key={i} t={t} />)}
+            </div>
           ) : auctions.length === 0 ? (
             <div className="rounded-2xl border border-dark-border bg-dark-card p-8 text-center text-beige-muted">
               {t('auc.none')}
             </div>
           ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {auctions.map((a) => (
-                <AuctionCard
-                  key={a.id}
-                  info={a}
-                  tick={tick}
-                  address={address}
-                  isConnected={isConnected}
-                  bidBal={bidBal}
-                  winLimited={!!(winLimit && winsWeek && winLimit > BigInt(0) && winsWeek >= winLimit)}
-                  paused={!!paused_}
-                  pending={pending}
-                  t={t}
-                  onBid={() => handleBid(BigInt(a.id))}
-                  onClaim={() => handleClaim(BigInt(a.id))}
-                  onFinalize={() => handleFinalize(BigInt(a.id))}
-                />
-              ))}
-            </div>
+            <>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {auctions.map((a) => (
+                  <AuctionCard
+                    key={a.id}
+                    info={a}
+                    tick={tick}
+                    address={address}
+                    isConnected={isConnected}
+                    bidBal={bidBal}
+                    winLimited={!!(winLimit && winsWeek && winLimit > BigInt(0) && winsWeek >= winLimit)}
+                    paused={!!paused_}
+                    pending={pending}
+                    t={t}
+                    onBid={() => handleBid(BigInt(a.id))}
+                    onClaim={() => handleClaim(BigInt(a.id))}
+                    onFinalize={() => handleFinalize(BigInt(a.id))}
+                  />
+                ))}
+                {Array.from({ length: emptySlots }).map((_, i) => (
+                  <div key={`empty-${i}`} className="rounded-2xl border border-dashed border-dark-border bg-dark-card/40 p-8 flex flex-col items-center justify-center text-center min-h-[280px]">
+                    <Gavel className="w-10 h-10 text-gold/20 mb-3" />
+                    <span className="text-sm text-beige-muted">{t('auc.none')}</span>
+                  </div>
+                ))}
+              </div>
+            </>
           )}
         </div>
 
@@ -348,6 +361,7 @@ interface AuctionInfo {
   prize: bigint; price: bigint; bidCount: bigint; lastBidder: string; winner: string;
   startTime: bigint; endTime: bigint; finalizeTime: bigint; finalPricePaid: bigint;
   prizeClaimed: boolean; status: number;
+  title: string; image: string;
   refetch: () => void;
 }
 
@@ -358,12 +372,19 @@ function useAuction(preview: boolean, id: bigint | undefined): AuctionInfo | nul
     chainId: bsc.id, query: { enabled: !preview && id !== undefined },
   }) as { data: AuctionTuple | undefined; refetch: () => void };
 
+  const { data: meta } = useReadContract({
+    address: AUCTION_ADDRESS as `0x${string}`, abi: AuctionABI,
+    functionName: 'getAuctionMeta', args: id !== undefined ? [id] : undefined,
+    chainId: bsc.id, query: { enabled: !preview && id !== undefined },
+  }) as { data: readonly [string, string] | undefined };
+
   if (preview || id === undefined || !data) return null;
   return {
     id: Number(id),
     prize: data[0], price: data[1], bidCount: data[2], lastBidder: data[3], winner: data[4],
     startTime: data[5], endTime: data[6], finalizeTime: data[7], finalPricePaid: data[8],
     prizeClaimed: data[9], status: Number(data[10]),
+    title: meta?.[0] ?? '', image: meta?.[1] ?? '',
     refetch,
   };
 }
@@ -397,13 +418,34 @@ function AuctionCard({ info, tick, address, isConnected, bidBal, winLimited, pau
     : 0;
 
   return (
-    <motion.div variants={fadeUp} className="rounded-2xl border border-gold/30 bg-dark-card overflow-hidden">
+    <motion.div variants={fadeUp} className="rounded-2xl border border-gold/30 bg-dark-card overflow-hidden flex flex-col">
+      {/* Illustrative image */}
+      <div className="relative h-44 sm:h-48 bg-dark-elevated border-b border-gold/20">
+        {info.image ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={info.image} alt={info.title || 'Prize'} className="w-full h-full object-cover" />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center">
+            <Trophy className="w-14 h-14 text-gold/40" />
+          </div>
+        )}
+        <div className="absolute inset-0 bg-gradient-to-t from-dark/80 to-transparent pointer-events-none" />
+        {info.title && (
+          <div className="absolute bottom-2 left-3 right-3">
+            <span className="text-sm font-bold text-white drop-shadow">{info.title}</span>
+          </div>
+        )}
+        <div className="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-dark/80 border border-gold/40 text-gold text-xs font-bold">
+          #{info.id}
+        </div>
+      </div>
+
       {/* Prize header */}
-      <div className="bg-gradient-to-r from-gold/15 to-transparent p-5 border-b border-gold/20">
+      <div className="bg-gradient-to-r from-gold/15 to-transparent p-4 border-b border-gold/20">
         <div className="flex items-start justify-between gap-3">
           <div>
             <div className="text-xs text-beige-muted">{t('auc.prize')}</div>
-            <div className="text-3xl font-black text-gold">${fmt(info.prize, 0)}</div>
+            <div className="text-2xl font-black text-gold">${fmt(info.prize, 0)}</div>
           </div>
           <div className="text-right">
             <div className="text-xs text-beige-muted">{t('auc.timer')}</div>

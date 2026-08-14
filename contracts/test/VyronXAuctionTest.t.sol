@@ -639,4 +639,49 @@ contract VyronXAuctionTest is Test {
         vm.expectRevert("Not active");
         auction.placeBid(999);
     }
+
+    // ════════════════════════════════════════════════════
+    // METADATA (image + title)
+    // ════════════════════════════════════════════════════
+
+    function test_Meta_SetAndRead() public {
+        uint256 id = _open(PRIZE, 3600);
+        vm.prank(owner);
+        auction.setAuctionMeta(id, "iPhone 17 Pro", "https://vyronx.io/img/prizes/iphone.png");
+        (string memory title, string memory image) = auction.getAuctionMeta(id);
+        assertEq(title, "iPhone 17 Pro");
+        assertEq(image, "https://vyronx.io/img/prizes/iphone.png");
+    }
+
+    function test_Meta_EditableAfterSet() public {
+        uint256 id = _open(PRIZE, 3600);
+        vm.startPrank(owner);
+        auction.setAuctionMeta(id, "Old", "https://old.png");
+        auction.setAuctionMeta(id, "New Title", "https://new.png");
+        vm.stopPrank();
+        (string memory title, string memory image) = auction.getAuctionMeta(id);
+        assertEq(title, "New Title");
+        assertEq(image, "https://new.png");
+    }
+
+    function test_Meta_InvalidId_Reverts() public {
+        vm.prank(owner);
+        vm.expectRevert("Invalid id");
+        auction.setAuctionMeta(999, "X", "https://x.png");
+    }
+
+    function test_Meta_UrlTooLong_Reverts() public {
+        uint256 id = _open(PRIZE, 3600);
+        string memory longUrl = new string(300);
+        vm.prank(owner);
+        vm.expectRevert("URL too long");
+        auction.setAuctionMeta(id, "X", longUrl);
+    }
+
+    function test_Meta_OnlyOwner() public {
+        uint256 id = _open(PRIZE, 3600);
+        vm.prank(alice);
+        vm.expectRevert("Not owner");
+        auction.setAuctionMeta(id, "Hack", "https://evil.png");
+    }
 }

@@ -121,6 +121,10 @@ contract VyronXAuction is ReentrancyGuard {
     mapping(uint256 => Auction) public auctions;
     uint256[] public activeAuctionIds;
 
+    /// @notice Auction metadata — illustrative image URL + title (set/edited by owner)
+    mapping(uint256 => string) public auctionTitle;
+    mapping(uint256 => string) public auctionImage;
+
     /// @notice Winner must claim within 7 days of finalize
     uint256 public constant CLAIM_WINDOW = 7 days;
 
@@ -137,6 +141,7 @@ contract VyronXAuction is ReentrancyGuard {
     // ════════════════════════════════════════════════════════════
 
     event AuctionOpened(uint256 indexed auctionId, uint256 prizeUsdt, uint256 endTime);
+    event AuctionMetaUpdated(uint256 indexed auctionId, string title, string image);
     event BidPlaced(uint256 indexed auctionId, address indexed bidder, uint256 newPrice, uint256 endTime, uint256 windowSeconds);
     event AuctionFinalized(uint256 indexed auctionId, address indexed winner, uint256 bidCount, uint256 revenueUsdt);
     event AuctionCancelled(uint256 indexed auctionId);
@@ -458,6 +463,20 @@ contract VyronXAuction is ReentrancyGuard {
         availablePrizeFunds += a.prizeUsdt;
         _removeFromActive(auctionId);
         emit AuctionCancelled(auctionId);
+    }
+
+    /// @notice Set/edit the illustrative image URL + title of an auction (any time).
+    function setAuctionMeta(uint256 auctionId, string calldata title, string calldata imageUrl) external onlyOwner {
+        require(auctionId >= 1 && auctionId <= nextAuctionId, "Invalid id");
+        require(bytes(imageUrl).length <= 256, "URL too long");
+        auctionTitle[auctionId] = title;
+        auctionImage[auctionId] = imageUrl;
+        emit AuctionMetaUpdated(auctionId, title, imageUrl);
+    }
+
+    /// @notice Read metadata (title, imageUrl).
+    function getAuctionMeta(uint256 auctionId) external view returns (string memory title, string memory imageUrl) {
+        return (auctionTitle[auctionId], auctionImage[auctionId]);
     }
 
     // ════════════════════════════════════════════════════════════
