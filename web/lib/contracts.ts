@@ -11,7 +11,7 @@ import VyronXAuctionABI from './abi/VyronXAuction.json';
 
 export const TOKEN_ADDRESS = process.env.NEXT_PUBLIC_TOKEN_ADDRESS as `0x${string}`;
 export const PRESALE_ADDRESS = process.env.NEXT_PUBLIC_PRESALE_ADDRESS as `0x${string}`;
-export const STAKING_ADDRESS = '0x94E035f10e6FF280A2Cab45C3F1A2a6a68696541' as `0x${string}`; // Staking V5 (11 directs cap) — hardcoded
+export const STAKING_ADDRESS = '0x1867b6110c59477B8ADeFd4eC69b054210F19D25' as `0x${string}`; // Staking V5 (11 directs cap) — hardcoded
 // Previous V4 (0xeAEA) holds 432.4M VYR — needs to migrate to V5 (0x94E0)
 export const STAKING_V1_ADDRESS = '0xeAEAd8DAe5234Ef82B40F308006faB2c7FFF3A9A';
 export const USDT_ADDRESS = process.env.NEXT_PUBLIC_USDT_ADDRESS as `0x${string}`;

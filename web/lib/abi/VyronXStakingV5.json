@@ -373,6 +373,30 @@
   },
   {
     "type": "function",
+    "name": "getAffiliateQualification",
+    "inputs": [
+      {
+        "name": "user",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "totalStaked",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "qualifiedDirects",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "getPendingEarnings",
     "inputs": [
       {
@@ -642,6 +666,29 @@
         "name": "tierName",
         "type": "string",
         "internalType": "string"
+      },
+      {
+        "name": "minStakeUsdt",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "maxStakeUsdt",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "qualifiedDirectMin",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
       }
     ],
     "stateMutability": "view"
@@ -817,6 +864,42 @@
         "name": "newName",
         "type": "string",
         "internalType": "string"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "setPoolLimits",
+    "inputs": [
+      {
+        "name": "poolId",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "minStakeUsdt",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "maxStakeUsdt",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "setQualifiedDirectMin",
+    "inputs": [
+      {
+        "name": "_min",
+        "type": "uint256",
+        "internalType": "uint256"
       }
     ],
     "outputs": [],
@@ -1410,6 +1493,31 @@
       },
       {
         "name": "lostAmount",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "PoolLimitsChanged",
+    "inputs": [
+      {
+        "name": "poolId",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      },
+      {
+        "name": "minStakeUsdt",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "maxStakeUsdt",
         "type": "uint256",
         "indexed": false,
         "internalType": "uint256"

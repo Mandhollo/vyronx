@@ -215,20 +215,24 @@ export default function WhitepaperPage() {
                         <th className="px-4 py-3 text-left text-xs font-bold uppercase text-gold">Duration</th>
                         <th className="px-4 py-3 text-left text-xs font-bold uppercase text-gold">Daily</th>
                         <th className="px-4 py-3 text-left text-xs font-bold uppercase text-gold">Monthly</th>
+                        <th className="px-4 py-3 text-left text-xs font-bold uppercase text-gold">Min</th>
+                        <th className="px-4 py-3 text-left text-xs font-bold uppercase text-gold">Max</th>
                       </tr>
                     </thead>
                     <tbody>
                       {[
-                        ['Starter', '30 days', '0.11%', '~3.5%'],
-                        ['Growth', '60 days', '0.23%', '~7%'],
-                        ['Pro', '180 days', '0.33%', '~10%'],
-                        ['Elite', '360 days', '0.50%', '~15%'],
-                      ].map(([tier, dur, daily, monthly]) => (
+                        ['Starter', '30 days', '0.11%', '~3.5%', '$50', '$100'],
+                        ['Growth', '60 days', '0.23%', '~7%', '$50', '$250'],
+                        ['Pro', '180 days', '0.33%', '~10%', '$50', '$500'],
+                        ['Elite', '360 days', '0.50%', '~15%', '$100', 'No limit'],
+                      ].map(([tier, dur, daily, monthly, mn, mx]) => (
                         <tr key={tier} className="border-b border-dark-border/50 last:border-0">
                           <td className="px-2 py-2 sm:px-4 sm:py-3 text-xs sm:text-sm font-bold text-white">{tier}</td>
                           <td className="px-2 py-2 sm:px-4 sm:py-3 text-xs sm:text-sm text-beige">{dur}</td>
                           <td className="px-2 py-2 sm:px-4 sm:py-3 text-xs sm:text-sm text-beige">{daily}</td>
                           <td className="px-2 py-2 sm:px-4 sm:py-3 text-xs sm:text-sm font-bold text-gold">{monthly}</td>
+                          <td className="px-2 py-2 sm:px-4 sm:py-3 text-xs sm:text-sm text-beige">{mn}</td>
+                          <td className="px-2 py-2 sm:px-4 sm:py-3 text-xs sm:text-sm text-beige">{mx}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -278,7 +282,15 @@ export default function WhitepaperPage() {
                     </div>
                     <div>
                       <div className="text-gold font-bold mb-1">Qualification</div>
-                      <div className="text-beige-muted">Only participants with an <span className="text-gold">active Elite (360-day) stake</span> receive affiliate commissions. Downline can be in any pool.</div>
+                      <div className="text-beige-muted">Only participants with an <span className="text-gold">active Elite (360-day) stake</span> receive affiliate commissions. Commissions are generated exclusively by Elite (360-day) stakes in your downline.</div>
+                    </div>
+                    <div>
+                      <div className="text-gold font-bold mb-1">Level Requirements</div>
+                      <div className="text-beige-muted">Each level requires a number of <span className="text-gold">direct referrals with at least $100 staked</span> (1 direct for Level 1, up to 11 for Level 11). Your staking amount is the <span className="text-gold">sum of all active stakes</span> — accumulate from $100 up to $1,100 to unlock all 11 levels.</div>
+                    </div>
+                    <div>
+                      <div className="text-gold font-bold mb-1">Dynamic Levels</div>
+                      <div className="text-beige-muted">Levels are recalculated in real time: if your stakes (or your directs' stakes) expire or are withdrawn, you automatically return to the previous level — and rise again with new stakes.</div>
                     </div>
                   </div>
                 </div>
@@ -295,17 +307,17 @@ export default function WhitepaperPage() {
                     </thead>
                     <tbody>
                       {[
-                        ['1', '7%', '$100', '0'],
+                        ['1', '7%', '$100', '1'],
                         ['2', '6%', '$200', '2'],
                         ['3', '5%', '$300', '3'],
-                        ['4', '4%', '$400', '5'],
-                        ['5', '3%', '$500', '8'],
-                        ['6', '2%', '$600', '12'],
-                        ['7', '2%', '$700', '15'],
-                        ['8', '2%', '$800', '20'],
-                        ['9', '2%', '$900', '25'],
-                        ['10', '2%', '$1,000', '30'],
-                        ['11', '7%', '$1,100', '50'],
+                        ['4', '4%', '$400', '4'],
+                        ['5', '3%', '$500', '5'],
+                        ['6', '2%', '$600', '6'],
+                        ['7', '2%', '$700', '7'],
+                        ['8', '2%', '$800', '8'],
+                        ['9', '2%', '$900', '9'],
+                        ['10', '2%', '$1,000', '10'],
+                        ['11', '7%', '$1,100', '11'],
                       ].map(([lvl, comm, stake, refs]) => (
                         <tr key={lvl} className="border-b border-dark-border/50 last:border-0 hover:bg-gold/5">
                           <td className="px-4 py-2 text-sm font-bold text-white">Lv {lvl}</td>

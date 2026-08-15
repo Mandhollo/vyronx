@@ -36,14 +36,14 @@ const ERC20_ABI = [
 ] as const;
 
 const POOLS = [
-  { id: 0, duration: '30 Days', daily: 0.11, monthly: '~3.5%', lock: 30, tier: 'Starter', color: 'from-slate-600 to-slate-800', minStake: 50, badge: '/badge-starter.png' },
-  { id: 1, duration: '60 Days', daily: 0.23, monthly: '~7%', lock: 60, tier: 'Growth', color: 'from-amber-500 to-amber-700', minStake: 50, badge: '/badge-growth.png' },
-  { id: 2, duration: '180 Days', daily: 0.33, monthly: '~10%', lock: 180, tier: 'Pro', color: 'from-orange-500 to-orange-700', minStake: 100, badge: '/badge-pro.png' },
-  { id: 3, duration: '360 Days', daily: 0.50, monthly: '~15%', lock: 360, tier: 'Elite', color: 'from-gold-light to-gold-dark', featured: true, features: ['Accelerator', '11-Level Affiliate Program'], minStake: 100, badge: '/badge-elite.png' },
+  { id: 0, duration: '30 Days', daily: 0.11, monthly: '~3.5%', lock: 30, tier: 'Starter', color: 'from-slate-600 to-slate-800', minStake: 50, maxStake: 100, badge: '/badge-starter.png' },
+  { id: 1, duration: '60 Days', daily: 0.23, monthly: '~7%', lock: 60, tier: 'Growth', color: 'from-amber-500 to-amber-700', minStake: 50, maxStake: 250, badge: '/badge-growth.png' },
+  { id: 2, duration: '180 Days', daily: 0.33, monthly: '~10%', lock: 180, tier: 'Pro', color: 'from-orange-500 to-orange-700', minStake: 50, maxStake: 500, badge: '/badge-pro.png' },
+  { id: 3, duration: '360 Days', daily: 0.50, monthly: '~15%', lock: 360, tier: 'Elite', color: 'from-gold-light to-gold-dark', featured: true, features: ['Accelerator', '11-Level Affiliate Program'], minStake: 100, maxStake: 0, badge: '/badge-elite.png' },
 ];
 
 const AFFILIATE_LEVELS = [
-  { level: 1, commission: '7%', stake: '$100', directs: '—' },
+  { level: 1, commission: '7%', stake: '$100', directs: '1' },
   { level: 2, commission: '6%', stake: '$200', directs: '2' },
   { level: 3, commission: '5%', stake: '$300', directs: '3' },
   { level: 4, commission: '4%', stake: '$400', directs: '4' },
@@ -188,6 +188,10 @@ function StakingPageContent() {
 
   const handleStake = async () => {
     if (!isConnected || !stakeAmount || activePool === null) return;
+    // V5 per-pool limits (frontend validation; contract enforces too)
+    const amt = parseFloat(stakeAmount);
+    if (selectedPool && amt < selectedPool.minStake) { toast.error(`Minimum for ${selectedPool.tier} is $${selectedPool.minStake} USDT`); return; }
+    if (selectedPool && selectedPool.maxStake > 0 && amt > selectedPool.maxStake) { toast.error(`Maximum for ${selectedPool.tier} is $${selectedPool.maxStake} USDT`); return; }
     setTxPending(true);
     const toastId = toast.loading(`Staking ${stakeAmount} USDT in ${selectedPool?.tier} pool...`);
     try {
@@ -300,6 +304,7 @@ function StakingPageContent() {
                 <div className="flex justify-between"><span className="text-beige-muted">{t('pool.daily')}</span><span className="text-beige font-medium">{pool.daily}%</span></div>
                 <div className="flex justify-between"><span className="text-beige-muted">{t('pool.lock')}</span><span className="text-beige font-medium">{pool.lock} {t('pool.days')}</span></div>
                 <div className="flex justify-between"><span className="text-beige-muted">{t('staking.min')}</span><span className="text-beige font-medium">${pool.minStake} USDT</span></div>
+                <div className="flex justify-between"><span className="text-beige-muted">{t('staking.max')}</span><span className="text-beige font-medium">{pool.maxStake > 0 ? `$${pool.maxStake} USDT` : t('staking.noMax')}</span></div>
               </div>
               {pool.features && (
                 <div className="mx-6 pt-2 border-t border-dark-border space-y-2 pb-4">

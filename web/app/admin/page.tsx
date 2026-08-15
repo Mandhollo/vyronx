@@ -101,10 +101,10 @@ export default function AdminPage() {
   }) as { data: bigint | undefined };
 
   // === READS: POOLS (individual reads) ===
-  const { data: pool0 } = useReadContract({ address: STAKING_ADDRESS, abi: StakingABI, functionName: 'pools', args: [BigInt(0)], chainId: bsc.id }) as { data: readonly [bigint, bigint, boolean, string] | undefined };
-  const { data: pool1 } = useReadContract({ address: STAKING_ADDRESS, abi: StakingABI, functionName: 'pools', args: [BigInt(1)], chainId: bsc.id }) as { data: readonly [bigint, bigint, boolean, string] | undefined };
-  const { data: pool2 } = useReadContract({ address: STAKING_ADDRESS, abi: StakingABI, functionName: 'pools', args: [BigInt(2)], chainId: bsc.id }) as { data: readonly [bigint, bigint, boolean, string] | undefined };
-  const { data: pool3 } = useReadContract({ address: STAKING_ADDRESS, abi: StakingABI, functionName: 'pools', args: [BigInt(3)], chainId: bsc.id }) as { data: readonly [bigint, bigint, boolean, string] | undefined };
+  const { data: pool0 } = useReadContract({ address: STAKING_ADDRESS, abi: StakingABI, functionName: 'pools', args: [BigInt(0)], chainId: bsc.id }) as { data: readonly [bigint, bigint, boolean, string, bigint, bigint] | undefined };
+  const { data: pool1 } = useReadContract({ address: STAKING_ADDRESS, abi: StakingABI, functionName: 'pools', args: [BigInt(1)], chainId: bsc.id }) as { data: readonly [bigint, bigint, boolean, string, bigint, bigint] | undefined };
+  const { data: pool2 } = useReadContract({ address: STAKING_ADDRESS, abi: StakingABI, functionName: 'pools', args: [BigInt(2)], chainId: bsc.id }) as { data: readonly [bigint, bigint, boolean, string, bigint, bigint] | undefined };
+  const { data: pool3 } = useReadContract({ address: STAKING_ADDRESS, abi: StakingABI, functionName: 'pools', args: [BigInt(3)], chainId: bsc.id }) as { data: readonly [bigint, bigint, boolean, string, bigint, bigint] | undefined };
   const allPools = [pool0, pool1, pool2, pool3];
 
   // === LOCAL STATE for forms ===
@@ -114,6 +114,8 @@ export default function AdminPage() {
   const [priceInput, setPriceInput] = useState('');
   const [poolRates, setPoolRates] = useState<Record<number, string>>({});
   const [poolLocks, setPoolLocks] = useState<Record<number, string>>({});
+  const [poolMins, setPoolMins] = useState<Record<number, string>>({});
+  const [poolMaxs, setPoolMaxs] = useState<Record<number, string>>({});
 
   // === HELPERS ===
   const fmt = (val: bigint | undefined, decimals: number, display: number) => {
@@ -173,6 +175,17 @@ export default function AdminPage() {
     return writeContractAsync({ address: STAKING_ADDRESS, abi: StakingABI, functionName: 'setPoolConfig',
       args: [BigInt(poolId), rate, lock, active, name], chainId: bsc.id });
   });
+
+  const handleSetPoolLimits = (poolId: number) => {
+    const min = poolMins[poolId]; const max = poolMaxs[poolId];
+    if (!min || parseFloat(min) <= 0) { toast.error('Min must be > 0 (enter 0 = keep current)'); return; }
+    const maxWei = max === '' || max === undefined ? BigInt(0) : BigInt(Math.floor(parseFloat(max) * 1e18));
+    const minWei = BigInt(Math.floor(parseFloat(min) * 1e18));
+    exec(`Set Limits Pool ${poolId}`, () =>
+      writeContractAsync({ address: STAKING_ADDRESS, abi: StakingABI, functionName: 'setPoolLimits',
+        args: [BigInt(poolId), minWei, maxWei], chainId: bsc.id })
+    );
+  };
 
   const handleSetPrice = () => {
     if (!priceInput) return;
@@ -640,6 +653,24 @@ export default function AdminPage() {
                     {pending === `Update Pool ${pool.id}` ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Settings className="h-3.5 w-3.5" />}
                     Apply Changes
                   </button>
+                  {/* V5 per-pool stake limits */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3 pt-3 border-t border-dark-border">
+                    <div>
+                      <label className="text-xs text-beige-muted block mb-1">Min Stake (USDT)</label>
+                      <input type="number" value={poolMins[pool.id] ?? String(Number(chain ? chain[4] : BigInt(0)) / 1e18)} onChange={(e) => setPoolMins({ ...poolMins, [pool.id]: e.target.value })}
+                        className="w-full bg-dark-elevated border border-dark-border rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-gold/50" />
+                    </div>
+                    <div>
+                      <label className="text-xs text-beige-muted block mb-1">Max Stake (USDT — 0 = no limit)</label>
+                      <input type="number" value={poolMaxs[pool.id] ?? String(Number(chain ? chain[5] : BigInt(0)) / 1e18)} onChange={(e) => setPoolMaxs({ ...poolMaxs, [pool.id]: e.target.value })}
+                        className="w-full bg-dark-elevated border border-dark-border rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-gold/50" />
+                    </div>
+                  </div>
+                  <button onClick={() => handleSetPoolLimits(pool.id)} disabled={pending === `Set Limits Pool ${pool.id}`}
+                    className="mt-3 px-4 py-2 text-xs font-bold rounded-lg bg-purple-500/10 text-purple-300 border border-purple-500/30 hover:bg-purple-500/20 disabled:opacity-50 flex items-center gap-2">
+                    {pending === `Set Limits Pool ${pool.id}` ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Settings className="h-3.5 w-3.5" />}
+                    Apply Limits
+                  </button>
                 </motion.div>
               );
             })}
@@ -986,6 +1017,54 @@ export default function AdminPage() {
                     }} disabled={pending === 'Set Comm Fee'}
                       className="px-4 py-2 text-sm font-bold rounded-lg bg-gradient-to-r from-gold-light to-gold-dark text-dark disabled:opacity-50">
                       {pending === 'Set Comm Fee' ? '...' : 'Set Comm Fee %'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* V5: Affiliate Levels editor (11 levels) */}
+              <div className="rounded-xl bg-purple-500/5 border border-purple-500/20 p-4 mt-4">
+                <label className="text-xs text-purple-300 block mb-2 font-bold">AFFILIATE LEVELS (V5 — commission %, min stake USDT, min direct referrals)</label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                  {Array.from({ length: 11 }, (_, i) => i).map((lvl) => (
+                    <div key={lvl} className="flex items-center gap-1">
+                      <span className="text-xs text-beige-muted w-10">Lv {lvl + 1}</span>
+                      <input type="number" id={`lvlBps${lvl}`} placeholder="bps" min="0" max="1000"
+                        className="w-full bg-dark-elevated border border-dark-border rounded px-2 py-1.5 text-xs text-white" />
+                      <input type="number" id={`lvlStake${lvl}`} placeholder="min $" min="1"
+                        className="w-full bg-dark-elevated border border-dark-border rounded px-2 py-1.5 text-xs text-white" />
+                      <input type="number" id={`lvlDir${lvl}`} placeholder="directs" min="0" max="50"
+                        className="w-full bg-dark-elevated border border-dark-border rounded px-2 py-1.5 text-xs text-white" />
+                      <button onClick={async () => {
+                        const bps = parseFloat((document.getElementById(`lvlBps${lvl}`) as HTMLInputElement).value);
+                        const stake = parseFloat((document.getElementById(`lvlStake${lvl}`) as HTMLInputElement).value);
+                        const dirs = parseFloat((document.getElementById(`lvlDir${lvl}`) as HTMLInputElement).value);
+                        if (isNaN(bps) || isNaN(stake) || isNaN(dirs)) return toast.error('Fill all 3 fields');
+                        await exec(`Set Level ${lvl + 1}`, async () => {
+                          await writeContractAsync({ address: STAKING_ADDRESS, abi: StakingABI, functionName: 'setAffiliateLevel',
+                            args: [BigInt(lvl), BigInt(Math.round(bps)), BigInt(Math.floor(stake * 1e18)), BigInt(Math.round(dirs))] });
+                        });
+                      }} disabled={pending === `Set Level ${lvl + 1}`}
+                        className="px-2 py-1.5 text-xs font-bold rounded bg-purple-500/15 text-purple-300 border border-purple-500/30 hover:bg-purple-500/25 disabled:opacity-50">
+                        {pending === `Set Level ${lvl + 1}` ? '...' : 'Set'}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-3 pt-3 border-t border-purple-500/20">
+                  <label className="text-xs text-purple-300 block mb-1">Qualified Direct Min (USDT staked sum — default $100)</label>
+                  <div className="flex gap-2">
+                    <input type="number" id="qualDirMin" placeholder="e.g. 100" min="1"
+                      className="flex-1 bg-dark-elevated border border-dark-border rounded-lg px-3 py-2 text-sm text-white" />
+                    <button onClick={async () => {
+                      const val = parseFloat((document.getElementById('qualDirMin') as HTMLInputElement).value);
+                      if (isNaN(val) || val <= 0) return toast.error('Enter a value > 0');
+                      await exec('Set Qual Direct Min', async () => {
+                        await writeContractAsync({ address: STAKING_ADDRESS, abi: StakingABI, functionName: 'setQualifiedDirectMin', args: [BigInt(Math.floor(val * 1e18))] });
+                      });
+                    }} disabled={pending === 'Set Qual Direct Min'}
+                      className="px-4 py-2 text-sm font-bold rounded-lg bg-purple-500/15 text-purple-300 border border-purple-500/30 hover:bg-purple-500/25 disabled:opacity-50">
+                      {pending === 'Set Qual Direct Min' ? '...' : 'Set'}
                     </button>
                   </div>
                 </div>
