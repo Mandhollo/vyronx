@@ -1566,17 +1566,32 @@ function VoucherMigration({ pending, setPending }: { pending: string | null; set
     address: STAKING_ADDRESS, abi: StakingABI, functionName: 'getVoucherCount', chainId: bsc.id,
   });
 
-  const migrated = voucherCount != null && Number(voucherCount) >= 7;
-
-  // The 7 vouchers from V3 with their referrer chain
+  const migrated = voucherCount != null && Number(voucherCount) >= 23;
+  // 23 vouchers extracted on-chain from V4 0xeAEA (all $1,100, Elite, referrer chain preserved)
   const vouchers = [
-    { recipient: '0xFfAF2525F659aC7Da49dfCd4D15b12eFc578539c', poolId: 3, usdtValue: '1100', referrer: '0x77619322427f006b14DA3Dbb25F9eb420372f7c7', name: 'Conta Mãe' },
-    { recipient: '0xEd324c73fae8bCbC3318123a025ec47A41E20b71', poolId: 3, usdtValue: '1100', referrer: '0xFfAF2525F659aC7Da49dfCd4D15b12eFc578539c', name: 'Thiago' },
-    { recipient: '0xB863C989b252749f89d14086fabB40E5f17ab77D', poolId: 3, usdtValue: '1100', referrer: '0xEd324c73fae8bCbC3318123a025ec47A41E20b71', name: 'Indicado Thiago' },
-    { recipient: '0x5b4b91aA04e2722ebAF4A6090970c1c92BEe1090', poolId: 3, usdtValue: '1100', referrer: '0xFfAF2525F659aC7Da49dfCd4D15b12eFc578539c', name: 'Promotor 3' },
-    { recipient: '0xd7A8484fD713D28870FCd4ad198fAB9e3ffDedB1', poolId: 3, usdtValue: '1100', referrer: '0xFfAF2525F659aC7Da49dfCd4D15b12eFc578539c', name: 'Deployer' },
-    { recipient: '0xB783cC9C7785caf201d77167eCB60f381AAca9d9', poolId: 3, usdtValue: '1100', referrer: '0xFfAF2525F659aC7Da49dfCd4D15b12eFc578539c', name: 'Promotor 5' },
-    { recipient: '0x470a2608fa72f823d4C32Bf32f3ea318fb995c6E', poolId: 3, usdtValue: '1100', referrer: '0xFfAF2525F659aC7Da49dfCd4D15b12eFc578539c', name: 'Promotor 6' },
+    {recipient: '0xFfAF2525F659aC7Da49dfCd4D15b12eFc578539c', poolId: 3, usdtValue: '1100', referrer: '0x77619322427f006b14DA3Dbb25F9eb420372f7c7', name: 'Conta Mãe'},
+    {recipient: '0xEd324c73fae8bCbC3318123a025ec47A41E20b71', poolId: 3, usdtValue: '1100', referrer: '0xFfAF2525F659aC7Da49dfCd4D15b12eFc578539c', name: 'Thiago'},
+    {recipient: '0xB863C989b252749f89d14086fabB40E5f17ab77D', poolId: 3, usdtValue: '1100', referrer: '0xEd324c73fae8bCbC3318123a025ec47A41E20b71', name: 'Ind. Thiago'},
+    {recipient: '0x5b4b91aA04e2722ebAF4A6090970c1c92BEe1090', poolId: 3, usdtValue: '1100', referrer: '0xFfAF2525F659aC7Da49dfCd4D15b12eFc578539c', name: 'Promotor 3'},
+    {recipient: '0xd7A8484fD713D28870FCd4ad198fAB9e3ffDedB1', poolId: 3, usdtValue: '1100', referrer: '0xFfAF2525F659aC7Da49dfCd4D15b12eFc578539c', name: 'Deployer'},
+    {recipient: '0xB783cC9C7785caf201d77167eCB60f381AAca9d9', poolId: 3, usdtValue: '1100', referrer: '0xFfAF2525F659aC7Da49dfCd4D15b12eFc578539c', name: 'Promotor 5'},
+    {recipient: '0x470a2608fa72f823d4C32Bf32f3ea318fb995c6E', poolId: 3, usdtValue: '1100', referrer: '0xFfAF2525F659aC7Da49dfCd4D15b12eFc578539c', name: 'Promotor 6'},
+    {recipient: '0x11B9aF1e89C2c51aB39be59Ea248Cb6a495Cb84e', poolId: 3, usdtValue: '1100', referrer: '0xFfAF2525F659aC7Da49dfCd4D15b12eFc578539c', name: 'Promotor 7'},
+    {recipient: '0x301892e42aE40327856bb676B1e7c2e4C4B7392c', poolId: 3, usdtValue: '1100', referrer: '0x11B9aF1e89C2c51aB39be59Ea248Cb6a495Cb84e', name: 'Ind. Promotor 7'},
+    {recipient: '0x28c438cb3Ab95B6dEE755A3f3570943b52C7b0F4', poolId: 3, usdtValue: '1100', referrer: '0xFfAF2525F659aC7Da49dfCd4D15b12eFc578539c', name: 'Promotor 8'},
+    {recipient: '0x3b791FF255AD221475e5551FfE0FB605b9753257', poolId: 3, usdtValue: '1100', referrer: '0xFfAF2525F659aC7Da49dfCd4D15b12eFc578539c', name: 'Promotor 9'},
+    {recipient: '0xC06cedf252139469B797b719B97C0541dab7aC77', poolId: 3, usdtValue: '1100', referrer: '0xFfAF2525F659aC7Da49dfCd4D15b12eFc578539c', name: 'Promotor 10'},
+    {recipient: '0x9D173220DA490ea1374F818106707D6a749fe700', poolId: 3, usdtValue: '1100', referrer: '0xFfAF2525F659aC7Da49dfCd4D15b12eFc578539c', name: 'Promotor 11'},
+    {recipient: '0x8986e36a8814b3783c0C4034654708115349b356', poolId: 3, usdtValue: '1100', referrer: '0xFfAF2525F659aC7Da49dfCd4D15b12eFc578539c', name: 'Promotor 12'},
+    {recipient: '0x3A23c096eab6bB2Fc09921eb22998Ae37E9C2F7b', poolId: 3, usdtValue: '1100', referrer: '0x28c438cb3Ab95B6dEE755A3f3570943b52C7b0F4', name: 'Ind. Promotor 8'},
+    {recipient: '0xE42Ea653Be137954b0bFF7193c06A363CEccbB3b', poolId: 3, usdtValue: '1100', referrer: '0xFfAF2525F659aC7Da49dfCd4D15b12eFc578539c', name: 'Promotor 13'},
+    {recipient: '0xF077609b70baF4eA503E54D1731d65eB4eBB149e', poolId: 3, usdtValue: '1100', referrer: '0xFfAF2525F659aC7Da49dfCd4D15b12eFc578539c', name: 'Promotor 14'},
+    {recipient: '0x9Db81f4E9CdD28C1497cC147bE36055A8859E034', poolId: 3, usdtValue: '1100', referrer: '0xFfAF2525F659aC7Da49dfCd4D15b12eFc578539c', name: 'Promotor 15'},
+    {recipient: '0x9A38A4b356536302fdF80A114C70cbC5a9A3E8d1', poolId: 3, usdtValue: '1100', referrer: '0xFfAF2525F659aC7Da49dfCd4D15b12eFc578539c', name: 'Promotor 16'},
+    {recipient: '0xa3Ebe62F3493DEfe02F828183796d26b39312C51', poolId: 3, usdtValue: '1100', referrer: '0xFfAF2525F659aC7Da49dfCd4D15b12eFc578539c', name: 'Promotor 17'},
+    {recipient: '0x76a5cbf390Cb72AC820857FAA7f8F5a9152B579C', poolId: 3, usdtValue: '1100', referrer: '0xFfAF2525F659aC7Da49dfCd4D15b12eFc578539c', name: 'Promotor 18'},
+    {recipient: '0xd784b8c7B8ADCF81dEEAbB75883656a39728C4B0', poolId: 3, usdtValue: '1100', referrer: '0xFfAF2525F659aC7Da49dfCd4D15b12eFc578539c', name: 'Promotor 19'},
+    {recipient: '0xe9A61001c79287C300378F5caB528baec36274Cd', poolId: 3, usdtValue: '1100', referrer: '0xFfAF2525F659aC7Da49dfCd4D15b12eFc578539c', name: 'Promotor 20'},
   ];
 
   if (migrated) {
@@ -1590,7 +1605,7 @@ function VoucherMigration({ pending, setPending }: { pending: string | null; set
         <h3 className="text-base font-bold text-purple-400">Voucher Migration (V4 → V5)</h3>
       </div>
       <p className="text-xs text-beige-muted mb-4">
-        Migrates all 7 vouchers from V3 with the full referral chain intact. Each voucher keeps its $1,100 value, Elite pool, MLM position, and accelerator entry. Users don&apos;t need to re-activate.
+        Migrates all 23 vouchers from V4 with the full referral chain intact. Each voucher keeps its $1,100 value, Elite pool, MLM position, and accelerator entry. Users don&apos;t need to re-activate.
       </p>
 
       {/* Preview */}
@@ -1621,7 +1636,7 @@ function VoucherMigration({ pending, setPending }: { pending: string | null; set
                 vouchers.map(v => v.referrer as `0x${string}`),
               ],
             });
-            toast.success('Vouchers migrados! ✅ 7 vouchers ativos no V4.');
+            toast.success('Vouchers migrados! ✅ 23 vouchers ativos no V5.');
           } catch (e) {
             toast.error(e instanceof Error ? e.message : 'Failed');
           } finally {
@@ -1631,7 +1646,7 @@ function VoucherMigration({ pending, setPending }: { pending: string | null; set
         disabled={pending !== null}
         className="w-full sm:w-auto px-6 py-3 text-sm font-bold rounded-xl bg-gradient-to-r from-purple-600 to-purple-800 text-white hover:shadow-lg hover:shadow-purple-500/40 transition-all disabled:opacity-50"
       >
-        {pending === 'Migrate Vouchers' ? 'Confirming...' : 'Migrate 7 Vouchers'}
+        {pending === 'Migrate Vouchers' ? 'Confirming...' : 'Migrate 23 Vouchers'}
       </button>
     </motion.div>
   );
