@@ -282,7 +282,7 @@ export default function WhitepaperPage() {
                     </div>
                     <div>
                       <div className="text-gold font-bold mb-1">Qualification</div>
-                      <div className="text-beige-muted">Only participants with an <span className="text-gold">active Elite (360-day) stake</span> receive affiliate commissions. Commissions are generated exclusively by Elite (360-day) stakes in your downline.</div>
+                      <div className="text-beige-muted">Only participants with an <span className="text-gold">active Elite (360-day) stake</span> receive affiliate commissions. Downline members in any pool (Starter, Growth, Pro, Elite) generate commissions for their upline.</div>
                     </div>
                     <div>
                       <div className="text-gold font-bold mb-1">Level Requirements</div>

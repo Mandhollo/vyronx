@@ -221,8 +221,8 @@ contract VyronXStakingV5Test is Test {
         assertGe(usdt.balanceOf(w4), 1e18, "Wallet 4 should have >= $1");
     }
 
-    /// @dev V5: MLM is paid ONLY on Elite (360) pool yield — Starter/Growth/Pro pay NOTHING
-    function test_MLM_NonElitePool_PaysNothing() public {
+    /// @dev V5: MLM commissions ARE paid on ANY pool's yield (upline qualified with Elite 360)
+    function test_MLM_PaysOnNonElitePool() public {
         // Promoter stakes $1100 in Pool 360 (Elite) to qualify
         usdt.mint(promoter, 2000e18);
         vm.startPrank(promoter);
@@ -244,8 +244,8 @@ contract VyronXStakingV5Test is Test {
         vm.prank(investor);
         staking.claimDailyEarnings(0);
 
-        // V5: Growth yield pays NO MLM commission — unilevel is Elite-360 only
-        assertEq(staking.totalReferralEarnings(promoter), 0, "Non-Elite pool must NOT pay MLM");
+        // V5: Growth yield PAYS MLM commission — unilevel covers all pools; accelerator stays 360-only
+        assertGt(staking.totalReferralEarnings(promoter), 0, "MLM must pay on non-Elite pool yield");
     }
 
     /// @dev V4: Upline without Elite stake should NOT receive MLM
