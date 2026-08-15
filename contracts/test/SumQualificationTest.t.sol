@@ -132,24 +132,24 @@ contract SumQualificationTest is Test {
         for (uint8 i = 0; i < 11; i++) {
             _makeStaker(address(uint160(0xA000 + i)), promoter, 100e18);
         }
-        // Promoter: $1,000 in PRO (180d) + $100 in Elite (360d) = $1,100 → L11 qualified
-        staking.setPoolActive(2, true); // Pro
+        // Promoter: $1,000 in ELITE (360d, multi-stake allowed) + $100 more = $1,100 → L11 qualified
         usdt.mint(promoter, 2000e18);
         vm.startPrank(promoter);
         usdt.approve(address(staking), type(uint256).max);
         staking.setReferrer(owner);
-        staking.stake(2, 500e18); // PRO (max $500) — two stakes
-        staking.stake(2, 500e18);
-        staking.stake(3, 100e18);  // Elite
+        staking.stake(3, 500e18); // ELITE — unlimited simultaneous stakes
+        staking.stake(3, 500e18);
+        vm.warp(block.timestamp + 100 days); // stagger: this last stake expires 100d later
+        staking.stake(3, 100e18);
         vm.stopPrank();
 
         (uint256 ts,) = staking.getAffiliateQualification(promoter);
         assertEq(ts, 1100e18, "L11 qualified: $1,100 active");
 
-        // PRO stake expires (180 days) → SUM drops to $100 → falls back to L1
-        vm.warp(block.timestamp + 181 days);
+        // First two ELITE stakes expire (360d from t0); the $100 one was made at t0+100d
+        vm.warp(block.timestamp + 261 days); // t0+100d+261d = t0+361d > 360d for first two; $100 stake ends at t0+460d
         (uint256 ts2,) = staking.getAffiliateQualification(promoter);
-        assertEq(ts2, 100e18, "PRO expired: only 100 USD Elite active: back to L1");
+        assertEq(ts2, 100e18, "Expired stakes: only $100 remains active: back to L1");
     }
 
     /// @notice DYNAMIC: direct's stakes ALL expire → he stops counting as qualified → promoter drops

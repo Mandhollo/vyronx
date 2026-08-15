@@ -192,6 +192,17 @@ contract VyronXStakingV5 is ReentrancyGuard {
         if (pool.maxStakeUsdt > 0) {
             require(usdtAmount <= pool.maxStakeUsdt, "Above pool maximum");
         }
+        // V5: one ACTIVE stake per pool (Starter/Growth/Pro). A new stake in the
+        // same pool requires the previous one to be fully withdrawn. Elite (360,
+        // maxStake = 0 = no ceiling) allows unlimited simultaneous stakes.
+        if (pool.maxStakeUsdt > 0) {
+            Stake[] storage existing = userStakes[msg.sender];
+            for (uint256 i = 0; i < existing.length; i++) {
+                if (existing[i].poolId == poolId && !existing[i].withdrawn) {
+                    revert("Active stake exists in this pool");
+                }
+            }
+        }
 
         _ensureReferrer();
 

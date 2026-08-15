@@ -238,6 +238,9 @@ export default function WhitepaperPage() {
                     </tbody>
                   </table>
                 </div>
+                <div className="text-xs text-beige-muted mt-3 leading-relaxed">
+                  Starter, Growth and Pro allow <span className="text-gold font-bold">one active stake at a time</span> — a new stake in the same tier requires the previous one to be fully withdrawn. Elite (360 days) has no ceiling and <span className="text-gold font-bold">unlimited simultaneous stakes</span>.
+                </div>
               </motion.section>
 
               {/* Accelerator */}

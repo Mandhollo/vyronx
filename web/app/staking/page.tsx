@@ -305,6 +305,7 @@ function StakingPageContent() {
                 <div className="flex justify-between"><span className="text-beige-muted">{t('pool.lock')}</span><span className="text-beige font-medium">{pool.lock} {t('pool.days')}</span></div>
                 <div className="flex justify-between"><span className="text-beige-muted">{t('staking.min')}</span><span className="text-beige font-medium">${pool.minStake} USDT</span></div>
                 <div className="flex justify-between"><span className="text-beige-muted">{t('staking.max')}</span><span className="text-beige font-medium">{pool.maxStake > 0 ? `$${pool.maxStake} USDT` : t('staking.noMax')}</span></div>
+                <div className="flex justify-between"><span className="text-beige-muted">{t('staking.oneActive')}</span><span className="text-beige font-medium">{pool.maxStake > 0 ? t('staking.oneActiveYes') : t('staking.oneActiveNo')}</span></div>
               </div>
               {pool.features && (
                 <div className="mx-6 pt-2 border-t border-dark-border space-y-2 pb-4">
