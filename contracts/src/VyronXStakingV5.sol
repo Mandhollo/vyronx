@@ -144,7 +144,7 @@ contract VyronXStakingV5 is ReentrancyGuard {
         pools[3] = Pool({lockPeriodDays: 360, dailyRateBps: 50, active: false, tierName: "Elite", minStakeUsdt: 100e18, maxStakeUsdt: 0});
 
         // V5: direct referrals capped at 11 — level N requires N directs (L11 = 11 directs)
-        affiliateLevels[0] = AffiliateLevel(700, 100e18, 0);
+        affiliateLevels[0] = AffiliateLevel(700, 100e18, 1); // V5 final: L1 = 1 qualified direct
         affiliateLevels[1] = AffiliateLevel(600, 200e18, 2);
         affiliateLevels[2] = AffiliateLevel(500, 300e18, 3);
         affiliateLevels[3] = AffiliateLevel(400, 400e18, 4);
@@ -278,8 +278,9 @@ contract VyronXStakingV5 is ReentrancyGuard {
 
         require(vyrToken.balanceOf(address(this)) >= vyrToPay, "Insufficient VYR");
 
-        // V4 FIX: MLM commissions distributed on daily yield from ANY pool (not just 360)
-        if (referrer[msg.sender] != address(0)) {
+        // V5: 11-level affiliate commissions are paid ONLY on Elite (360-day) pool yield.
+        // Starter/Growth/Pro pools do NOT participate in the unilevel.
+        if (s.poolId == POOL_360_ID && referrer[msg.sender] != address(0)) {
             _payAffiliateCommissions(msg.sender, earningsUsdt);
         }
 

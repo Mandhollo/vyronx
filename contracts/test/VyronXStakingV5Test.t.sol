@@ -221,8 +221,8 @@ contract VyronXStakingV5Test is Test {
         assertGe(usdt.balanceOf(w4), 1e18, "Wallet 4 should have >= $1");
     }
 
-    /// @dev V4: MLM pays even when downline is in a non-360 pool, if upline has Elite
-    function test_MLM_PaysOnNonElitePool() public {
+    /// @dev V5: MLM is paid ONLY on Elite (360) pool yield — Starter/Growth/Pro pay NOTHING
+    function test_MLM_NonElitePool_PaysNothing() public {
         // Promoter stakes $1100 in Pool 360 (Elite) to qualify
         usdt.mint(promoter, 2000e18);
         vm.startPrank(promoter);
@@ -231,21 +231,21 @@ contract VyronXStakingV5Test is Test {
         staking.stake(3, 1100e18); // Elite
         vm.stopPrank();
 
-        // Investor stakes $1000 in Pool 0 (Starter), referred by promoter
+        // Investor stakes $100 in Growth (60d lock), referred by promoter
+        vm.prank(owner);
+        staking.setPoolActive(1, true); // Growth
         vm.startPrank(investor);
         staking.setReferrer(promoter);
-        staking.stake(0, 100e18); // Starter (max $100 now)
+        staking.stake(1, 100e18); // Growth ($50-$250)
         vm.stopPrank();
 
-        // Fast forward 100 days (yield: $100 * 0.0011 * 100 = $11 > $10 min)
-        vm.warp(block.timestamp + 100 days);
+        // Fast forward 50 days (yield: $100 * 0.0023 * 50 = $11.50 > $10 min; lock 60d still active)
+        vm.warp(block.timestamp + 50 days);
         vm.prank(investor);
         staking.claimDailyEarnings(0);
 
-        // Pool 0 rate: 0.11% daily = 11 bps
-        // Investor yield: $1000 * 0.0011 * 3 = $3.30 yield
-        // Promoter commission (Level 1): 7% of $3.30 = $0.231
-        assertGt(staking.totalReferralEarnings(promoter), 0, "MLM should pay even on non-Elite pool");
+        // V5: Growth yield pays NO MLM commission — unilevel is Elite-360 only
+        assertEq(staking.totalReferralEarnings(promoter), 0, "Non-Elite pool must NOT pay MLM");
     }
 
     /// @dev V4: Upline without Elite stake should NOT receive MLM
