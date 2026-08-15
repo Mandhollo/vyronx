@@ -244,7 +244,7 @@ export default function WhitepaperPage() {
               <motion.section variants={fadeUp} id="accelerator" className="scroll-mt-24">
                 <h2 className="text-2xl font-bold text-white mb-4">{t('wp.accelerator')}</h2>
                 <p className="text-beige leading-relaxed mb-4">
-                  Exclusive to the 360-day pool. Each referral&apos;s deposit adds <span className="text-gold font-bold">10% of their amount</span> to your accelerator. When accumulated referrals reach <span className="text-gold font-bold">100% of your stake</span>, you unlock early withdrawal of your earnings.
+                  Requires an active Elite (360-day) stake. Each referral&apos;s deposit — in <span className="text-gold font-bold">any pool</span> (Starter, Growth, Pro or Elite) — pays you <span className="text-gold font-bold">10% in USDT instantly</span> and adds 10% of their amount to your accelerator progress. When accumulated referrals reach <span className="text-gold font-bold">100% of your stake</span>, you unlock early withdrawal of your earnings.
                 </p>
                 <div className="rounded-xl bg-dark-card border border-gold/30 p-5 mb-4">
                   <div className="text-sm font-bold text-gold mb-2">12-Hour Grace Period</div>
@@ -282,7 +282,7 @@ export default function WhitepaperPage() {
                     </div>
                     <div>
                       <div className="text-gold font-bold mb-1">Qualification</div>
-                      <div className="text-beige-muted">Only participants with an <span className="text-gold">active Elite (360-day) stake</span> receive affiliate commissions. Downline members in any pool (Starter, Growth, Pro, Elite) generate commissions for their upline.</div>
+                      <div className="text-beige-muted">Requires an <span className="text-gold">active Elite (360-day) stake</span> to receive. Downline members in <span className="text-gold">any pool</span> (Starter, Growth, Pro, Elite) generate commissions for their upline.</div>
                     </div>
                     <div>
                       <div className="text-gold font-bold mb-1">Level Requirements</div>

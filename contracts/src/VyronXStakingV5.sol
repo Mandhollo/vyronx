@@ -198,9 +198,16 @@ contract VyronXStakingV5 is ReentrancyGuard {
         require(usdt.transferFrom(msg.sender, address(this), usdtAmount), "USDT transfer failed");
 
         uint256 amountToCollector = usdtAmount;
-        if (poolId == POOL_360_ID) {
+        // V5: accelerator instant commission (10% USDT) is triggered by a referral
+        // deposit in ANY pool (Starter/Growth/Pro/Elite) — the "enabled" requirement
+        // lives on the referrer side (accelerator progress requires an active Elite
+        // 360 stake, checked in _updateAccelerator / hasActivePool360).
+        {
             address ref = referrer[msg.sender];
-            if (ref != address(0)) {
+            // V5: instant accelerator commission requires the REFERRER to be
+            // 360-enabled (active Elite stake or voucher). The referral deposit
+            // itself can be in ANY pool.
+            if (ref != address(0) && hasActivePool360(ref)) {
                 uint256 commission = (usdtAmount * acceleratorCommBps) / 10000;
                 // V4: 4% fee on commission, split to 4 wallets
                 uint256 fee = (commission * commFeeBps) / 10000;
@@ -230,9 +237,13 @@ contract VyronXStakingV5 is ReentrancyGuard {
         totalStakedUsdt += usdtAmount;
         if (userStakes[msg.sender].length == 1) totalStakers++;
 
+        // V5: accelerator ENTRY belongs to the Elite 360 stake (that is what
+        // auto-liquidates); but referral deposits from ANY pool feed the upline's
+        // accelerator progress.
         if (poolId == POOL_360_ID) {
             _createAccelerator(msg.sender, userStakes[msg.sender].length - 1);
-
+        }
+        {
             address ref = referrer[msg.sender];
             if (ref != address(0)) _updateAccelerator(ref, usdtAmount);
         }
