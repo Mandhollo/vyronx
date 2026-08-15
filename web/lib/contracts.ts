@@ -4,16 +4,16 @@
 
 import VyronXTokenABI from './abi/VyronXToken.json';
 import VyronXPresaleABI from './abi/VyronXPresale.json';
-import VyronXStakingV4ABI from './abi/VyronXStakingV4.json';
+import VyronXStakingV5ABI from './abi/VyronXStakingV5.json';
 import PresaleReferralABI from './abi/PresaleReferral.json';
 import VyronXLotteryABI from './abi/VyronXLottery.json';
 import VyronXAuctionABI from './abi/VyronXAuction.json';
 
 export const TOKEN_ADDRESS = process.env.NEXT_PUBLIC_TOKEN_ADDRESS as `0x${string}`;
 export const PRESALE_ADDRESS = process.env.NEXT_PUBLIC_PRESALE_ADDRESS as `0x${string}`;
-export const STAKING_ADDRESS = '0xeAEAd8DAe5234Ef82B40F308006faB2c7FFF3A9A' as `0x${string}`; // Staking V4 (fixed) — hardcoded
-// Previous V4 (0x32fa) holds 432.4M VYR — needs to migrate to new V4 (0xeAEA)
-export const STAKING_V1_ADDRESS = '0x32fa9BFdD3b8BA0938148A8f0c2DA3C56395EDa6';
+export const STAKING_ADDRESS = '0x94E035f10e6FF280A2Cab45C3F1A2a6a68696541' as `0x${string}`; // Staking V5 (11 directs cap) — hardcoded
+// Previous V4 (0xeAEA) holds 432.4M VYR — needs to migrate to V5 (0x94E0)
+export const STAKING_V1_ADDRESS = '0xeAEAd8DAe5234Ef82B40F308006faB2c7FFF3A9A';
 export const USDT_ADDRESS = process.env.NEXT_PUBLIC_USDT_ADDRESS as `0x${string}`;
 export const PRESALE_REFERRAL_ADDRESS = (process.env.NEXT_PUBLIC_PRESALE_REFERRAL_ADDRESS || '0xcA7Df2522b08453715372EEc33b40aB499d9B86C') as `0x${string}`;
 export const LOTTERY_ADDRESS = (process.env.NEXT_PUBLIC_LOTTERY_ADDRESS || '0x22293B30effD86A99A173314914454CaD95AA992') as `0x${string}`;
@@ -22,7 +22,7 @@ export const AUCTION_ADDRESS = (process.env.NEXT_PUBLIC_AUCTION_ADDRESS || '0xDB
 
 export const TokenABI = VyronXTokenABI;
 export const PresaleABI = VyronXPresaleABI;
-export const StakingABI = VyronXStakingV4ABI;
+export const StakingABI = VyronXStakingV5ABI;
 export const ReferralABI = PresaleReferralABI;
 export const LotteryABI = VyronXLotteryABI;
 export const AuctionABI = VyronXAuctionABI;

@@ -1508,7 +1508,7 @@ function VoucherMigration({ pending, setPending }: { pending: string | null; set
     <motion.div variants={fadeUp} className="rounded-2xl border border-purple-500/40 bg-purple-500/5 p-6">
       <div className="flex items-center gap-2 mb-3">
         <Gift className="h-5 w-5 text-purple-400" />
-        <h3 className="text-base font-bold text-purple-400">Voucher Migration (V3 → V4)</h3>
+        <h3 className="text-base font-bold text-purple-400">Voucher Migration (V4 → V5)</h3>
       </div>
       <p className="text-xs text-beige-muted mb-4">
         Migrates all 7 vouchers from V3 with the full referral chain intact. Each voucher keeps its $1,100 value, Elite pool, MLM position, and accelerator entry. Users don&apos;t need to re-activate.
