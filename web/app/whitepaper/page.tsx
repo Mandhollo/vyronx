@@ -82,6 +82,23 @@ export default function WhitepaperPage() {
               <motion.p variants={fadeUp} className="mt-4 text-lg text-beige-muted">
                 {t('wp.subtitle')}
               </motion.p>
+              <motion.div variants={fadeUp} className="mt-6 flex flex-wrap gap-3">
+                {[
+                  { href: '/whitepaper/vyronx-whitepaper-en.pdf', label: 'English', flag: '🇺🇸' },
+                  { href: '/whitepaper/vyronx-whitepaper-pt.pdf', label: 'Português', flag: '🇧🇷' },
+                  { href: '/whitepaper/vyronx-whitepaper-es.pdf', label: 'Español', flag: '🇪🇸' },
+                ].map((f) => (
+                  <a
+                    key={f.href}
+                    href={f.href}
+                    download
+                    className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-bold rounded-xl bg-gradient-to-r from-gold-light to-gold-dark text-dark hover:shadow-lg hover:shadow-gold/40 transition-all"
+                  >
+                    <Download className="h-4 w-4" />
+                    {f.flag} {f.label}
+                  </a>
+                ))}
+              </motion.div>
             </motion.div>
 
             {/* Sections */}
