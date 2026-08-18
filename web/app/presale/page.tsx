@@ -96,8 +96,9 @@ export default function PresalePage() {
 
   const hasPresaleReferrer = presaleRefData && presaleRefData[0] !== '0x0000000000000000000000000000000000000000';
 
-  // Check URL for ?ref=VYR... code
-  const refCode = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('ref') : null;
+  // Check URL for ?ref=VYR... code — falls back to globally captured ref (localStorage)
+  const savedRef = typeof window !== 'undefined' ? (() => { try { const s = localStorage.getItem('vyronx-ref'); return s ? (JSON.parse(s) as { ref: string }).ref : null; } catch { return null; } })() : null;
+  const refCode = typeof window !== 'undefined' ? (new URLSearchParams(window.location.search).get('ref') || savedRef) : null;
   const validRefCode = refCode && (refCode.startsWith('0x') ? refCode.length === 42 : isReferralCode(refCode));
   const decodedRefAddress = validRefCode
     ? (refCode!.startsWith('0x') ? refCode! : decodeReferralCode(refCode!))
@@ -250,8 +251,35 @@ export default function PresalePage() {
         await switchChainAsync({ chainId: bsc.id });
         toast.loading('Buying VYR tokens...', { id: toastId });
       }
+      // Ensure referrer is registered BEFORE buying — if a ref code exists
+      // (URL or saved) but registration hasn't landed on-chain, register now.
+      let registeredNow = false;
+      if (!hasPresaleReferrer && decodedRefAddress) {
+        try {
+          await writeContractAsync({
+            address: PRESALE_REFERRAL_ADDRESS, abi: ReferralABI, functionName: 'setReferrer',
+            args: [decodedRefAddress as `0x${string}`],
+          });
+          registeredNow = true;
+          // wait a beat for the registry to index before buying via wrapper
+          await new Promise(r => setTimeout(r, 3000));
+          // ensure the wrapper has USDT allowance (approval may have gone to Presale)
+          const wrapperAllowance = allowanceWrapper ?? BigInt(0);
+          if (wrapperAllowance < parseUnits(amount, 18)) {
+            toast.loading('Approving USDT for referral purchase...', { id: toastId });
+            const approveTx = await writeContractAsync({
+              address: USDT_ADDRESS, abi: ERC20_ABI, functionName: 'approve',
+              args: [PRESALE_REFERRAL_ADDRESS, MAX_UINT256],
+            });
+            await publicClient.waitForTransactionReceipt({ hash: approveTx });
+            refetchAllowanceWrapper?.();
+          }
+        } catch {
+          // registration reverted (e.g. already set on-chain) — proceed with buy
+        }
+      }
       // If buyer has a referrer registered → buy through wrapper (gets 10% bonus for referrer)
-      if (hasPresaleReferrer) {
+      if (hasPresaleReferrer || registeredNow) {
         await writeContractAsync({
           address: PRESALE_REFERRAL_ADDRESS,
           abi: ReferralABI,

@@ -4,6 +4,7 @@ import "./globals.css";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { Web3Provider } from "@/components/web3/Web3Provider";
+import RefCapture from "@/components/web3/RefCapture";
 import { Toaster } from "react-hot-toast";
 import CoinConfetti from "@/components/effects/CoinConfetti";
 import { ScrollProgress, CustomCursor } from "@/components/fx/CursorFX";
@@ -60,6 +61,7 @@ export default function RootLayout({
         <CustomCursor />
         <I18nProvider>
         <Web3Provider>
+          <RefCapture />
           <div className="flex min-h-screen flex-col bg-background text-foreground">
             <Header />
             <main className="flex-1">{children}</main>
