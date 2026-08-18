@@ -250,7 +250,7 @@ export default function AdminPage() {
     const newMkt = newMktAddr.trim();
     if (!/^0x[a-fA-F0-9]{40}$/.test(newMkt)) return toast.error('Paste the NEW Marketing wallet (0x...)');
     if (!feeWallet1 || !feeWallet2 || !feeWallet3 || !feeWallet4 ||
-        !pMarketing || !pLp || !pBuyback || !pTech || !pDev1 || !pDev2 || !pDev3 || !pDev4 ||
+        !pDev1 || !pDev2 || !pDev3 || !pDev4 ||
         !sComm1 || !sComm2 || !sComm3 || !sComm4 ||
         !lotFeeWallets || !lotBuybackW ||
         !aucW1 || !aucW2 || !aucW3 || !aucW4) {
@@ -276,32 +276,26 @@ export default function AdminPage() {
         writeContractAsync({ address: PRESALE_ADDRESS, abi: PresaleABI, functionName: 'setDevWallets',
           args: [pDev1, pDev2, pDev3, mkt], chainId: bsc.id }) });
 
-    // 3) Presale distribution Marketing (10% of raised USDT)
-    if (pMarketing.toLowerCase() !== mkt.toLowerCase())
-      steps.push({ label: 'Presale (marketing 10%)', addr: PRESALE_ADDRESS, do: () =>
-        writeContractAsync({ address: PRESALE_ADDRESS, abi: PresaleABI, functionName: 'setDistributionWallets',
-          args: [mkt, pLp, pBuyback, pTech], chainId: bsc.id }) });
-
-    // 4) Staking V5 withdrawal commission wallet 4
+    // 3) Staking V5 withdrawal commission wallet 4
     if (sComm4.toLowerCase() !== mkt.toLowerCase())
       steps.push({ label: 'Staking (withdrawal fee)', addr: STAKING_ADDRESS, do: () =>
         writeContractAsync({ address: STAKING_ADDRESS, abi: StakingABI, functionName: 'setCommissionFeeWallets',
           args: [[sComm1, sComm2, sComm3, mkt] as [string, string, string, string]], chainId: bsc.id }) });
 
-    // 5) Lottery fee wallet 4 (keeps buyback wallet as-is)
+    // 4) Lottery fee wallet 4 (keeps buyback wallet as-is)
     if (lotFeeWallets[3].toLowerCase() !== mkt.toLowerCase())
       steps.push({ label: 'Lottery (prize split)', addr: LOTTERY_ADDRESS, do: () =>
         writeContractAsync({ address: LOTTERY_ADDRESS, abi: LotteryABI, functionName: 'setFeeWallets',
           args: [[lotFeeWallets[0], lotFeeWallets[1], lotFeeWallets[2], mkt] as [string, string, string, string], lotBuybackW], chainId: bsc.id }) });
 
-    // 6) Auction fee wallet 4
+    // 5) Auction fee wallet 4
     if (aucW4.toLowerCase() !== mkt.toLowerCase())
       steps.push({ label: 'Auction (revenue split)', addr: AUCTION_ADDRESS, do: AuctionABI && (() =>
         writeContractAsync({ address: AUCTION_ADDRESS, abi: AuctionABI, functionName: 'setFeeWallets',
           args: [[aucW1, aucW2, aucW3, mkt] as [string, string, string, string]], chainId: bsc.id })) });
 
     if (steps.length === 0) {
-      toast.success('Marketing wallet is already up to date in all 6 places!');
+      toast.success('Marketing wallet is already up to date in all 5 places!');
       setReplaceMktStep(null);
       return;
     }
@@ -479,8 +473,8 @@ export default function AdminPage() {
                 <UserRoundPen className="w-5 h-5 text-gold" /> Replace Team Member Wallet
               </h3>
               <p className="text-xs text-beige-muted mb-4">
-                Team member left? Paste the NEW member's wallet once — this updates the Marketing wallet in all 6 places
-                (Token sell tax, Presale dev, Presale marketing, Staking withdrawal fee, Lottery, Auction) in one go.
+                Team member left? Paste the NEW member's wallet once — this updates the Marketing wallet in all 5 places
+                (Token sell tax, Presale dev, Staking withdrawal fee, Lottery, Auction) in one go.
                 Each update is a separate blockchain transaction: approve each one in your wallet.
               </p>
               <div className="flex flex-col sm:flex-row gap-3 mb-3">
