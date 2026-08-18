@@ -488,8 +488,9 @@ export default function AdminPage() {
                   value={newMktAddr}
                   onChange={(e) => setNewMktAddr(e.target.value)}
                   className="flex-1 bg-dark-elevated border border-dark-border rounded-lg px-4 py-3 text-sm text-white font-mono focus:outline-none focus:border-gold/60" />
-                <ActionBtn onClick={handleReplaceMarketing} disabled={pending !== null || !!replaceMktStep}
-                  loading={!!replaceMktStep}
+                <ActionBtn onClick={handleReplaceMarketing}
+                  disabled={pending !== null || (!!replaceMktStep && replaceMktStep.label !== 'done' && !replaceMktStep.label.endsWith('failed'))}
+                  loading={!!replaceMktStep && replaceMktStep.label !== 'done' && !replaceMktStep.label.endsWith('failed')}
                   icon={UserRoundPen} label={replaceMktStep ? `Updating ${replaceMktStep.done}/${replaceMktStep.total}...` : 'Replace Marketing Wallet'} variant="gold" />
               </div>
               {replaceMktStep && (
