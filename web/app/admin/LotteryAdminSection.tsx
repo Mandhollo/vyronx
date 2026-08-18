@@ -6,6 +6,7 @@ import { useAccount, useReadContract, useSwitchChain } from 'wagmi';
 import {
   Gift, Loader2, Play, Power, DollarSign, Percent, Ticket,
   Trophy, Check, AlertCircle, Settings, Sparkles, Tag, Flame,
+  Image as ImageIcon, Upload, Trash2, Wallet,
 } from 'lucide-react';
 import { LOTTERY_ADDRESS, LotteryABI, TOKEN_ADDRESS, TokenABI } from '@/lib/contracts';
 import { formatUnits, parseUnits } from 'viem';
@@ -71,6 +72,9 @@ export default function LotteryAdminSection({ writeContractAsync, pending, setPe
   const [w3Bps, setW3Bps] = useState('400');
   const [bbBps, setBbBps] = useState('2000');
   const [wlBps, setWlBps] = useState('2000');
+  // Fee wallet addresses (4) + buyback wallet — editable
+  const [lotFeeWallets, setLotFeeWallets] = useState<[string, string, string, string]>(['', '', '', '']);
+  const [lotBuyback, setLotBuyback] = useState('');
 
   // Reads: 4 current rounds (inlined to respect Rules of Hooks)
   const r0 = useReadContract({
@@ -102,15 +106,43 @@ export default function LotteryAdminSection({ writeContractAsync, pending, setPe
     functionName: 'getTicketPrices', chainId: bsc.id,
   }) as { data: readonly [bigint, bigint, bigint, bigint] | undefined };
 
+  // Read lottery images from chain
+  const { data: imageData, refetch: refetchImages } = useReadContract({
+    address: LOTTERY_ADDRESS as `0x${string}`, abi: LotteryABI,
+    functionName: 'getLotteryImages', chainId: bsc.id,
+  }) as { data: readonly [string, string, string, string] | undefined; refetch: () => void };
+
   const { data: curW1 } = useReadContract({ address: LOTTERY_ADDRESS as `0x${string}`, abi: LotteryABI, functionName: 'winner1ShareBps', chainId: bsc.id }) as { data: bigint | undefined };
   const { data: curW2 } = useReadContract({ address: LOTTERY_ADDRESS as `0x${string}`, abi: LotteryABI, functionName: 'winner2ShareBps', chainId: bsc.id }) as { data: bigint | undefined };
   const { data: curW3 } = useReadContract({ address: LOTTERY_ADDRESS as `0x${string}`, abi: LotteryABI, functionName: 'winner3ShareBps', chainId: bsc.id }) as { data: bigint | undefined };
   const { data: curBb } = useReadContract({ address: LOTTERY_ADDRESS as `0x${string}`, abi: LotteryABI, functionName: 'buybackShareBps', chainId: bsc.id }) as { data: bigint | undefined };
   const { data: curWl } = useReadContract({ address: LOTTERY_ADDRESS as `0x${string}`, abi: LotteryABI, functionName: 'walletShareBps', chainId: bsc.id }) as { data: bigint | undefined };
 
-  const { data: totalRounds } = useReadContract({
+  // Current fee wallets on-chain (array of 4) + buyback wallet
+  const { data: curFeeWallets } = useReadContract({ address: LOTTERY_ADDRESS as `0x${string}`, abi: LotteryABI, functionName: 'getFeeWallets', chainId: bsc.id }) as { data: readonly [string, string, string, string] | undefined };
+  const { data: curLotBuyback } = useReadContract({ address: LOTTERY_ADDRESS as `0x${string}`, abi: LotteryABI, functionName: 'buybackWallet', chainId: bsc.id }) as { data: string | undefined };
+
+  const handleSetLotFeeWallets = async () => {
+    const ws = lotFeeWallets.map(w => w.trim()) as [string, string, string, string];
+    const bb = lotBuyback.trim();
+    if (!ws.every(w => /^0x[a-fA-F0-9]{40}$/.test(w))) return toast.error('Fill ALL 4 fee wallets (0x...)');
+    if (!/^0x[a-fA-F0-9]{40}$/.test(bb)) return toast.error('Fill the buyback wallet (0x...)');
+    if (!onCorrectChain) { await switchChainAsync?.({ chainId: bsc.id }); return; }
+    setPending('Update Lottery Wallets');
+    try {
+      const tx = await writeContractAsync({
+        address: LOTTERY_ADDRESS as `0x${string}`, abi: LotteryABI,
+        functionName: 'setFeeWallets', args: [ws, bb], chainId: bsc.id,
+      });
+      await waitForTx(tx);
+      toast.success('Lottery fee wallets updated!');
+    } catch (e: any) { toast.error(e?.shortMessage || 'Failed'); }
+    finally { setPending(null); }
+  };
+
+  const { data: totalRounds, refetch: refetchTotalRounds } = useReadContract({
     address: LOTTERY_ADDRESS as `0x${string}`, abi: LotteryABI, functionName: 'totalRoundsCompleted', chainId: bsc.id,
-  }) as { data: bigint | undefined };
+  }) as { data: bigint | undefined; refetch: () => void };
 
   const fmt = (val: bigint | undefined) => val ? parseFloat(formatUnits(val, 18)).toLocaleString('en-US', { maximumFractionDigits: 2 }) : '0';
 
@@ -229,6 +261,12 @@ export default function LotteryAdminSection({ writeContractAsync, pending, setPe
   };
 
   const totalSum = parseInt(wlBps) + parseInt(bbBps) + parseInt(w1Bps) + parseInt(w2Bps) + parseInt(w3Bps);
+
+  const refetchAll = () => {
+    roundReads.forEach((r) => r.refetch());
+    refetchTotalRounds();
+    refetchImages();
+  };
 
   return (
     <>
@@ -375,6 +413,17 @@ export default function LotteryAdminSection({ writeContractAsync, pending, setPe
                   </button>
                 </div>
               </div>
+
+              {/* Image upload — compressed to data-URI and stored on-chain */}
+              <LotteryImageUploader
+                lotteryType={meta.type}
+                label={meta.label}
+                currentImage={imageData?.[meta.type] ?? ''}
+                onSaved={refetchAll}
+                writeContractAsync={writeContractAsync}
+                pending={pending}
+                setPending={setPending}
+              />
             </div>
           </motion.div>
         );
@@ -416,6 +465,49 @@ export default function LotteryAdminSection({ writeContractAsync, pending, setPe
           className="px-6 py-2.5 rounded-xl bg-dark-elevated text-white font-bold hover:bg-dark-border disabled:opacity-50 flex items-center gap-2">
           {pending === 'Set Distribution' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
           Update Distribution
+        </button>
+      </motion.div>
+
+      {/* Fee Wallet Addresses — 4 recipients + buyback */}
+      <motion.div variants={fadeUp} className="rounded-2xl border border-dark-border bg-dark-card/60 p-6">
+        <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+          <Wallet className="w-5 h-5 text-gold" /> Fee Wallet Addresses
+        </h3>
+        <p className="text-xs text-beige/50 mb-4">The "4 Wallets" share above is split equally between these addresses. All 5 fields required to update.</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-3">
+          {(['Wallet 1', 'Wallet 2', 'Wallet 3', 'Wallet 4'] as const).map((lbl, i) => (
+            <div key={lbl}>
+              <div className="text-xs text-beige/50 mb-1">{lbl} — Current</div>
+              <code className="text-xs text-gold break-all">{curFeeWallets?.[i] || '...'}</code>
+            </div>
+          ))}
+          <div>
+            <div className="text-xs text-beige/50 mb-1">Buyback — Current</div>
+            <code className="text-xs text-gold break-all">{curLotBuyback || '...'}</code>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+          {([0, 1, 2, 3] as const).map((i) => (
+            <div key={i}>
+              <label className="block text-xs text-beige/50 mb-1">New Wallet {i + 1}</label>
+              <input type="text" placeholder="0x..."
+                value={lotFeeWallets[i]}
+                onChange={(e) => setLotFeeWallets(prev => { const n = [...prev] as [string, string, string, string]; n[i] = e.target.value; return n; })}
+                className="w-full h-10 rounded-lg bg-dark-elevated border border-dark-border text-white px-3 text-xs font-mono focus:border-gold/50 outline-none" />
+            </div>
+          ))}
+          <div>
+            <label className="block text-xs text-beige/50 mb-1">New Buyback Wallet</label>
+            <input type="text" placeholder="0x..."
+              value={lotBuyback}
+              onChange={(e) => setLotBuyback(e.target.value)}
+              className="w-full h-10 rounded-lg bg-dark-elevated border border-dark-border text-white px-3 text-xs font-mono focus:border-gold/50 outline-none" />
+          </div>
+        </div>
+        <button onClick={handleSetLotFeeWallets} disabled={pending !== null}
+          className="px-6 py-2.5 rounded-xl bg-gold/10 text-gold border border-gold/30 font-bold hover:bg-gold/20 disabled:opacity-50 flex items-center gap-2">
+          {pending === 'Update Lottery Wallets' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+          Update Wallets (All 5)
         </button>
       </motion.div>
 
@@ -656,5 +748,150 @@ function FeeExclusionSection({ writeContractAsync, pending, setPending }: {
         </div>
       </div>
     </motion.div>
+  );
+}
+
+// ════════════════════════════════════════════════════
+// Lottery Image Uploader — compresses in browser, stores data-URI on-chain
+// ════════════════════════════════════════════════════
+
+const IMG_MAX_BYTES = 96 * 1024; // 96KB contract limit (131072 chars ≈ 96KB binary)
+
+async function compressImage(file: File): Promise<string> {
+  // Load file
+  const dataUrl = await new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+  // Load image
+  const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => resolve(image);
+    image.onerror = reject;
+    image.src = dataUrl;
+  });
+  // Downscale loop: 640 → 512 → 420 → 320 px, JPEG quality 0.82 → lower
+  const sizes = [640, 512, 420, 320];
+  const qualities = [0.82, 0.75, 0.68, 0.6];
+  for (let i = 0; i < sizes.length; i++) {
+    const canvas = document.createElement('canvas');
+    const scale = Math.min(1, sizes[i] / Math.max(img.width, img.height));
+    canvas.width = Math.max(1, Math.round(img.width * scale));
+    canvas.height = Math.max(1, Math.round(img.height * scale));
+    const ctx = canvas.getContext('2d');
+    if (!ctx) break;
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    const out = canvas.toDataURL('image/jpeg', qualities[i]);
+    if (out.length <= IMG_MAX_BYTES) return out;
+  }
+  throw new Error('Imagem muito grande mesmo após compressão. Use uma imagem menor.');
+}
+
+function LotteryImageUploader({ lotteryType, label, currentImage, onSaved, writeContractAsync, pending, setPending }: {
+  lotteryType: number;
+  label: string;
+  currentImage: string;
+  onSaved: () => void;
+  writeContractAsync: (config: any) => Promise<`0x${string}`>;
+  pending: string | null;
+  setPending: (v: string | null) => void;
+}) {
+  const [preview, setPreview] = useState<string | null>(null);
+  const [compressed, setCompressed] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  const shown = preview ?? (currentImage || null);
+
+  const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) { toast.error('Arquivo não é imagem'); return; }
+    setBusy(true);
+    try {
+      const dataUri = await compressImage(file);
+      setCompressed(dataUri);
+      setPreview(dataUri);
+      toast.success('Imagem pronta! Clique em SALVAR para enviar ao blockchain.');
+    } catch (err: any) {
+      toast.error(err?.message || 'Falha ao comprimir imagem');
+      setPreview(null);
+      setCompressed(null);
+    } finally {
+      setBusy(false);
+      e.target.value = '';
+    }
+  };
+
+  const handleSave = async () => {
+    if (!compressed) return;
+    setPending(`Imagem ${label}`);
+    try {
+      const tx = await writeContractAsync({
+        address: LOTTERY_ADDRESS as `0x${string}`, abi: LotteryABI,
+        functionName: 'setLotteryImage', args: [lotteryType, compressed], chainId: bsc.id,
+      });
+      await waitForTx(tx);
+      toast.success(`Imagem da ${label} salva no blockchain!`);
+      setPreview(null);
+      setCompressed(null);
+      onSaved();
+    } catch (e: any) { toast.error(e?.shortMessage || 'Falha ao salvar'); }
+    finally { setPending(null); }
+  };
+
+  const handleClear = async () => {
+    setPending(`Imagem ${label}`);
+    try {
+      const tx = await writeContractAsync({
+        address: LOTTERY_ADDRESS as `0x${string}`, abi: LotteryABI,
+        functionName: 'setLotteryImage', args: [lotteryType, ''], chainId: bsc.id,
+      });
+      await waitForTx(tx);
+      toast.success(`Imagem da ${label} removida`);
+      setPreview(null);
+      setCompressed(null);
+      onSaved();
+    } catch (e: any) { toast.error(e?.shortMessage || 'Falha ao remover'); }
+    finally { setPending(null); }
+  };
+
+  return (
+    <div className="pt-2 border-t border-dark-border mt-2">
+      <div className="text-xs text-beige/50 mb-2">Imagem da loteria (aparece no site):</div>
+      <div className="flex gap-3 items-start">
+        {/* Preview */}
+        <div className="w-20 h-20 rounded-lg border border-dark-border bg-dark-elevated overflow-hidden flex items-center justify-center shrink-0">
+          {shown ? (
+            <img src={shown} alt={`${label} image`} className="w-full h-full object-cover" />
+          ) : (
+            <ImageIcon className="w-6 h-6 text-beige/30" />
+          )}
+        </div>
+        {/* Actions */}
+        <div className="flex-1 flex flex-col gap-2">
+          <label className={`px-3 py-2 rounded-lg bg-dark-elevated border border-dark-border text-white text-xs font-semibold hover:bg-dark-border cursor-pointer text-center flex items-center justify-center gap-1.5 ${busy || pending ? 'opacity-50 pointer-events-none' : ''}`}>
+            {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
+            {busy ? 'Comprimindo...' : '📤 Escolher imagem'}
+            <input type="file" accept="image/*" className="hidden" onChange={handleFile} />
+          </label>
+          {compressed && (
+            <button onClick={handleSave} disabled={pending !== null}
+              className="px-3 py-2 rounded-lg bg-gradient-to-r from-gold to-gold-dark text-black font-bold text-xs hover:opacity-90 disabled:opacity-50 flex items-center justify-center gap-1.5">
+              {pending === `Imagem ${label}` ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+              SALVAR NO BLOCKCHAIN
+            </button>
+          )}
+          {currentImage && !compressed && (
+            <button onClick={handleClear} disabled={pending !== null}
+              className="px-3 py-2 rounded-lg bg-red-600/10 text-red-400 border border-red-500/30 text-xs font-semibold hover:bg-red-600/20 disabled:opacity-50 flex items-center justify-center gap-1.5">
+              <Trash2 className="w-3.5 h-3.5" />
+              Remover imagem
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }

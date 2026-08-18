@@ -76,9 +76,24 @@ export default function AuctionAdminSection({ writeContractAsync, pending, setPe
   const [vyBonusInput, setVyBonusInput] = useState('10');
   const [burnShareInput, setBurnShareInput] = useState('100');
   const [splitInputs, setSplitInputs] = useState({ bb: '40', pool: '25', wl: '20', mlm: '15' });
+  // Fee wallet addresses (4) — editable
+  const [aucFeeWallets, setAucFeeWallets] = useState<[string, string, string, string]>(['', '', '', '']);
 
   // ── Reads (config + stats) ──
   const cfg = (name: string) => useReadContract({ address: AUCTION_ADDRESS as `0x${string}`, abi: AuctionABI, functionName: name, chainId: bsc.id, query: { enabled: !NOT_DEPLOYED  }}) as { data: any };
+  const aucW1 = useReadContract({ address: AUCTION_ADDRESS as `0x${string}`, abi: AuctionABI, functionName: 'feeWallets', args: [BigInt(0)], chainId: bsc.id, query: { enabled: !NOT_DEPLOYED } }) as { data: string | undefined };
+  const aucW2 = useReadContract({ address: AUCTION_ADDRESS as `0x${string}`, abi: AuctionABI, functionName: 'feeWallets', args: [BigInt(1)], chainId: bsc.id, query: { enabled: !NOT_DEPLOYED } }) as { data: string | undefined };
+  const aucW3 = useReadContract({ address: AUCTION_ADDRESS as `0x${string}`, abi: AuctionABI, functionName: 'feeWallets', args: [BigInt(2)], chainId: bsc.id, query: { enabled: !NOT_DEPLOYED } }) as { data: string | undefined };
+  const aucW4 = useReadContract({ address: AUCTION_ADDRESS as `0x${string}`, abi: AuctionABI, functionName: 'feeWallets', args: [BigInt(3)], chainId: bsc.id, query: { enabled: !NOT_DEPLOYED } }) as { data: string | undefined };
+
+  const handleSetAucFeeWallets = async () => {
+    const ws = aucFeeWallets.map(w => w.trim()) as [string, string, string, string];
+    if (!ws.every(w => /^0x[a-fA-F0-9]{40}$/.test(w))) return toast.error('Fill ALL 4 fee wallets (0x...)');
+    await doTx('Set Auction Wallets', () => writeContractAsync({
+      address: AUCTION_ADDRESS as `0x${string}`, abi: AuctionABI,
+      functionName: 'setFeeWallets', args: [ws], chainId: bsc.id,
+    }));
+  };
 
   const { data: bidPrice } = cfg('bidPrice');
   const { data: inc } = cfg('priceIncrement');
@@ -476,6 +491,38 @@ export default function AuctionAdminSection({ writeContractAsync, pending, setPe
           className="px-6 py-2.5 rounded-xl bg-dark-elevated text-white font-bold hover:bg-dark-border disabled:opacity-50 flex items-center gap-2">
           {pending === 'Set Splits' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
           Update Split
+        </button>
+      </motion.div>
+
+      {/* Fee Wallet Addresses — 4 recipients */}
+      <motion.div variants={fadeUp} className="rounded-2xl border border-dark-border bg-dark-card/60 p-6">
+        <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+          <Wallet className="w-5 h-5 text-gold" /> Fee Wallet Addresses
+        </h3>
+        <p className="text-xs text-beige/50 mb-4">The "4 Wallets" share above is split equally between these addresses. All 4 fields required to update.</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-3">
+          {([aucW1?.data, aucW2?.data, aucW3?.data, aucW4?.data] as (string | undefined)[]).map((w, i) => (
+            <div key={i}>
+              <div className="text-xs text-beige/50 mb-1">Wallet {i + 1} — Current</div>
+              <code className="text-xs text-gold break-all">{w || '...'}</code>
+            </div>
+          ))}
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+          {([0, 1, 2, 3] as const).map((i) => (
+            <div key={i}>
+              <label className="block text-xs text-beige/50 mb-1">New Wallet {i + 1}</label>
+              <input type="text" placeholder="0x..."
+                value={aucFeeWallets[i]}
+                onChange={(e) => setAucFeeWallets(prev => { const n = [...prev] as [string, string, string, string]; n[i] = e.target.value; return n; })}
+                className="w-full h-10 rounded-lg bg-dark-elevated border border-dark-border text-white px-3 text-xs font-mono focus:border-gold/50 outline-none" />
+            </div>
+          ))}
+        </div>
+        <button onClick={handleSetAucFeeWallets} disabled={pending !== null}
+          className="px-6 py-2.5 rounded-xl bg-gold/10 text-gold border border-gold/30 font-bold hover:bg-gold/20 disabled:opacity-50 flex items-center gap-2">
+          {pending === 'Set Auction Wallets' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+          Update Wallets (All 4)
         </button>
       </motion.div>
 

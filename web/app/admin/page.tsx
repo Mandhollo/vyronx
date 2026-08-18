@@ -76,6 +76,12 @@ export default function AdminPage() {
   const { data: pDev3 } = useReadContract({ address: PRESALE_ADDRESS, abi: PresaleABI, functionName: 'devWallet3', chainId: bsc.id }) as { data: string | undefined };
   const { data: pDev4 } = useReadContract({ address: PRESALE_ADDRESS, abi: PresaleABI, functionName: 'devWallet4', chainId: bsc.id }) as { data: string | undefined };
 
+  // Staking V5 commission wallets (4% withdrawal fee → 4×25% USDT)
+  const { data: sComm1 } = useReadContract({ address: STAKING_ADDRESS, abi: StakingABI, functionName: 'commissionFeeWallets', args: [BigInt(0)], chainId: bsc.id }) as { data: string | undefined };
+  const { data: sComm2 } = useReadContract({ address: STAKING_ADDRESS, abi: StakingABI, functionName: 'commissionFeeWallets', args: [BigInt(1)], chainId: bsc.id }) as { data: string | undefined };
+  const { data: sComm3 } = useReadContract({ address: STAKING_ADDRESS, abi: StakingABI, functionName: 'commissionFeeWallets', args: [BigInt(2)], chainId: bsc.id }) as { data: string | undefined };
+  const { data: sComm4 } = useReadContract({ address: STAKING_ADDRESS, abi: StakingABI, functionName: 'commissionFeeWallets', args: [BigInt(3)], chainId: bsc.id }) as { data: string | undefined };
+
   const { data: maxWallet } = useReadContract({
     address: TOKEN_ADDRESS, abi: TokenABI, functionName: 'maxWalletAmount', chainId: bsc.id,
   }) as { data: bigint | undefined };
@@ -141,6 +147,7 @@ export default function AdminPage() {
   // Presale wallet inputs — distribution (Marketing/LP/Buyback/Tech) and dev (4×10%)
   const [newDistWallets, setNewDistWallets] = useState<[string, string, string, string]>(['', '', '', '']);
   const [newDevWallets, setNewDevWallets] = useState<[string, string, string, string]>(['', '', '', '']);
+  const [newCommWallets, setNewCommWallets] = useState<[string, string, string, string]>(['', '', '', '']);
   const [priceInput, setPriceInput] = useState('');
   const [poolRates, setPoolRates] = useState<Record<number, string>>({});
   const [poolLocks, setPoolLocks] = useState<Record<number, string>>({});
@@ -211,6 +218,16 @@ export default function AdminPage() {
     return exec('Update Presale Dev Wallets', () =>
       writeContractAsync({ address: PRESALE_ADDRESS, abi: PresaleABI, functionName: 'setDevWallets',
         args: [w1.trim(), w2.trim(), w3.trim(), w4.trim()] as [string, string, string, string], chainId: bsc.id })
+    );
+  };
+
+  const handleSetCommWallets = () => {
+    const [w1, w2, w3, w4] = newCommWallets;
+    const allFilled = [w1, w2, w3, w4].every(w => /^0x[a-fA-F0-9]{40}$/.test(w.trim()));
+    if (!allFilled) return toast.error('Fill ALL 4 commission wallet addresses');
+    return exec('Update Commission Wallets', () =>
+      writeContractAsync({ address: STAKING_ADDRESS, abi: StakingABI, functionName: 'setCommissionFeeWallets',
+        args: [[w1.trim(), w2.trim(), w3.trim(), w4.trim()] as [string, string, string, string]], chainId: bsc.id })
     );
   };
 
@@ -853,6 +870,33 @@ export default function AdminPage() {
                 </motion.div>
               );
             })}
+
+            {/* Withdrawal Commission Wallets — 4 recipients of the 4% withdrawal fee (USDT, split 25% each) */}
+            <motion.div variants={fadeUp} className="rounded-2xl glass-card p-6">
+              <h3 className="text-lg font-bold text-white mb-1">Withdrawal Commission Wallets (Staking V5)</h3>
+              <p className="text-xs text-beige-muted mb-4">The 4% withdrawal commission is paid in USDT and split equally between these 4 wallets (25% each).</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-3">
+                {([sComm1, sComm2, sComm3, sComm4] as (string | undefined)[]).map((w, i) => (
+                  <div key={i} className="rounded-xl bg-dark-elevated p-3">
+                    <div className="text-xs text-beige-muted mb-1">Wallet {i + 1} — Current</div>
+                    <code className="text-xs text-gold break-all">{w || '...'}</code>
+                  </div>
+                ))}
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+                {([0, 1, 2, 3] as const).map((i) => (
+                  <div key={i}>
+                    <label className="text-xs text-beige-muted block mb-1">New Wallet {i + 1}</label>
+                    <input type="text" placeholder="0x..."
+                      value={newCommWallets[i]}
+                      onChange={(e) => setNewCommWallets(prev => { const n = [...prev] as [string, string, string, string]; n[i] = e.target.value; return n; })}
+                      className="w-full bg-dark-elevated border border-dark-border rounded-lg px-3 py-2 text-xs text-white font-mono focus:outline-none focus:border-gold/50" />
+                  </div>
+                ))}
+              </div>
+              <ActionBtn onClick={handleSetCommWallets} disabled={pending === 'Update Commission Wallets'} loading={pending === 'Update Commission Wallets'}
+                icon={Banknote} label="Update Commission Wallets (All 4)" variant="green" />
+            </motion.div>
           </motion.div>
         )}
 
