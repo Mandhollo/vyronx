@@ -66,6 +66,16 @@ export default function AdminPage() {
   const { data: feeWallet3 } = useReadContract({ address: TOKEN_ADDRESS, abi: TokenABI, functionName: 'sellFeeWallet3', chainId: bsc.id }) as { data: string | undefined };
   const { data: feeWallet4 } = useReadContract({ address: TOKEN_ADDRESS, abi: TokenABI, functionName: 'sellFeeWallet4', chainId: bsc.id }) as { data: string | undefined };
 
+  // Presale distribution wallets (Marketing 10% / LP 15% / Buyback 15% / Tech 20%) + Dev wallets (4×10%)
+  const { data: pMarketing } = useReadContract({ address: PRESALE_ADDRESS, abi: PresaleABI, functionName: 'marketingWallet', chainId: bsc.id }) as { data: string | undefined };
+  const { data: pLp } = useReadContract({ address: PRESALE_ADDRESS, abi: PresaleABI, functionName: 'lpWallet', chainId: bsc.id }) as { data: string | undefined };
+  const { data: pBuyback } = useReadContract({ address: PRESALE_ADDRESS, abi: PresaleABI, functionName: 'buybackWallet', chainId: bsc.id }) as { data: string | undefined };
+  const { data: pTech } = useReadContract({ address: PRESALE_ADDRESS, abi: PresaleABI, functionName: 'techWallet', chainId: bsc.id }) as { data: string | undefined };
+  const { data: pDev1 } = useReadContract({ address: PRESALE_ADDRESS, abi: PresaleABI, functionName: 'devWallet1', chainId: bsc.id }) as { data: string | undefined };
+  const { data: pDev2 } = useReadContract({ address: PRESALE_ADDRESS, abi: PresaleABI, functionName: 'devWallet2', chainId: bsc.id }) as { data: string | undefined };
+  const { data: pDev3 } = useReadContract({ address: PRESALE_ADDRESS, abi: PresaleABI, functionName: 'devWallet3', chainId: bsc.id }) as { data: string | undefined };
+  const { data: pDev4 } = useReadContract({ address: PRESALE_ADDRESS, abi: PresaleABI, functionName: 'devWallet4', chainId: bsc.id }) as { data: string | undefined };
+
   const { data: maxWallet } = useReadContract({
     address: TOKEN_ADDRESS, abi: TokenABI, functionName: 'maxWalletAmount', chainId: bsc.id,
   }) as { data: bigint | undefined };
@@ -128,6 +138,9 @@ export default function AdminPage() {
   const [sellW3, setSellW3] = useState('2');
   const [sellW4, setSellW4] = useState('2');
   const [newFeeWallets, setNewFeeWallets] = useState<[string, string, string, string]>(['', '', '', '']);
+  // Presale wallet inputs — distribution (Marketing/LP/Buyback/Tech) and dev (4×10%)
+  const [newDistWallets, setNewDistWallets] = useState<[string, string, string, string]>(['', '', '', '']);
+  const [newDevWallets, setNewDevWallets] = useState<[string, string, string, string]>(['', '', '', '']);
   const [priceInput, setPriceInput] = useState('');
   const [poolRates, setPoolRates] = useState<Record<number, string>>({});
   const [poolLocks, setPoolLocks] = useState<Record<number, string>>({});
@@ -177,6 +190,26 @@ export default function AdminPage() {
     if (!allFilled) return toast.error('Fill ALL 4 wallet addresses (0x...)');
     return exec('Update Fee Wallets', () =>
       writeContractAsync({ address: TOKEN_ADDRESS, abi: TokenABI, functionName: 'setSellFeeWallets',
+        args: [w1.trim(), w2.trim(), w3.trim(), w4.trim()] as [string, string, string, string], chainId: bsc.id })
+    );
+  };
+
+  const handleSetDistWallets = () => {
+    const [w1, w2, w3, w4] = newDistWallets;
+    const allFilled = [w1, w2, w3, w4].every(w => /^0x[a-fA-F0-9]{40}$/.test(w.trim()));
+    if (!allFilled) return toast.error('Fill ALL 4 addresses (Marketing, LP, Buyback, Tech)');
+    return exec('Update Presale Distribution Wallets', () =>
+      writeContractAsync({ address: PRESALE_ADDRESS, abi: PresaleABI, functionName: 'setDistributionWallets',
+        args: [w1.trim(), w2.trim(), w3.trim(), w4.trim()] as [string, string, string, string], chainId: bsc.id })
+    );
+  };
+
+  const handleSetDevWallets = () => {
+    const [w1, w2, w3, w4] = newDevWallets;
+    const allFilled = [w1, w2, w3, w4].every(w => /^0x[a-fA-F0-9]{40}$/.test(w.trim()));
+    if (!allFilled) return toast.error('Fill ALL 4 dev addresses');
+    return exec('Update Presale Dev Wallets', () =>
+      writeContractAsync({ address: PRESALE_ADDRESS, abi: PresaleABI, functionName: 'setDevWallets',
         args: [w1.trim(), w2.trim(), w3.trim(), w4.trim()] as [string, string, string, string], chainId: bsc.id })
     );
   };
@@ -561,6 +594,64 @@ export default function AdminPage() {
                   <div className="text-beige">Tech: <span className="text-gold font-bold">20%</span></div>
                   <div className="text-beige">Dev (4×10%): <span className="text-gold font-bold">40%</span></div>
                 </div>
+              </div>
+            </motion.div>
+
+            {/* Presale Wallets — adjust the 8 recipients of raised USDT */}
+            <motion.div variants={fadeUp} className="rounded-2xl glass-card p-6">
+              <h3 className="text-lg font-bold text-white mb-1">Presale Distribution Wallets</h3>
+              <p className="text-xs text-beige-muted mb-4">USDT raised is split automatically every 48h. Percentages are fixed by contract; addresses are editable below.</p>
+
+              {/* Distribution: Marketing / LP / Buyback / Tech */}
+              <div className="mb-6">
+                <div className="text-xs font-bold text-gold mb-2">DISTRIBUTION — Marketing 10% · LP 15% · Buyback 15% · Tech 20%</div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-3">
+                  {([['Marketing', pMarketing], ['LP', pLp], ['Buyback', pBuyback], ['Tech', pTech]] as [string, string | undefined][]).map(([name, w], i) => (
+                    <div key={name} className="rounded-xl bg-dark-elevated p-3">
+                      <div className="text-xs text-beige-muted mb-1">{name} — Current</div>
+                      <code className="text-xs text-gold break-all">{w || '...'}</code>
+                    </div>
+                  ))}
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+                  {(['Marketing', 'LP', 'Buyback', 'Tech'] as const).map((name, i) => (
+                    <div key={name}>
+                      <label className="text-xs text-beige-muted block mb-1">New {name} Wallet</label>
+                      <input type="text" placeholder="0x..."
+                        value={newDistWallets[i]}
+                        onChange={(e) => setNewDistWallets(prev => { const n = [...prev] as [string, string, string, string]; n[i] = e.target.value; return n; })}
+                        className="w-full bg-dark-elevated border border-dark-border rounded-lg px-3 py-2 text-xs text-white font-mono focus:outline-none focus:border-gold/50" />
+                    </div>
+                  ))}
+                </div>
+                <ActionBtn onClick={handleSetDistWallets} disabled={pending === 'Update Presale Distribution Wallets'} loading={pending === 'Update Presale Distribution Wallets'}
+                  icon={Banknote} label="Update Distribution Wallets (All 4)" variant="green" />
+              </div>
+
+              {/* Dev wallets: 4×10% */}
+              <div className="pt-4 border-t border-dark-border">
+                <div className="text-xs font-bold text-gold mb-2">DEV — 4 wallets × 10% (40% total)</div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-3">
+                  {([pDev1, pDev2, pDev3, pDev4] as (string | undefined)[]).map((w, i) => (
+                    <div key={i} className="rounded-xl bg-dark-elevated p-3">
+                      <div className="text-xs text-beige-muted mb-1">Dev {i + 1} — Current</div>
+                      <code className="text-xs text-gold break-all">{w || '...'}</code>
+                    </div>
+                  ))}
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+                  {([0, 1, 2, 3] as const).map((i) => (
+                    <div key={i}>
+                      <label className="text-xs text-beige-muted block mb-1">New Dev {i + 1} Wallet</label>
+                      <input type="text" placeholder="0x..."
+                        value={newDevWallets[i]}
+                        onChange={(e) => setNewDevWallets(prev => { const n = [...prev] as [string, string, string, string]; n[i] = e.target.value; return n; })}
+                        className="w-full bg-dark-elevated border border-dark-border rounded-lg px-3 py-2 text-xs text-white font-mono focus:outline-none focus:border-gold/50" />
+                    </div>
+                  ))}
+                </div>
+                <ActionBtn onClick={handleSetDevWallets} disabled={pending === 'Update Presale Dev Wallets'} loading={pending === 'Update Presale Dev Wallets'}
+                  icon={Banknote} label="Update Dev Wallets (All 4)" variant="green" />
               </div>
             </motion.div>
 
