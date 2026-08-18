@@ -55,6 +55,17 @@ export default function AdminPage() {
     address: TOKEN_ADDRESS, abi: TokenABI, functionName: 'buyFee', chainId: bsc.id,
   }) as { data: readonly [bigint, bigint, bigint] | undefined };
 
+  // Sell fee (4 BNB wallets) — current percentages on-chain
+  const { data: sellFeeData } = useReadContract({
+    address: TOKEN_ADDRESS, abi: TokenABI, functionName: 'sellFee', chainId: bsc.id,
+  }) as { data: readonly [bigint, bigint, bigint, bigint] | undefined };
+
+  // Current fee recipient wallets on-chain
+  const { data: feeWallet1 } = useReadContract({ address: TOKEN_ADDRESS, abi: TokenABI, functionName: 'sellFeeWallet1', chainId: bsc.id }) as { data: string | undefined };
+  const { data: feeWallet2 } = useReadContract({ address: TOKEN_ADDRESS, abi: TokenABI, functionName: 'sellFeeWallet2', chainId: bsc.id }) as { data: string | undefined };
+  const { data: feeWallet3 } = useReadContract({ address: TOKEN_ADDRESS, abi: TokenABI, functionName: 'sellFeeWallet3', chainId: bsc.id }) as { data: string | undefined };
+  const { data: feeWallet4 } = useReadContract({ address: TOKEN_ADDRESS, abi: TokenABI, functionName: 'sellFeeWallet4', chainId: bsc.id }) as { data: string | undefined };
+
   const { data: maxWallet } = useReadContract({
     address: TOKEN_ADDRESS, abi: TokenABI, functionName: 'maxWalletAmount', chainId: bsc.id,
   }) as { data: bigint | undefined };
@@ -111,6 +122,12 @@ export default function AdminPage() {
   const [buyRewards, setBuyRewards] = useState('4');
   const [buyLiq, setBuyLiq] = useState('2');
   const [buyBurn, setBuyBurn] = useState('2');
+  // Sell fee inputs (4 BNB wallets) — defaults to current on-chain 2/2/2/2
+  const [sellW1, setSellW1] = useState('2');
+  const [sellW2, setSellW2] = useState('2');
+  const [sellW3, setSellW3] = useState('2');
+  const [sellW4, setSellW4] = useState('2');
+  const [newFeeWallets, setNewFeeWallets] = useState<[string, string, string, string]>(['', '', '', '']);
   const [priceInput, setPriceInput] = useState('');
   const [poolRates, setPoolRates] = useState<Record<number, string>>({});
   const [poolLocks, setPoolLocks] = useState<Record<number, string>>({});
@@ -144,6 +161,25 @@ export default function AdminPage() {
     writeContractAsync({ address: TOKEN_ADDRESS, abi: TokenABI, functionName: 'setBuyFees',
       args: [BigInt(buyRewards), BigInt(buyLiq), BigInt(buyBurn)], chainId: bsc.id })
   );
+
+  const handleSetSellFees = () => {
+    const total = Number(sellW1) + Number(sellW2) + Number(sellW3) + Number(sellW4);
+    if (total > 25) return toast.error('Total sell fee max 25%');
+    return exec('Update Sell Fees (4 Wallets)', () =>
+      writeContractAsync({ address: TOKEN_ADDRESS, abi: TokenABI, functionName: 'setSellFees',
+        args: [BigInt(sellW1), BigInt(sellW2), BigInt(sellW3), BigInt(sellW4)], chainId: bsc.id })
+    );
+  };
+
+  const handleSetFeeWallets = () => {
+    const [w1, w2, w3, w4] = newFeeWallets;
+    const allFilled = [w1, w2, w3, w4].every(w => /^0x[a-fA-F0-9]{40}$/.test(w.trim()));
+    if (!allFilled) return toast.error('Fill ALL 4 wallet addresses (0x...)');
+    return exec('Update Fee Wallets', () =>
+      writeContractAsync({ address: TOKEN_ADDRESS, abi: TokenABI, functionName: 'setSellFeeWallets',
+        args: [w1.trim(), w2.trim(), w3.trim(), w4.trim()] as [string, string, string, string], chainId: bsc.id })
+    );
+  };
 
   const handleEnableTrading = () => exec('Enable Trading', () =>
     writeContractAsync({ address: TOKEN_ADDRESS, abi: TokenABI, functionName: 'enableTrading', chainId: bsc.id })
@@ -345,7 +381,59 @@ export default function AdminPage() {
                     icon={Percent} label="Update Buy Fees" variant="gold" full />
                 </div>
               </motion.div>
+
+              {/* Sell Fees — 4 BNB wallets */}
+              <motion.div variants={fadeUp} className="rounded-2xl border border-gold/30 bg-gold/5 p-6">
+                <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                  <ArrowRight className="h-5 w-5 text-gold" /> Sell Tax — Current: {sellFeeData ? Number(sellFeeData[0]) + Number(sellFeeData[1]) + Number(sellFeeData[2]) + Number(sellFeeData[3]) : 8}%
+                </h3>
+                <div className="space-y-3">
+                  <FeeInput label={`Wallet 1 — ${shortAddr(feeWallet1)}`} value={sellW1} onChange={setSellW1} current={sellFeeData?.[0]} />
+                  <FeeInput label={`Wallet 2 — ${shortAddr(feeWallet2)}`} value={sellW2} onChange={setSellW2} current={sellFeeData?.[1]} />
+                  <FeeInput label={`Wallet 3 — ${shortAddr(feeWallet3)}`} value={sellW3} onChange={setSellW3} current={sellFeeData?.[2]} />
+                  <FeeInput label={`Wallet 4 — ${shortAddr(feeWallet4)}`} value={sellW4} onChange={setSellW4} current={sellFeeData?.[3]} />
+                </div>
+                <div className="mt-4 pt-4 border-t border-dark-border">
+                  <div className="flex justify-between items-center mb-3">
+                    <span className="text-sm text-beige-muted">Total Sell Tax</span>
+                    <span className={`text-xl font-black ${Number(sellW1) + Number(sellW2) + Number(sellW3) + Number(sellW4) > 25 ? 'text-red-400' : 'text-gold'}`}>
+                      {Number(sellW1) + Number(sellW2) + Number(sellW3) + Number(sellW4)}%
+                    </span>
+                  </div>
+                  <ActionBtn onClick={handleSetSellFees} disabled={pending === 'Update Sell Fees (4 Wallets)'} loading={pending === 'Update Sell Fees (4 Wallets)'}
+                    icon={Percent} label="Update Sell Fees" variant="gold" full />
+                </div>
+              </motion.div>
             </div>
+
+            {/* Fee Wallet Addresses — replace the 4 recipients */}
+            <motion.div variants={fadeUp} className="rounded-2xl glass-card p-6">
+              <h3 className="text-lg font-bold text-white mb-1">Fee Wallet Addresses (Sell Tax Recipients)</h3>
+              <p className="text-xs text-beige-muted mb-4">Current recipients receive the sell tax in BNB. Fill ALL 4 to replace them — leave empty to keep.</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                {([feeWallet1, feeWallet2, feeWallet3, feeWallet4] as (string | undefined)[]).map((w, i) => (
+                  <div key={i} className="rounded-xl bg-dark-elevated p-3">
+                    <div className="text-xs text-beige-muted mb-1">Wallet {i + 1} — Current</div>
+                    <code className="text-xs text-gold break-all">{w || '...'}</code>
+                  </div>
+                ))}
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+                {([0, 1, 2, 3] as const).map((i) => (
+                  <div key={i}>
+                    <label className="text-xs text-beige-muted block mb-1">New Wallet {i + 1}</label>
+                    <input
+                      type="text" placeholder="0x..."
+                      value={newFeeWallets[i]}
+                      onChange={(e) => setNewFeeWallets(prev => { const n = [...prev] as [string, string, string, string]; n[i] = e.target.value; return n; })}
+                      className="w-full bg-dark-elevated border border-dark-border rounded-lg px-3 py-2 text-xs text-white font-mono focus:outline-none focus:border-gold/50"
+                    />
+                  </div>
+                ))}
+              </div>
+              <ActionBtn onClick={handleSetFeeWallets} disabled={pending === 'Update Fee Wallets'} loading={pending === 'Update Fee Wallets'}
+                icon={Banknote} label="Update Fee Wallets (All 4)" variant="green" />
+            </motion.div>
 
             {/* Limits */}
             <motion.div variants={fadeUp} className="rounded-2xl glass-card p-6">
@@ -1270,6 +1358,10 @@ function ActionBtn({ onClick, disabled, loading, icon: Icon, label, variant = 'g
       {label}
     </button>
   );
+}
+
+function shortAddr(a?: string): string {
+  return a && a.startsWith('0x') && a.length === 42 ? `${a.slice(0, 6)}...${a.slice(-4)}` : '...';
 }
 
 function AddrRow({ label, addr }: { label: string; addr: string }) {
