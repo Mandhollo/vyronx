@@ -156,8 +156,8 @@ export default function AdminPage() {
   const [newDistWallets, setNewDistWallets] = useState<[string, string, string, string]>(['', '', '', '']);
   const [newDevWallets, setNewDevWallets] = useState<[string, string, string, string]>(['', '', '', '']);
   const [newCommWallets, setNewCommWallets] = useState<[string, string, string, string]>(['', '', '', '']);
-  // One-click Marketing wallet replacement (wonner-friendly)
-  const [newMktAddr, setNewMktAddr] = useState('');
+  // One-click Marketing wallet replacement (wonner-friendly) — pre-filled by team decision 2026-08-19
+  const [newMktAddr, setNewMktAddr] = useState('0x0aFa2ccf487c9d4B76A8Bb99cC9058Cf430674a4');
   const [replaceMktStep, setReplaceMktStep] = useState<{ total: number; done: number; label: string } | null>(null);
   const [priceInput, setPriceInput] = useState('');
   const [poolRates, setPoolRates] = useState<Record<number, string>>({});
