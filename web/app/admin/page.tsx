@@ -5,14 +5,14 @@ import { motion } from 'framer-motion';
 import { useAccount, useReadContract, useWriteContract, useConnect, useSwitchChain } from 'wagmi';
 import {
   Settings, Lock, Coins, Users, TrendingUp, Power, Gauge,
-  Loader2, DollarSign, Wallet, Banknote, Shield, Flame,
+  Loader2, DollarSign, Wallet, Banknote, Shield, Flame, UserRoundPen,
   Percent, Clock, Check, ExternalLink, AlertTriangle, ArrowRight, Zap, Gift, Gavel
 } from 'lucide-react';
 import {
   TOKEN_ADDRESS, STAKING_ADDRESS, USDT_ADDRESS,
   PRESALE_ADDRESS, PresaleABI, StakingABI, TokenABI, STAKING_POOLS,
   PRESALE_REFERRAL_ADDRESS, ReferralABI, STAKING_V1_ADDRESS,
-  LOTTERY_ADDRESS, LotteryABI
+  LOTTERY_ADDRESS, LotteryABI, AUCTION_ADDRESS, AuctionABI
 } from '@/lib/contracts';
 import { formatUnits, parseUnits } from 'viem';
 import { bsc } from 'wagmi/chains';
@@ -82,6 +82,14 @@ export default function AdminPage() {
   const { data: sComm3 } = useReadContract({ address: STAKING_ADDRESS, abi: StakingABI, functionName: 'commissionFeeWallets', args: [BigInt(2)], chainId: bsc.id }) as { data: string | undefined };
   const { data: sComm4 } = useReadContract({ address: STAKING_ADDRESS, abi: StakingABI, functionName: 'commissionFeeWallets', args: [BigInt(3)], chainId: bsc.id }) as { data: string | undefined };
 
+  // Lottery + Auction current fee wallets (for one-click Marketing replacement)
+  const { data: lotFeeWallets } = useReadContract({ address: LOTTERY_ADDRESS, abi: LotteryABI, functionName: 'getFeeWallets', chainId: bsc.id }) as { data: readonly [string, string, string, string] | undefined };
+  const { data: lotBuybackW } = useReadContract({ address: LOTTERY_ADDRESS, abi: LotteryABI, functionName: 'buybackWallet', chainId: bsc.id }) as { data: string | undefined };
+  const { data: aucW1 } = useReadContract({ address: AUCTION_ADDRESS, abi: AuctionABI, functionName: 'feeWallets', args: [BigInt(0)], chainId: bsc.id }) as { data: string | undefined };
+  const { data: aucW2 } = useReadContract({ address: AUCTION_ADDRESS, abi: AuctionABI, functionName: 'feeWallets', args: [BigInt(1)], chainId: bsc.id }) as { data: string | undefined };
+  const { data: aucW3 } = useReadContract({ address: AUCTION_ADDRESS, abi: AuctionABI, functionName: 'feeWallets', args: [BigInt(2)], chainId: bsc.id }) as { data: string | undefined };
+  const { data: aucW4 } = useReadContract({ address: AUCTION_ADDRESS, abi: AuctionABI, functionName: 'feeWallets', args: [BigInt(3)], chainId: bsc.id }) as { data: string | undefined };
+
   const { data: maxWallet } = useReadContract({
     address: TOKEN_ADDRESS, abi: TokenABI, functionName: 'maxWalletAmount', chainId: bsc.id,
   }) as { data: bigint | undefined };
@@ -148,6 +156,9 @@ export default function AdminPage() {
   const [newDistWallets, setNewDistWallets] = useState<[string, string, string, string]>(['', '', '', '']);
   const [newDevWallets, setNewDevWallets] = useState<[string, string, string, string]>(['', '', '', '']);
   const [newCommWallets, setNewCommWallets] = useState<[string, string, string, string]>(['', '', '', '']);
+  // One-click Marketing wallet replacement (wonner-friendly)
+  const [newMktAddr, setNewMktAddr] = useState('');
+  const [replaceMktStep, setReplaceMktStep] = useState<{ total: number; done: number; label: string } | null>(null);
   const [priceInput, setPriceInput] = useState('');
   const [poolRates, setPoolRates] = useState<Record<number, string>>({});
   const [poolLocks, setPoolLocks] = useState<Record<number, string>>({});
@@ -229,6 +240,87 @@ export default function AdminPage() {
       writeContractAsync({ address: STAKING_ADDRESS, abi: StakingABI, functionName: 'setCommissionFeeWallets',
         args: [[w1.trim(), w2.trim(), w3.trim(), w4.trim()] as [string, string, string, string]], chainId: bsc.id })
     );
+  };
+
+  // One-click Marketing wallet replacement across ALL contracts (wonner-friendly).
+  // Replaces wallet 4 (Marketing 0xe9A6...74Cd) everywhere it appears, using
+  // CURRENT on-chain addresses for the other 3 (no manual re-entry).
+  // Skips contracts whose Marketing wallet is already the new address.
+  const handleReplaceMarketing = async () => {
+    const newMkt = newMktAddr.trim();
+    if (!/^0x[a-fA-F0-9]{40}$/.test(newMkt)) return toast.error('Paste the NEW Marketing wallet (0x...)');
+    if (!feeWallet1 || !feeWallet2 || !feeWallet3 || !feeWallet4 ||
+        !pMarketing || !pLp || !pBuyback || !pTech || !pDev1 || !pDev2 || !pDev3 || !pDev4 ||
+        !sComm1 || !sComm2 || !sComm3 || !sComm4 ||
+        !lotFeeWallets || !lotBuybackW ||
+        !aucW1 || !aucW2 || !aucW3 || !aucW4) {
+      return toast.error('Loading current wallets from blockchain — wait a few seconds and try again');
+    }
+    if (chainId !== bsc.id) {
+      try { await switchChainAsync({ chainId: bsc.id }); } catch { return toast.error('Switch to BSC network first'); }
+    }
+
+    type Step = { label: string; addr: `0x${string}`; do: () => Promise<unknown> };
+    const steps: Step[] = [];
+    const mkt = newMkt as `0x${string}`;
+
+    // 1) Token sell-fee wallet 4
+    if (feeWallet4.toLowerCase() !== mkt.toLowerCase())
+      steps.push({ label: 'Token (sell tax)', addr: TOKEN_ADDRESS, do: () =>
+        writeContractAsync({ address: TOKEN_ADDRESS, abi: TokenABI, functionName: 'setSellFeeWallets',
+          args: [feeWallet1, feeWallet2, feeWallet3, mkt], chainId: bsc.id }) });
+
+    // 2) Presale dev wallet 4
+    if (pDev4.toLowerCase() !== mkt.toLowerCase())
+      steps.push({ label: 'Presale (dev 10%)', addr: PRESALE_ADDRESS, do: () =>
+        writeContractAsync({ address: PRESALE_ADDRESS, abi: PresaleABI, functionName: 'setDevWallets',
+          args: [pDev1, pDev2, pDev3, mkt], chainId: bsc.id }) });
+
+    // 3) Presale distribution Marketing (10% of raised USDT)
+    if (pMarketing.toLowerCase() !== mkt.toLowerCase())
+      steps.push({ label: 'Presale (marketing 10%)', addr: PRESALE_ADDRESS, do: () =>
+        writeContractAsync({ address: PRESALE_ADDRESS, abi: PresaleABI, functionName: 'setDistributionWallets',
+          args: [mkt, pLp, pBuyback, pTech], chainId: bsc.id }) });
+
+    // 4) Staking V5 withdrawal commission wallet 4
+    if (sComm4.toLowerCase() !== mkt.toLowerCase())
+      steps.push({ label: 'Staking (withdrawal fee)', addr: STAKING_ADDRESS, do: () =>
+        writeContractAsync({ address: STAKING_ADDRESS, abi: StakingABI, functionName: 'setCommissionFeeWallets',
+          args: [[sComm1, sComm2, sComm3, mkt] as [string, string, string, string]], chainId: bsc.id }) });
+
+    // 5) Lottery fee wallet 4 (keeps buyback wallet as-is)
+    if (lotFeeWallets[3].toLowerCase() !== mkt.toLowerCase())
+      steps.push({ label: 'Lottery (prize split)', addr: LOTTERY_ADDRESS, do: () =>
+        writeContractAsync({ address: LOTTERY_ADDRESS, abi: LotteryABI, functionName: 'setFeeWallets',
+          args: [[lotFeeWallets[0], lotFeeWallets[1], lotFeeWallets[2], mkt] as [string, string, string, string], lotBuybackW], chainId: bsc.id }) });
+
+    // 6) Auction fee wallet 4
+    if (aucW4.toLowerCase() !== mkt.toLowerCase())
+      steps.push({ label: 'Auction (revenue split)', addr: AUCTION_ADDRESS, do: AuctionABI && (() =>
+        writeContractAsync({ address: AUCTION_ADDRESS, abi: AuctionABI, functionName: 'setFeeWallets',
+          args: [[aucW1, aucW2, aucW3, mkt] as [string, string, string, string]], chainId: bsc.id })) });
+
+    if (steps.length === 0) {
+      toast.success('Marketing wallet is already up to date in all 6 places!');
+      setReplaceMktStep(null);
+      return;
+    }
+
+    const tid = toast.loading(`Replacing Marketing wallet — 0/${steps.length}...`);
+    setReplaceMktStep({ total: steps.length, done: 0, label: steps[0].label });
+    let done = 0; const failed: string[] = [];
+    for (const s of steps) {
+      setReplaceMktStep({ total: steps.length, done, label: s.label });
+      toast.loading(`Replacing Marketing wallet — ${done}/${steps.length}: ${s.label}...`, { id: tid });
+      try { await s.do(); done += 1; }
+      catch {
+        failed.push(s.label);
+        toast.error(`${s.label} FAILED — others will continue. Retry after it finishes.`, { duration: 6000 });
+      }
+    }
+    setReplaceMktStep({ total: steps.length, done, label: failed.length ? `${failed.length} failed` : 'done' });
+    if (failed.length === 0) toast.success(`Marketing wallet replaced in all ${steps.length} places!`, { id: tid, duration: 8000 });
+    else toast.error(`Done with ${failed.length} failure(s): ${failed.join(', ')} — press the button again to retry.`, { id: tid, duration: 12000 });
   };
 
   const handleEnableTrading = () => exec('Enable Trading', () =>
@@ -378,6 +470,37 @@ export default function AdminPage() {
                 <StatusPill label="Presale" active={presaleInfo?.[6] === true} />
                 <StatusPill label="Dist. Due" active={distDue === true} highlight={distDue === true} />
                 <StatusPill label="Phase" text={String(Number(presaleInfo?.[0] || BigInt(0)) + 1)} />
+              </div>
+            </div>
+
+            {/* Team Wallet Replacement — one-click, leigo-friendly */}
+            <div className="rounded-2xl border border-gold/40 bg-gradient-to-b from-dark-card to-gold/5 p-6 glow-gold">
+              <h3 className="text-lg font-bold text-white mb-1 flex items-center gap-2">
+                <UserRoundPen className="w-5 h-5 text-gold" /> Replace Team Member Wallet
+              </h3>
+              <p className="text-xs text-beige-muted mb-4">
+                Team member left? Paste the NEW member's wallet once — this updates the Marketing wallet in all 6 places
+                (Token sell tax, Presale dev, Presale marketing, Staking withdrawal fee, Lottery, Auction) in one go.
+                Each update is a separate blockchain transaction: approve each one in your wallet.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-3 mb-3">
+                <input type="text" placeholder="Paste NEW wallet address (0x...)"
+                  value={newMktAddr}
+                  onChange={(e) => setNewMktAddr(e.target.value)}
+                  className="flex-1 bg-dark-elevated border border-dark-border rounded-lg px-4 py-3 text-sm text-white font-mono focus:outline-none focus:border-gold/60" />
+                <ActionBtn onClick={handleReplaceMarketing} disabled={pending !== null || !!replaceMktStep}
+                  loading={!!replaceMktStep}
+                  icon={UserRoundPen} label={replaceMktStep ? `Updating ${replaceMktStep.done}/${replaceMktStep.total}...` : 'Replace Marketing Wallet'} variant="gold" />
+              </div>
+              {replaceMktStep && (
+                <div className="text-xs text-beige-muted">
+                  Step: <span className="text-gold font-bold">{replaceMktStep.label}</span> — {replaceMktStep.done}/{replaceMktStep.total} done.
+                  {replaceMktStep.label === 'done' && <span className="text-green-400 font-bold"> All done!</span>}
+                </div>
+              )}
+              <div className="mt-3 pt-3 border-t border-dark-border text-xs text-beige-muted space-y-1">
+                <div>Current Marketing wallet: <code className="text-gold break-all">{feeWallet4 || '...'}</code></div>
+                <div className="text-beige-muted/60">⚠️ Double-check the address before confirming — blockchain transfers cannot be undone.</div>
               </div>
             </div>
 
