@@ -321,6 +321,26 @@ export default function AdminPage() {
     writeContractAsync({ address: TOKEN_ADDRESS, abi: TokenABI, functionName: 'enableTrading', chainId: bsc.id })
   );
 
+  // Burn stuck tokens held by the token contract itself (from the pre-launch fee split transfer).
+  // Uses distributeRewards([DEAD], [balance]) — sends contract-held VYR to the dead address in one owner tx.
+  const { data: tokenContractBalance } = useReadContract({
+    address: TOKEN_ADDRESS, abi: TokenABI, functionName: 'balanceOf', args: [TOKEN_ADDRESS], chainId: bsc.id,
+  }) as { data: bigint | undefined };
+  const DEAD = '0x000000000000000000000000000000000000dEaD';
+  const stuckTokens = tokenContractBalance ? Number(formatUnits(tokenContractBalance, 18)) : 0;
+  const handleBurnStuck = () => {
+    if (!tokenContractBalance || tokenContractBalance === BigInt(0)) { toast.error('No stuck tokens in the token contract.'); return; }
+    const fmt = `${stuckTokens.toLocaleString('en-US', { maximumFractionDigits: 0 })} VYR`;
+    if (!window.confirm(`BURN ${fmt} held by the token contract?\n\nThis permanently destroys them (sent to 0x...dEaD). Cannot be undone.\nTotal burned will rise to ~${(stuckTokens / 1e9 * 100).toFixed(2)}% of supply.`)) return;
+    if (!window.confirm(`Really sure? ${fmt} will be gone forever. OK to continue.`)) return;
+    exec('Burn Stuck Tokens', () =>
+      writeContractAsync({
+        address: TOKEN_ADDRESS, abi: TokenABI, functionName: 'distributeRewards', chainId: bsc.id,
+        args: [[DEAD], [tokenContractBalance]],
+      })
+    );
+  };
+
   const handleStartPresale = () => exec('Start Presale', () =>
     writeContractAsync({ address: PRESALE_ADDRESS, abi: PresaleABI, functionName: 'startPresale', chainId: bsc.id })
   );
@@ -505,6 +525,8 @@ export default function AdminPage() {
               <div className="flex flex-wrap gap-3">
                 <ActionBtn onClick={handleEnableTrading} disabled={tradingEnabled === true || pending === 'Enable Trading'} loading={pending === 'Enable Trading'}
                   icon={Power} label={tradingEnabled ? 'Trading Active' : 'Enable Trading'} variant="gold" />
+                <ActionBtn onClick={handleBurnStuck} disabled={stuckTokens === 0 || pending === 'Burn Stuck Tokens'} loading={pending === 'Burn Stuck Tokens'}
+                  icon={Flame} label={`Burn Stuck (${stuckTokens.toLocaleString('en-US', { maximumFractionDigits: 0 })} VYR)`} variant="danger" />
                 {distDue && (
                   <ActionBtn onClick={handleDistribute} disabled={pending === 'Distribute Funds'} loading={pending === 'Distribute Funds'}
                     icon={Banknote} label="Distribute Funds Now" variant="danger" />
