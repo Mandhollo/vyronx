@@ -899,12 +899,22 @@ export default function AdminPage() {
                   <div className="text-xs text-beige-muted">Current Price</div>
                   <div className="text-xl font-bold text-gold">${vyrPrice ? (Number(vyrPrice) / 1e18).toFixed(4) : '--'}</div>
                 </div>
-                <div className="flex gap-2 w-full sm:w-auto">
+                <div className="flex gap-2 w-full sm:w-auto flex-wrap">
                   <input type="number" value={priceInput} onChange={(e) => setPriceInput(e.target.value)}
                     placeholder="1.00" step="0.01"
-                    className="flex-1 bg-dark-elevated border border-dark-border rounded-lg px-3 py-2 text-white focus:outline-none focus:border-gold/50" />
+                    className="flex-1 min-w-[90px] bg-dark-elevated border border-dark-border rounded-lg px-3 py-2 text-white focus:outline-none focus:border-gold/50" />
                   <ActionBtn onClick={handleSetPrice} disabled={!priceInput || pending === 'Update VYR Price'} loading={pending === 'Update VYR Price'}
                     icon={DollarSign} label="Set" variant="gold" />
+                  {/* One-click: team decision 2026-08-19 — $0.05 until launch, oracle takes over after */}
+                  <button onClick={async () => {
+                    if (!confirm('Set VYR Price to $0.05?\n\nTeam decision: $0.05 until launch. After launch the oracle/market price applies (update here or on DEX).')) return;
+                    await exec('Set $0.05 (until launch)', () =>
+                      writeContractAsync({ address: STAKING_ADDRESS, abi: StakingABI, functionName: 'setVyrPrice', args: [BigInt('50000000000000000')], chainId: bsc.id })
+                    );
+                  }} disabled={pending === 'Set $0.05 (until launch)'}
+                    className="px-4 py-2 text-xs font-bold rounded-lg bg-green-500/10 text-green-400 border border-green-500/30 hover:bg-green-500/20 whitespace-nowrap">
+                    {pending === 'Set $0.05 (until launch)' ? <Loader2 className="h-4 w-4 animate-spin" /> : '⚡ $0.05 until launch'}
+                  </button>
                 </div>
               </div>
               <p className="text-xs text-beige-muted mt-3">Price in USDT per 1 VYR. Used for stake→VYR conversion on withdrawal.</p>
