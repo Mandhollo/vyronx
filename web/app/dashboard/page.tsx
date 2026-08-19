@@ -1174,10 +1174,11 @@ function LotteryDashboardSection({ address }: { address: `0x${string}` | undefin
             return (
             <div key={name} className={`rounded-xl p-3 text-center ${active ? 'bg-gold/10 border border-gold/30' : 'bg-dark-elevated border border-dark-border'}`}>
               <div className="text-xs font-bold text-white mb-1">{name}</div>
-              <div className={`text-lg font-bold ${active ? 'text-gold' : 'text-beige-muted'}`}>
-                {active ? `$${Number(formatUnits(r!.collected, 18)).toLocaleString('en-US', { maximumFractionDigits: 0 })}` : '—'}
+              <div className={`text-2xl font-black leading-tight ${active ? 'bg-clip-text text-transparent bg-gradient-to-b from-white via-gold-light to-gold-dark drop-shadow-[0_0_14px_rgba(212,175,55,0.45)]' : 'text-beige-muted'}`}>
+                {active ? `$${Number(formatUnits(r!.target, 18)).toLocaleString('en-US', { maximumFractionDigits: 0 })}` : '—'}
               </div>
-              <div className="text-[10px] text-beige-muted">{active ? `${r!.tickets} tickets` : 'Inactive'}</div>
+              <div className="text-[10px] text-gold/80 font-bold uppercase tracking-wide">{active ? '1st Prize' : 'Lottery'}</div>
+              <div className="text-[10px] text-beige-muted">{active ? `Pot $${Number(formatUnits(r!.collected, 18)).toLocaleString('en-US', { maximumFractionDigits: 0 })} · ${r!.tickets} tickets` : 'Inactive'}</div>
               {active && (
                 <div className="mt-2">
                   <div className="h-1.5 rounded-full bg-dark-elevated overflow-hidden">

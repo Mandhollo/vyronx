@@ -153,6 +153,14 @@ export default function LotteryPage() {
     chainId: bsc.id,
   }) as { data: readonly [string, string, string, string] | undefined };
 
+  // Lottery images (data-URIs or URLs, set by admin)
+  const { data: imagesData } = useReadContract({
+    address: LOTTERY_ADDRESS as `0x${string}`,
+    abi: LotteryABI,
+    functionName: 'getLotteryImages',
+    chainId: bsc.id,
+  }) as { data: readonly [string, string, string, string] | undefined };
+
   const { data: pricesData } = useReadContract({
     address: LOTTERY_ADDRESS as `0x${string}`,
     abi: LotteryABI,
@@ -179,25 +187,36 @@ export default function LotteryPage() {
   const allowance = allowanceData ?? BigInt(0);
 
   // User history
-  const { data: userHistoryData } = useReadContract({
+  const { data: userHistoryData, refetch: refetchHistory } = useReadContract({
     address: LOTTERY_ADDRESS as `0x${string}`,
     abi: LotteryABI,
     functionName: 'getUserHistory',
     args: [address || '0x0'],
     chainId: bsc.id,
-  }) as {
+  } as any) as {
     data: readonly {
       roundId: bigint;
       lotteryType: number;
       ticketCount: bigint;
       totalPaid: bigint;
       timestamp: bigint;
-    }[] | undefined;
-  };
+    }[] | undefined; refetch: () => void; };
+
 
   // Parse rounds — use mock data if contract not deployed, null-safe otherwise
   const rounds = LOTTERY_NOT_DEPLOYED ? MOCK_ROUNDS : reads.map((r) => parseRound(r?.data));
+  // User tickets in the CURRENT round of each lottery, from on-chain history
+  const userTicketsByType = [0, 1, 2, 3].map((lt) => {
+    if (LOTTERY_NOT_DEPLOYED || !userHistoryData || !rounds[lt]) return BigInt(0);
+    const rid = rounds[lt]!.roundId;
+    return BigInt(
+      userHistoryData
+        .filter((h) => Number(h.roundId) === rid && Number(h.lotteryType) === lt)
+        .reduce((s, h) => s + Number(h.ticketCount), 0)
+    );
+  });
   const names = LOTTERY_NOT_DEPLOYED ? DEFAULT_NAMES : (namesData && Array.isArray(namesData) ? [namesData[0], namesData[1], namesData[2], namesData[3]] : DEFAULT_NAMES);
+  const images = LOTTERY_NOT_DEPLOYED ? ['', '', '', ''] : (imagesData && Array.isArray(imagesData) ? [imagesData[0] || '', imagesData[1] || '', imagesData[2] || '', imagesData[3] || ''] : ['', '', '', '']);
   const prices = LOTTERY_NOT_DEPLOYED ? MOCK_PRICES : (pricesData && Array.isArray(pricesData)
     ? [pricesData[0] ?? BigInt(0), pricesData[1] ?? BigInt(0), pricesData[2] ?? BigInt(0), pricesData[3] ?? BigInt(0)]
     : [BigInt(0), BigInt(0), BigInt(0), BigInt(0)]);
@@ -266,6 +285,7 @@ export default function LotteryPage() {
       setTimeout(() => triggerCoinConfetti(), 1500);
       reads.forEach((r) => r.refetch());
       refetchAllowance();
+      refetchHistory();
     } catch (e: any) {
       toast.error(e?.shortMessage || 'Purchase failed', { duration: 8000 });
       throw e;
@@ -320,9 +340,10 @@ export default function LotteryPage() {
           <LotteryCard
             lotteryType={0}
             name={names[0]}
+            image={images[0]}
             ticketPrice={prices[0]}
             round={rounds[0]}
-            userTickets={BigInt(0)}
+            userTickets={userTicketsByType[0]}
             usdtBalance={usdtBalance}
             allowance={allowance}
             isConnected={isConnected}
@@ -341,9 +362,10 @@ export default function LotteryPage() {
               <LotteryCard
                 lotteryType={lt}
                 name={names[lt]}
+                image={images[lt]}
                 ticketPrice={prices[lt]}
                 round={rounds[lt]}
-                userTickets={BigInt(0)}
+                userTickets={userTicketsByType[lt]}
                 usdtBalance={usdtBalance}
                 allowance={allowance}
                 isConnected={isConnected}
@@ -420,6 +442,7 @@ export default function LotteryPage() {
 interface LotteryCardProps {
   lotteryType: number;
   name: string;
+  image?: string;
   ticketPrice: bigint;
   round: ParsedRound | null;
   userTickets: bigint;
@@ -434,7 +457,7 @@ interface LotteryCardProps {
 }
 
 function LotteryCard({
-  lotteryType, name, ticketPrice, round, userTickets, usdtBalance, allowance,
+  lotteryType, name, image, ticketPrice, round, userTickets, usdtBalance, allowance,
   isConnected, onCorrectChain, onApprove, onBuy, onSwitchChain, isMega,
 }: LotteryCardProps) {
   const [ticketCount, setTicketCount] = useState('1');
@@ -517,6 +540,17 @@ function LotteryCard({
 
   return (
     <div className={cardBase}>
+      {/* Custom image (set by admin, stored on-chain) */}
+      {image && (
+        <div className={`relative rounded-xl overflow-hidden border ${theme.border} bg-black/70 flex items-center justify-center ${isMega ? 'h-56 sm:h-80 mb-6' : 'h-40 mb-4'}`}>
+          <img src={image} alt={`${name}`} className="w-full h-full object-contain" />
+          <div className={`absolute inset-0 bg-gradient-to-t ${isMega ? 'from-black/70 via-transparent' : 'from-black/50 via-transparent'}`} />
+          <div className={`absolute bottom-3 left-4 right-4 flex items-end justify-between ${isMega ? '' : 'mb-1'}`}>
+            <h2 className={`font-bold text-white drop-shadow-lg ${isMega ? 'text-3xl sm:text-4xl' : 'text-xl'}`}>{name}</h2>
+          </div>
+        </div>
+      )}
+
       {/* Header row */}
       <div className="flex items-start justify-between mb-4">
         <div>
@@ -525,7 +559,9 @@ function LotteryCard({
               <Crown className="w-3.5 h-3.5" /> Jackpot
             </div>
           )}
-          <h2 className={`font-bold text-white ${isMega ? 'text-2xl sm:text-3xl' : 'text-xl'}`}>{name}</h2>
+          {!image && (
+            <h2 className={`font-bold text-white ${isMega ? 'text-2xl sm:text-3xl' : 'text-xl'}`}>{name}</h2>
+          )}
           {round && (
             <div className={`text-xs ${theme.accent} mt-1`}>Round #{round.roundId}</div>
           )}
@@ -537,14 +573,18 @@ function LotteryCard({
         )}
       </div>
 
-      {/* Prize target */}
-      <div className="flex items-center justify-between mb-3">
-        <span className="text-sm text-beige/50 flex items-center gap-1.5">
-          <Trophy className={`w-4 h-4 ${theme.accent}`} /> Prize Target
-        </span>
-        <span className={`font-bold ${theme.accent} ${isMega ? 'text-3xl' : 'text-2xl'}`}>
-          ${round ? fmtUSDT(round.prizeTarget) : '—'}
-        </span>
+      {/* Prize — HERO display (team request: eye-catching prize value) */}
+      <div className={`relative overflow-hidden rounded-2xl mb-4 border text-center ${isMega
+        ? 'border-gold/40 bg-gradient-to-b from-gold/15 via-gold/5 to-transparent py-5 shadow-[0_0_35px_rgba(212,175,55,0.3)]'
+        : 'border-white/10 bg-dark-elevated py-4'}`}>
+        <div className="text-[10px] uppercase tracking-widest text-beige/50 flex items-center justify-center gap-1.5">
+          <Trophy className={`w-3.5 h-3.5 ${theme.accent}`} />
+          {isMega ? 'Jackpot Prize' : '1st Prize'} · Guaranteed
+        </div>
+        <div className={`${isMega ? 'text-5xl sm:text-6xl' : 'text-4xl'} font-black leading-tight bg-clip-text text-transparent bg-gradient-to-b from-white via-gold-light to-gold-dark drop-shadow-[0_0_18px_rgba(212,175,55,0.5)] ${isMega ? 'pulse-scale' : ''}`}>
+          {round ? `$${fmtUSDT(round.prizeTarget)}` : '—'}
+        </div>
+        <div className="text-[10px] text-beige/40 mt-0.5">USDT · 1st place takes 50% of the pot</div>
       </div>
 
       {/* Progress bar */}
