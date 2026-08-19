@@ -37,13 +37,13 @@ export const TOKEN_INFO = {
   symbol: 'VYR',
   decimals: 18,
   totalSupply: '1,000,000,000',
-  network: 'BSC Testnet',
+  network: 'BSC Mainnet',
 };
 
 // Staking pools info
 export const STAKING_POOLS = [
   { id: 0, tier: 'Starter', duration: '30 Days', dailyRate: 0.11, monthlyRate: '~3.5%', lockDays: 30, minStake: 50 },
   { id: 1, tier: 'Growth', duration: '60 Days', dailyRate: 0.23, monthlyRate: '~7%', lockDays: 60, minStake: 50 },
-  { id: 2, tier: 'Pro', duration: '180 Days', dailyRate: 0.33, monthlyRate: '~10%', lockDays: 180, minStake: 100 },
+  { id: 2, tier: 'Pro', duration: '180 Days', dailyRate: 0.33, monthlyRate: '~10%', lockDays: 180, minStake: 50 },
   { id: 3, tier: 'Elite', duration: '360 Days', dailyRate: 0.50, monthlyRate: '~15%', lockDays: 360, minStake: 100 },
 ];

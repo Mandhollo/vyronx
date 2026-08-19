@@ -130,7 +130,9 @@ function StakingPageContent() {
 
   useEffect(() => {
     if (!isConnected || !address) return;
-    const rawRef = searchParams.get('ref');
+    const rawRef = searchParams.get('ref')
+      // Fallback: globally captured ref (first-touch, saved by RefCapture on any page)
+      || (() => { try { const s = localStorage.getItem('vyronx-ref'); return s ? (JSON.parse(s) as { ref: string }).ref : null; } catch { return null; } })();
     if (!rawRef) return;
 
     // Decode referral code: VYR... → 0x address, or accept raw 0x address (backward compat)

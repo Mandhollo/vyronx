@@ -403,7 +403,7 @@ export default function DashboardPage() {
               <p className="text-beige-muted mt-1 flex items-center gap-2">
                 <span className={`h-2 w-2 rounded-full ${onCorrectChain ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} />
                 {address && `${address.slice(0, 6)}...${address.slice(-4)}`}
-                {!onCorrectChain && <span className="text-red-400 ml-2">⚠ Switch to BSC Testnet</span>}
+                {!onCorrectChain && <span className="text-red-400 ml-2">⚠ Switch to BSC Mainnet</span>}
               </p>
             </div>
             <button
@@ -962,9 +962,10 @@ export default function DashboardPage() {
                 <div className="h-8 w-px bg-dark-border" />
                 <div className="text-center">
                   <div className="text-lg font-black text-green-400">
-                    ${levelData.reduce((a, b, i) => a + (b.volume > 0 ? (b.volume * [7,6,5,4,3,2,2,2,2,2,7][i] / 100) : 0), 0).toLocaleString('en-US', { maximumFractionDigits: 0 })}
+                    {/* Est. DAILY commission: contract pays % of daily YIELD (not volume) */}
+                    ${levelData.reduce((a, b, i) => a + (b.volume > 0 ? (b.volume * 0.003 * [7,6,5,4,3,2,2,2,2,2,7][i] / 100) : 0), 0).toLocaleString('en-US', { maximumFractionDigits: 0 })}
                   </div>
-                  <div className="text-xs text-beige-muted">Est. Earnings</div>
+                  <div className="text-xs text-beige-muted">Est. Daily Earnings</div>
                 </div>
               </motion.div>
 
