@@ -31,18 +31,28 @@ export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = usePathname();
 
-  // Check if staking pool 0 is active (controls "Coming Soon" badge)
-  // Struct order: lockPeriodDays(0), dailyRateBps(1), active(2), tierName(3)
+  // Staking badge hides when ANY pool is active on-chain (Elite 360d is live today; pools 0-2 open at launch)
+  // wagmi returns named structs as objects AND arrays depending on version — handle both
+  const poolActive = (d: unknown): boolean => {
+    if (!d) return false;
+    if (Array.isArray(d)) return Boolean(d[2]);
+    if (typeof d === 'object' && d !== null) return Boolean((d as Record<string, unknown>).active);
+    return false;
+  };
   const { data: pool0Data } = useReadContract({
     address: STAKING_ADDRESS, abi: StakingABI, functionName: 'pools', args: [BigInt(0)], chainId: bsc.id,
-  }) as { data: readonly [bigint, bigint, boolean, string] | undefined };
-  const stakingLive = pool0Data?.[2] ?? false;
+  });
+  const { data: pool3Data } = useReadContract({
+    address: STAKING_ADDRESS, abi: StakingABI, functionName: 'pools', args: [BigInt(3)], chainId: bsc.id,
+  });
+  const stakingLive = poolActive(pool0Data) || poolActive(pool3Data);
 
-  // Check if any lottery round is active (controls "Soon" badge)
-  const { data: lotteryMegaRound } = useReadContract({
-    address: LOTTERY_ADDRESS as `0x${string}`, abi: LotteryABI, functionName: 'getCurrentRound', args: [0], chainId: bsc.id,
-  }) as { data: readonly [bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, `0x${string}`, `0x${string}`, `0x${string}`, bigint, bigint, bigint, bigint, bigint] | undefined };
-  const lotteryLive = lotteryMegaRound ? Number(lotteryMegaRound[2]) === 1 : false;
+  // Lottery badge hides when ANY of the 4 lottery types has an active round (currentRoundId != 0)
+  const { data: activeRoundMega } = useReadContract({ address: LOTTERY_ADDRESS as `0x${string}`, abi: LotteryABI, functionName: 'currentRoundId', args: [0], chainId: bsc.id }) as { data: bigint | undefined };
+  const { data: activeRoundWeekly } = useReadContract({ address: LOTTERY_ADDRESS as `0x${string}`, abi: LotteryABI, functionName: 'currentRoundId', args: [1], chainId: bsc.id }) as { data: bigint | undefined };
+  const { data: activeRoundMonthly } = useReadContract({ address: LOTTERY_ADDRESS as `0x${string}`, abi: LotteryABI, functionName: 'currentRoundId', args: [2], chainId: bsc.id }) as { data: bigint | undefined };
+  const { data: activeRoundPower } = useReadContract({ address: LOTTERY_ADDRESS as `0x${string}`, abi: LotteryABI, functionName: 'currentRoundId', args: [3], chainId: bsc.id }) as { data: bigint | undefined };
+  const lotteryLive = [activeRoundMega, activeRoundWeekly, activeRoundMonthly, activeRoundPower].some((r) => r != null && r > BigInt(0));
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
