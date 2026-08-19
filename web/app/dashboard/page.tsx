@@ -518,6 +518,9 @@ export default function DashboardPage() {
           </motion.div>
         )}
 
+        {/* Lottery Info — team request: above AI Arbitrage */}
+        <LotteryDashboardSection address={address} />
+
         {/* AI Arbitrage Live Feed — 3 panels only */}
         <motion.div variants={fadeUp} className="mb-8">
           <div className="flex items-center gap-2 mb-4">
@@ -670,9 +673,6 @@ export default function DashboardPage() {
             </div>
           )}
         </motion.div>
-
-        {/* Lottery Info */}
-        <LotteryDashboardSection address={address} />
 
         {/* Referral & Affiliate */}
         <motion.div variants={stagger} initial="hidden" animate="visible" className="mb-12">
@@ -1058,9 +1058,15 @@ function LotteryDashboardSection({ address }: { address: `0x${string}` | undefin
   const { data: r3 } = useReadContract({ address: LOTTERY_ADDRESS, abi: LotteryABI, functionName: 'getRound', args: [BigInt(Math.max(1, lastCompletedId - 2))], chainId: bsc.id, query: { enabled: lastCompletedId >= 3 } }) as { data: readonly bigint[] | undefined };
   const { data: r4 } = useReadContract({ address: LOTTERY_ADDRESS, abi: LotteryABI, functionName: 'getRound', args: [BigInt(Math.max(1, lastCompletedId - 3))], chainId: bsc.id, query: { enabled: lastCompletedId >= 4 } }) as { data: readonly bigint[] | undefined };
 
-  const parseR = (d: readonly bigint[] | undefined) => {
+  // wagmi returns named structs as objects AND arrays depending on version — handle both
+  const pick = (d: any, i: number, key: string) => {
+    if (Array.isArray(d)) return d[i];
+    if (d && typeof d === 'object' && d[key] !== undefined) return d[key];
+    return undefined;
+  };
+  const parseR = (d: readonly bigint[] | undefined | any) => {
     if (!d) return null;
-    return { status: Number(d[2] ?? 0), collected: BigInt(d[4] ?? 0), tickets: Number(d[5] ?? 0), target: BigInt(d[3] ?? 0) };
+    return { status: Number(pick(d, 2, 'status') ?? 0), collected: BigInt(pick(d, 4, 'totalCollected') ?? 0), tickets: Number(pick(d, 5, 'ticketCount') ?? 0), target: BigInt(pick(d, 3, 'prizeTarget') ?? 0), threshold: BigInt(pick(d, 8, 'closeThreshold') ?? 0) };
   };
   const mega = parseR(megaRound);
   const big = parseR(bigRound);
@@ -1078,16 +1084,16 @@ function LotteryDashboardSection({ address }: { address: `0x${string}` | undefin
     const addrLower = address.toLowerCase();
     for (const rd of recentRounds) {
       if (!rd) continue;
-      const roundId = Number(rd[0]);
-      const lotteryType = Number(rd[1]);
-      const status = Number(rd[2]);
+      const roundId = Number(pick(rd, 0, 'roundId'));
+      const lotteryType = Number(pick(rd, 1, 'lotteryType'));
+      const status = Number(pick(rd, 2, 'status'));
       if (status !== 3) continue; // only completed
-      const w1 = String(rd[10] ?? '0x0').toLowerCase();
-      const w2 = String(rd[11] ?? '0x0').toLowerCase();
-      const w3 = String(rd[12] ?? '0x0').toLowerCase();
-      const prize1 = BigInt(rd[13] ?? 0);
-      const prize2 = BigInt(rd[14] ?? 0);
-      const prize3 = BigInt(rd[15] ?? 0);
+      const w1 = String(pick(rd, 10, 'winner1') ?? '0x0').toLowerCase();
+      const w2 = String(pick(rd, 11, 'winner2') ?? '0x0').toLowerCase();
+      const w3 = String(pick(rd, 12, 'winner3') ?? '0x0').toLowerCase();
+      const prize1 = BigInt(pick(rd, 13, 'prize1') ?? 0);
+      const prize2 = BigInt(pick(rd, 14, 'prize2') ?? 0);
+      const prize3 = BigInt(pick(rd, 15, 'prize3') ?? 0);
       if (w1 === addrLower && prize1 > 0) userWins.push({ roundId, place: 1, prize: prize1, lotteryType });
       if (w2 === addrLower && prize2 > 0) userWins.push({ roundId, place: 2, prize: prize2, lotteryType });
       if (w3 === addrLower && prize3 > 0) userWins.push({ roundId, place: 3, prize: prize3, lotteryType });
@@ -1160,15 +1166,29 @@ function LotteryDashboardSection({ address }: { address: `0x${string}` | undefin
             { name: 'Big', r: big },
             { name: 'Medium', r: med },
             { name: 'Small', r: small },
-          ].map(({ name, r }) => (
-            <div key={name} className={`rounded-xl p-3 text-center ${r?.status === 1 ? 'bg-gold/10 border border-gold/30' : 'bg-dark-elevated border border-dark-border'}`}>
+          ].map(({ name, r }) => {
+            const active = r?.status === 1;
+            const pct = active && r!.threshold > BigInt(0)
+              ? Math.min(100, (Number(r!.collected) / Number(r!.threshold)) * 100)
+              : 0;
+            return (
+            <div key={name} className={`rounded-xl p-3 text-center ${active ? 'bg-gold/10 border border-gold/30' : 'bg-dark-elevated border border-dark-border'}`}>
               <div className="text-xs font-bold text-white mb-1">{name}</div>
-              <div className={`text-lg font-bold ${r?.status === 1 ? 'text-gold' : 'text-beige-muted'}`}>
-                {r?.status === 1 ? `$${Number(formatUnits(r.collected, 18)).toLocaleString('en-US', { maximumFractionDigits: 0 })}` : '—'}
+              <div className={`text-lg font-bold ${active ? 'text-gold' : 'text-beige-muted'}`}>
+                {active ? `$${Number(formatUnits(r!.collected, 18)).toLocaleString('en-US', { maximumFractionDigits: 0 })}` : '—'}
               </div>
-              <div className="text-[10px] text-beige-muted">{r?.status === 1 ? `${r.tickets} tickets` : 'Inactive'}</div>
+              <div className="text-[10px] text-beige-muted">{active ? `${r!.tickets} tickets` : 'Inactive'}</div>
+              {active && (
+                <div className="mt-2">
+                  <div className="h-1.5 rounded-full bg-dark-elevated overflow-hidden">
+                    <div className="h-full rounded-full bg-gradient-to-r from-gold-light to-gold-dark transition-all" style={{ width: `${pct}%` }} />
+                  </div>
+                  <div className="text-[10px] text-gold mt-1 font-medium">{pct.toFixed(0)}% to close</div>
+                </div>
+              )}
             </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* User Stats */}
