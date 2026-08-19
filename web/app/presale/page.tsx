@@ -146,7 +146,7 @@ export default function PresalePage() {
     abi: PresaleABI,
     functionName: 'getPresaleInfo',
     chainId: bsc.id,
-  });
+  }) as { data: readonly [bigint, bigint, bigint, bigint, bigint, bigint, boolean, boolean] | undefined };
 
   // Read buyer info
   const { data: buyerInfo } = useReadContract({
@@ -429,7 +429,7 @@ export default function PresalePage() {
               <div className="rounded-xl bg-dark-elevated border border-dark-border p-5 space-y-3 mb-6">
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-beige-muted">{t('presale.price')}</span>
-                  <span className="text-sm font-bold text-white">$0.010 / VYR</span>
+                  <span className="text-sm font-bold text-white">{presaleInfo ? `$${(Number(presaleInfo[1]) / 1e18).toFixed(3)} / VYR` : '$0.020 / VYR'}</span>
                 </div>
                 <div className="border-t border-dark-border pt-3">
                   <div className="flex justify-between items-center">
@@ -573,12 +573,12 @@ export default function PresalePage() {
         <motion.div variants={stagger} initial="hidden" whileInView="visible" viewport={{ once: true }} className="mb-16">
           <h2 className="text-2xl font-bold text-white text-center mb-8">{t('presale.phases2')}</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {PRESALE_PHASES.map((phase) => (
+            {PRESALE_PHASES.map((phase, i) => (
               <motion.div key={phase.phase} variants={fadeUp}
-                className={`rounded-2xl border p-5 ${phase.status === 'active' ? 'border-gold/50 bg-gold/5 glow-gold' : 'border-dark-border bg-dark-card'}`}>
+                className={`rounded-2xl border p-5 ${i === (presaleInfo ? Number(presaleInfo[0]) : 1) ? 'border-gold/50 bg-gold/5 glow-gold' : 'border-dark-border bg-dark-card'}`}>
                 <div className="flex items-center justify-between mb-3">
                   <span className="text-sm font-bold text-white">{phase.phase}</span>
-                  {phase.status === 'active' && (
+                  {i === (presaleInfo ? Number(presaleInfo[0]) : 1) && (
                     <span className="px-2 py-0.5 text-xs font-bold rounded-full bg-gold/20 text-gold border border-gold/30">{t('presale.live')}</span>
                   )}
                 </div>

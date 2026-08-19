@@ -716,8 +716,8 @@ export default function AdminPage() {
             <motion.div variants={fadeUp} className="rounded-2xl glass-card p-6">
               <h3 className="text-lg font-bold text-white mb-4">Presale Phases</h3>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <InfoBox label="Phase 1" value="$0.01" gold />
-                <InfoBox label="Phase 2" value="$0.02" />
+                <InfoBox label="Phase 1" value="$0.01 ✓" />
+                <InfoBox label="Phase 2 — NOW" value="$0.02" gold />
                 <InfoBox label="Launch" value="$0.03 • DEX" />
               </div>
               <div className="mt-4 rounded-xl bg-dark-elevated p-4">
@@ -802,18 +802,19 @@ export default function AdminPage() {
                   </div>
                 </div>
                 <div className="flex gap-2 flex-wrap">
+                  {/* ONE-CLICK Phase 2: configures price correctly ($0.02 = 2 cents, bonus 0, 150M allocation) AND switches to it */}
                   <button onClick={async () => {
-                    if (!confirm('Set Phase 0 price to $0.01/VYR? This will fix the presale price.')) return;
-                    await exec('Fix Phase 0 Price', async () => {
-                      await writeContractAsync({ address: PRESALE_ADDRESS, abi: PresaleABI, functionName: 'setPhase', args: [BigInt(0), BigInt(1), BigInt(0), BigInt(150_000_000) * BigInt(10)**BigInt(18)] });
-                      await writeContractAsync({ address: PRESALE_ADDRESS, abi: PresaleABI, functionName: 'setCurrentPhase', args: [BigInt(0)] });
+                    if (!confirm('Activate Phase 2 at $0.02/VYR?\n\nThis fixes the phase price to $0.02 (150M allocation) and switches the presale to Phase 2. Buyers pay $0.02 per VYR.')) return;
+                    await exec('Activate Phase 2 ($0.02)', async () => {
+                      await writeContractAsync({ address: PRESALE_ADDRESS, abi: PresaleABI, functionName: 'setPhase', args: [BigInt(1), BigInt(2), BigInt(0), BigInt(150_000_000)] });
+                      await writeContractAsync({ address: PRESALE_ADDRESS, abi: PresaleABI, functionName: 'setCurrentPhase', args: [BigInt(1)] });
                     });
-                  }} disabled={pending === 'Fix Phase 0 Price'}
+                  }} disabled={pending === 'Activate Phase 2 ($0.02)'}
                     className="px-4 py-2 text-xs font-bold rounded-lg bg-green-500/10 text-green-400 border border-green-500/30 hover:bg-green-500/20">
-                    {pending === 'Fix Phase 0 Price' ? <Loader2 className="h-4 w-4 animate-spin" /> : '⚡ Fix Price $0.01'}
+                    {pending === 'Activate Phase 2 ($0.02)' ? <Loader2 className="h-4 w-4 animate-spin" /> : '⚡ Activate Phase 2 ($0.02)'}
                   </button>
                   <button onClick={async () => {
-                    const current = presaleInfo ? Number(presaleInfo[0]) : 0;
+                    const current = presaleInfo ? Number(presaleInfo[0]) : 1;
                     if (current === 0) return toast.error('Already on Phase 1');
                     if (!confirm('Switch back to Phase 1 ($0.01)?')) return;
                     await exec('Set Phase 1', async () => {
@@ -821,18 +822,7 @@ export default function AdminPage() {
                     });
                   }} disabled={pending === 'Set Phase 1' || (presaleInfo ? Number(presaleInfo[0]) === 0 : true)}
                     className="px-4 py-2 text-xs font-bold rounded-lg bg-gold/10 text-gold border border-gold/30 hover:bg-gold/20 disabled:opacity-50 disabled:cursor-not-allowed">
-                    {pending === 'Set Phase 1' ? <Loader2 className="h-4 w-4 animate-spin" /> : '← Phase 1 ($0.01)'}
-                  </button>
-                  <button onClick={async () => {
-                    const current = presaleInfo ? Number(presaleInfo[0]) : 0;
-                    if (current === 1) return toast.error('Already on Phase 2');
-                    if (!confirm('Switch to Phase 2 ($0.02)?')) return;
-                    await exec('Set Phase 2', async () => {
-                      await writeContractAsync({ address: PRESALE_ADDRESS, abi: PresaleABI, functionName: 'setCurrentPhase', args: [BigInt(1)] });
-                    });
-                  }} disabled={pending === 'Set Phase 2' || (presaleInfo ? Number(presaleInfo[0]) === 1 : false)}
-                    className="px-4 py-2 text-xs font-bold rounded-lg bg-gold/10 text-gold border border-gold/30 hover:bg-gold/20 disabled:opacity-50 disabled:cursor-not-allowed">
-                    {pending === 'Set Phase 2' ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Phase 2 ($0.02) →'}
+                    {pending === 'Set Phase 1' ? <Loader2 className="h-4 w-4 animate-spin" /> : '← Back to Phase 1 ($0.01)'}
                   </button>
                 </div>
               </div>
