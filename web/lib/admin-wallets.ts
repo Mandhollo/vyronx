@@ -16,7 +16,7 @@ export const FEE_WALLETS: readonly string[] = [
   '0x9d7f20ebb6c5d73a4ca57e53e97fe2707fcce720', // Collaborators
   '0x76681cccEb9F03d2a054211df8FEEbcbfE817521', // Infrastructure
   '0x5dBB4282cadE4C3f38F1Ff73c2141Ab0402b5eD3', // Development
-  '0xe9A61001c79287C300378F5caB528baec36274Cd', // Marketing
+  // Marketing wallet 0xe9A6...74Cd REMOVED 2026-08-19 — swapped on-chain to 0x0aFa...74a4 (no panel access granted)
 ].map((a) => a.toLowerCase());
 
 export function isAdminWallet(address?: string): boolean {
