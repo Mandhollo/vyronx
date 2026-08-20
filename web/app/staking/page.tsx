@@ -9,7 +9,7 @@ import {
   Lock, Unlock, TrendingUp, Wallet, Award,
   Zap, Users, ChevronDown, Info, ArrowRight, Clock, Loader2, AlertCircle, Check, Gift, Copy
 } from 'lucide-react';
-import { STAKING_ADDRESS, USDT_ADDRESS, StakingABI } from '@/lib/contracts';
+import { STAKING_ADDRESS, USDT_ADDRESS, StakingABI, PRESALE_REFERRAL_ADDRESS, ReferralABI } from '@/lib/contracts';
 import ContractAddress from '@/components/web3/ContractAddress';
 import { triggerCoinConfetti } from '@/components/effects/CoinConfetti';
 import { useI18n } from '@/lib/i18n';
@@ -169,6 +169,50 @@ function StakingPageContent() {
             { loading: 'Registering referrer...', success: 'Referrer registered! 🎉', error: 'Failed to register referrer' }
           );
         }
+      } catch {
+        // Silent fail — user can manually retry
+      }
+    })();
+  }, [isConnected, address, searchParams]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // MIRROR FALLBACK (same ref for staking & presale): no ?ref= in URL and
+  // nothing saved locally → adopt the referrer already registered in the
+  // PresaleReferral wrapper, so presale buyers who later stake without a link
+  // still join the same referral tree.
+  useEffect(() => {
+    if (!isConnected || !address) return;
+    const hasRef =
+      searchParams.get('ref')
+      || (() => { try { const s = localStorage.getItem('vyronx-ref'); return s ? (JSON.parse(s) as { ref: string }).ref : null; } catch { return null; } })();
+    if (hasRef) return;
+
+    (async () => {
+      try {
+        const existingStakingRef = await publicClient.readContract({
+          address: STAKING_ADDRESS as `0x${string}`, abi: StakingABI,
+          functionName: 'referrer', args: [address as `0x${string}`],
+        }) as `0x${string}`;
+        if (existingStakingRef !== '0x0000000000000000000000000000000000000000') return;
+
+        const presaleInfo = await publicClient.readContract({
+          address: PRESALE_REFERRAL_ADDRESS as `0x${string}`, abi: ReferralABI,
+          functionName: 'getReferralInfo', args: [address as `0x${string}`],
+        }) as readonly [`0x${string}`, bigint];
+        const presaleRef = presaleInfo?.[0];
+        if (!presaleRef || presaleRef === '0x0000000000000000000000000000000000000000') return;
+        if (presaleRef.toLowerCase() === address.toLowerCase()) return;
+
+        await new Promise(r => setTimeout(r, 1500));
+        if (chainId !== bsc.id) {
+          try { await switchChainAsync({ chainId: bsc.id }); } catch {}
+        }
+        toast.promise(
+          writeContractAsync({
+            address: STAKING_ADDRESS as `0x${string}`, abi: StakingABI,
+            functionName: 'setReferrer', args: [presaleRef],
+          }),
+          { loading: 'Registering referrer...', success: 'Referrer registered! 🎉', error: 'Failed to register referrer' }
+        );
       } catch {
         // Silent fail — user can manually retry
       }
