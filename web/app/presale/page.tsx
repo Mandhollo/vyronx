@@ -8,7 +8,7 @@ import {
   Wallet, Clock, TrendingUp, Check, AlertCircle,
   ArrowRight, Shield, Zap, Loader2, ExternalLink, X, Send
 } from 'lucide-react';
-import { PRESALE_ADDRESS, USDT_ADDRESS, PRESALE_REFERRAL_ADDRESS, PresaleABI, ReferralABI } from '@/lib/contracts';
+import { PRESALE_ADDRESS, USDT_ADDRESS, PRESALE_REFERRAL_ADDRESS, PresaleABI, ReferralABI, STAKING_ADDRESS, StakingABI } from '@/lib/contracts';
 import ContractAddress from '@/components/web3/ContractAddress';
 import { parseUnits, formatUnits } from 'viem';
 import { publicClient } from '@/components/web3/Web3Provider';
@@ -107,7 +107,10 @@ export default function PresalePage() {
   // Auto-register referrer on connect (before first buy)
   const [refRegistered, setRefRegistered] = useState(false);
   useEffect(() => {
-    if (!isConnected || !decodedRefAddress || refRegistered || hasPresaleReferrer) return;
+    // presaleRefData === undefined → still loading; firing setReferrer now would
+    // revert with "Referrer already set" in the wallet for wallets that already
+    // have one on-chain. Wait for the read to land first.
+    if (!isConnected || !decodedRefAddress || refRegistered || presaleRefData === undefined || hasPresaleReferrer) return;
     if (decodedRefAddress.toLowerCase() === address?.toLowerCase()) return;
 
     (async () => {
@@ -253,12 +256,26 @@ export default function PresalePage() {
       }
       // Ensure referrer is registered BEFORE buying — if a ref code exists
       // (URL or saved) but registration hasn't landed on-chain, register now.
+      // FALLBACK: no ?ref= code AND nothing saved → use the referrer already
+      // registered in Staking V5 (first-touch tree), so the referrer still
+      // gets the 10% presale bonus via the wrapper.
       let registeredNow = false;
-      if (!hasPresaleReferrer && decodedRefAddress) {
+      let refToRegister = decodedRefAddress as `0x${string}` | null;
+      if (!hasPresaleReferrer && !refToRegister && address) {
+        try {
+          const stakingRef = await publicClient.readContract({
+            address: STAKING_ADDRESS, abi: StakingABI, functionName: 'referrer', args: [address],
+          }) as `0x${string}`;
+          if (stakingRef && stakingRef !== '0x0000000000000000000000000000000000000000') {
+            refToRegister = stakingRef;
+          }
+        } catch { /* staking read failed — proceed without */ }
+      }
+      if (!hasPresaleReferrer && refToRegister) {
         try {
           await writeContractAsync({
             address: PRESALE_REFERRAL_ADDRESS, abi: ReferralABI, functionName: 'setReferrer',
-            args: [decodedRefAddress as `0x${string}`],
+            args: [refToRegister],
           });
           registeredNow = true;
           // wait a beat for the registry to index before buying via wrapper
@@ -275,7 +292,15 @@ export default function PresalePage() {
             refetchAllowanceWrapper?.();
           }
         } catch {
-          // registration reverted (e.g. already set on-chain) — proceed with buy
+          // registration reverted (e.g. already set on-chain) — re-read to
+          // confirm: if a referrer exists in the wrapper, still buy through it
+          // so the referrer gets the 10% bonus.
+          try {
+            const info = await publicClient.readContract({
+              address: PRESALE_REFERRAL_ADDRESS, abi: ReferralABI, functionName: 'getReferralInfo', args: [address as `0x${string}`],
+            }) as readonly [`0x${string}`, bigint];
+            if (info && info[0] !== '0x0000000000000000000000000000000000000000') registeredNow = true;
+          } catch { /* read failed — fall through to direct buy */ }
         }
       }
       // If buyer has a referrer registered → buy through wrapper (gets 10% bonus for referrer)
