@@ -5,10 +5,10 @@ import { motion } from 'framer-motion';
 import { useAccount, useReadContract, useSwitchChain } from 'wagmi';
 import {
   Gift, Loader2, Play, Power, DollarSign, Percent, Ticket,
-  Trophy, Check, AlertCircle, Settings, Sparkles, Tag, Flame,
+  Trophy, Check, AlertCircle, Settings, Sparkles, Tag, Flame, Target,
   Image as ImageIcon, Upload, Trash2, Wallet,
 } from 'lucide-react';
-import { LOTTERY_ADDRESS, LotteryABI, TOKEN_ADDRESS, TokenABI } from '@/lib/contracts';
+import { LOTTERY_ADDRESS, LotteryABI, TOKEN_ADDRESS, TokenABI, PRESALE_ADDRESS, PresaleABI, AUCTION_ADDRESS, AuctionABI } from '@/lib/contracts';
 import { formatUnits, parseUnits } from 'viem';
 import { bsc } from 'wagmi/chains';
 import toast from 'react-hot-toast';
@@ -546,6 +546,86 @@ function BuybackSettings({ writeContractAsync, pending, setPending }: {
     functionName: 'autoBuybackEnabled', chainId: bsc.id,
   }) as { data: boolean | undefined };
 
+  // Current fallback wallet + the project's presale buyback wallet (on-chain)
+  const { data: curFallback, refetch: refetchFallback } = useReadContract({
+    address: LOTTERY_ADDRESS as `0x${string}`, abi: LotteryABI,
+    functionName: 'buybackFallbackWallet', chainId: bsc.id,
+  }) as { data: string | undefined; refetch: () => void };
+  const { data: presaleBuyback, refetch: refetchPresaleBb } = useReadContract({
+    address: PRESALE_ADDRESS as `0x${string}`, abi: PresaleABI,
+    functionName: 'buybackWallet', chainId: bsc.id,
+  }) as { data: string | undefined; refetch: () => void };
+  // Lottery buybackWallet (also receives prizes when a round has <3 players)
+  const { data: curLotBb, refetch: refetchLotBb } = useReadContract({
+    address: LOTTERY_ADDRESS as `0x${string}`, abi: LotteryABI,
+    functionName: 'buybackWallet', chainId: bsc.id,
+  }) as { data: string | undefined; refetch: () => void };
+  // Auction fallback
+  const { data: aucFallback, refetch: refetchAucFallback } = useReadContract({
+    address: AUCTION_ADDRESS as `0x${string}`, abi: AuctionABI,
+    functionName: 'buybackFallbackWallet', chainId: bsc.id,
+  }) as { data: string | undefined; refetch: () => void };
+  // Lottery 4 fee wallets — needed because setFeeWallets updates all 5 at once
+  const { data: lotFeeWalletsNow, refetch: refetchLotFees } = useReadContract({
+    address: LOTTERY_ADDRESS as `0x${string}`, abi: LotteryABI,
+    functionName: 'getFeeWallets', chainId: bsc.id,
+  }) as { data: readonly [string, string, string, string] | undefined; refetch: () => void };
+
+  const eq = (a?: string, b?: string) => !!a && !!b && a.toLowerCase() === b.toLowerCase();
+  const lotFallbackOk = eq(curFallback, presaleBuyback ?? undefined);
+  const lotPrizeOk = eq(curLotBb, presaleBuyback ?? undefined);
+  const aucFallbackOk = eq(aucFallback, presaleBuyback ?? undefined);
+  const allAligned = lotFallbackOk && lotPrizeOk && aucFallbackOk;
+
+  // One click → align ALL fallbacks to the project buyback wallet (3 txs in sequence)
+  const handleAlignAll = async () => {
+    if (!onCorrectChain) { await switchChainAsync?.({ chainId: bsc.id }); return; }
+    if (!presaleBuyback) { toast.error('Could not read the presale buyback wallet on-chain.'); return; }
+    if (!lotFeeWalletsNow) { toast.error('Could not read the lottery fee wallets on-chain.'); return; }
+    if (!window.confirm(`Align ALL fallbacks to the project Buyback wallet?\n\n${presaleBuyback}\n\nThis sends 3 transactions (lottery swap-fallback, lottery prize-fallback, auction fallback). Funds that fail to swap will land in this wallet instead of Collaborators.`)) return;
+    setPending('Aligning Buyback Wallets');
+    try {
+      // 1/3 — Lottery swap fallback
+      if (!lotFallbackOk) {
+        const tx1 = await writeContractAsync({
+          address: LOTTERY_ADDRESS as `0x${string}`, abi: LotteryABI,
+          functionName: 'setBuybackFallbackWallet', args: [presaleBuyback as `0x${string}`], chainId: bsc.id,
+        });
+        await waitForTx(tx1);
+        toast.success('1/3 — Lottery swap-fallback updated');
+        refetchFallback();
+      } else toast.success('1/3 — Lottery swap-fallback already OK');
+
+      // 2/3 — Lottery buyback wallet (<3 players prize fallback); setFeeWallets updates all 5
+      if (!lotPrizeOk) {
+        const tx2 = await writeContractAsync({
+          address: LOTTERY_ADDRESS as `0x${string}`, abi: LotteryABI,
+          functionName: 'setFeeWallets',
+          args: [[...lotFeeWalletsNow] as [string, string, string, string], presaleBuyback as `0x${string}`],
+          chainId: bsc.id,
+        });
+        await waitForTx(tx2);
+        toast.success('2/3 — Lottery prize-fallback updated');
+        refetchLotBb(); refetchLotFees();
+      } else toast.success('2/3 — Lottery prize-fallback already OK');
+
+      // 3/3 — Auction fallback
+      if (!aucFallbackOk) {
+        const tx3 = await writeContractAsync({
+          address: AUCTION_ADDRESS as `0x${string}`, abi: AuctionABI,
+          functionName: 'setBuybackWallet', args: [presaleBuyback as `0x${string}`], chainId: bsc.id,
+        });
+        await waitForTx(tx3);
+        toast.success('3/3 — Auction fallback updated');
+        refetchAucFallback();
+      } else toast.success('3/3 — Auction fallback already OK');
+
+      refetchPresaleBb();
+      toast.success('All fallbacks aligned to the project Buyback wallet! 🎯');
+    } catch (e: any) { toast.error(e?.shortMessage || 'Failed'); }
+    finally { setPending(null); }
+  };
+
   const handleToggle = async () => {
     if (!onCorrectChain) { await switchChainAsync?.({ chainId: bsc.id }); return; }
     setPending('Toggle Buyback');
@@ -562,13 +642,57 @@ function BuybackSettings({ writeContractAsync, pending, setPending }: {
 
   return (
     <motion.div variants={fadeUp} className="rounded-2xl border border-gold/20 bg-gradient-to-br from-gold/5 to-transparent p-6">
-      <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-        <Flame className="w-5 h-5 text-gold" /> Auto Buy-Back & Burn
-      </h3>
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-lg font-bold text-white flex items-center gap-2">
+          <Flame className="w-5 h-5 text-gold" /> Project Buyback Wallet & Fallbacks
+        </h3>
+        {(allAligned || (curFallback !== undefined && !allAligned)) && (
+          <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${allAligned ? 'bg-green-500/15 text-green-300' : 'bg-red-500/15 text-red-300'}`}>
+            {allAligned ? 'ALL ALIGNED ✓' : 'ACTION NEEDED'}
+          </span>
+        )}
+      </div>
       <div className="space-y-4">
+        {/* The source of truth: presale buyback wallet */}
+        <div className="p-4 rounded-xl bg-black/30">
+          <div className="text-xs text-beige/50 mb-1">Project Buyback Wallet (receives 15% of presale)</div>
+          <code className="text-sm text-gold break-all font-bold">{presaleBuyback || '...'}</code>
+        </div>
+
+        {/* Status of every fallback */}
+        <div className="space-y-2">
+          {[
+            { label: 'Lottery — swap fails (20% of pot)', ok: lotFallbackOk, cur: curFallback },
+            { label: 'Lottery — prizes when <3 players', ok: lotPrizeOk, cur: curLotBb },
+            { label: 'Auction — buyback swap fails', ok: aucFallbackOk, cur: aucFallback },
+          ].map((row) => (
+            <div key={row.label} className="flex items-center justify-between p-3 rounded-lg bg-dark-elevated">
+              <div className="min-w-0">
+                <div className="text-sm font-semibold text-white">{row.label}</div>
+                <div className="text-xs text-beige/40 font-mono truncate">{row.ok ? '→ project buyback wallet ✓' : `→ ${row.cur || '...'}`}</div>
+              </div>
+              <span className={`ml-3 shrink-0 text-lg ${row.ok ? 'text-green-400' : 'text-red-400'}`}>{row.ok ? '✓' : '✗'}</span>
+            </div>
+          ))}
+        </div>
+
+        {!allAligned && (
+          <button onClick={handleAlignAll} disabled={pending !== null}
+            className="w-full px-6 py-3 rounded-xl bg-gold/15 text-gold border border-gold/40 font-bold hover:bg-gold/25 disabled:opacity-50 flex items-center justify-center gap-2">
+            {pending === 'Aligning Buyback Wallets' ? <Loader2 className="w-5 h-5 animate-spin" /> : <Target className="w-5 h-5" />}
+            Align ALL Fallbacks to Buyback Wallet (3 txs)
+          </button>
+        )}
+        {allAligned && (
+          <div className="text-xs text-green-300 bg-green-500/10 border border-green-500/20 rounded-lg p-3">
+            ✓ Every fallback in every module (lottery swap, lottery prizes, auction) now sends funds to the project Buyback wallet. Nothing lands in Collaborators or the owner wallet by accident.
+          </div>
+        )}
+
+        {/* Auto buyback toggle */}
         <div className="flex items-center justify-between p-4 rounded-xl bg-dark-elevated">
           <div>
-            <div className="text-sm font-semibold text-white">Swap USDT → VYR + Burn</div>
+            <div className="text-sm font-semibold text-white">Auto Buy-Back & Burn (when swap works)</div>
             <div className="text-xs text-beige/40 mt-1">
               {autoEnabled
                 ? '✅ Active — Buys VYR on PancakeSwap and burns automatically after each draw'
@@ -588,9 +712,8 @@ function BuybackSettings({ writeContractAsync, pending, setPending }: {
           </button>
         </div>
         <div className="text-xs text-beige/30 leading-relaxed">
-          <strong className="text-beige/50">How it works:</strong> When a lottery closes, 20% of the pool is sent
-          to PancakeSwap V2, buys $VYR with USDT, and the purchased tokens are <strong className="text-red-400">permanently burned</strong>.
-          This reduces circulating supply and supports the chart price. If the swap fails (low liquidity), USDT goes to the fallback wallet.
+          <strong className="text-beige/50">How it works:</strong> When a lottery closes, 20% of the pool tries to buy $VYR on PancakeSwap and burn it.
+          Before launch there is no liquidity, so the swap fails — and that money must land in the <strong className="text-gold">project Buyback wallet</strong> (same one receiving 15% of the presale), never in Collaborators.
         </div>
       </div>
     </motion.div>
@@ -755,7 +878,9 @@ function FeeExclusionSection({ writeContractAsync, pending, setPending }: {
 // Lottery Image Uploader — compresses in browser, stores data-URI on-chain
 // ════════════════════════════════════════════════════
 
-const IMG_MAX_BYTES = 96 * 1024; // 96KB contract limit (131072 chars ≈ 96KB binary)
+// On-chain storage costs ~727 gas/char; wallets cap tx gas at 16.7M.
+// 14,000 chars ≈ 10.2M gas → safe margin. (~10KB image)
+const IMG_MAX_CHARS = 14000;
 
 async function compressImage(file: File): Promise<string> {
   // Load file
@@ -772,9 +897,9 @@ async function compressImage(file: File): Promise<string> {
     image.onerror = reject;
     image.src = dataUrl;
   });
-  // Downscale loop: 640 → 512 → 420 → 320 px, JPEG quality 0.82 → lower
-  const sizes = [640, 512, 420, 320];
-  const qualities = [0.82, 0.75, 0.68, 0.6];
+  // Downscale loop until it fits the on-chain gas limit (~14K chars)
+  const sizes = [480, 400, 320, 280, 240, 200];
+  const qualities = [0.78, 0.72, 0.65, 0.6, 0.55, 0.5];
   for (let i = 0; i < sizes.length; i++) {
     const canvas = document.createElement('canvas');
     const scale = Math.min(1, sizes[i] / Math.max(img.width, img.height));
@@ -784,9 +909,21 @@ async function compressImage(file: File): Promise<string> {
     if (!ctx) break;
     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
     const out = canvas.toDataURL('image/jpeg', qualities[i]);
-    if (out.length <= IMG_MAX_BYTES) return out;
+    if (out.length <= IMG_MAX_CHARS) return out;
   }
-  throw new Error('Imagem muito grande mesmo após compressão. Use uma imagem menor.');
+  // Last resort: smallest size, drop quality until it fits
+  for (const q of [0.45, 0.4, 0.35, 0.3]) {
+    const canvas = document.createElement('canvas');
+    const scale = Math.min(1, 200 / Math.max(img.width, img.height));
+    canvas.width = Math.max(1, Math.round(img.width * scale));
+    canvas.height = Math.max(1, Math.round(img.height * scale));
+    const ctx = canvas.getContext('2d');
+    if (!ctx) break;
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    const out = canvas.toDataURL('image/jpeg', q);
+    if (out.length <= IMG_MAX_CHARS) return out;
+  }
+  throw new Error('Imagem muito grande mesmo após compressão. Tente uma imagem menor.');
 }
 
 function LotteryImageUploader({ lotteryType, label, currentImage, onSaved, writeContractAsync, pending, setPending }: {
