@@ -576,7 +576,7 @@ export default function DashboardPage() {
                             {isWithdrawn && <span className="px-2 py-0.5 text-xs rounded-full bg-green-500/10 text-green-400">✓ Closed</span>}
                           </div>
                           <div className="text-xs text-beige-muted mt-1">
-                            {isVoucher ? 'MLM License — no yield, no principal' : `${pool.dailyRate}% daily • Staked: $${stakeValue}`}
+                            {isVoucher ? `Package: $${stakeValue} • MLM License — no yield, no principal` : `${pool.dailyRate}% daily • Staked: $${stakeValue}`}
                           </div>
                         </div>
                       </div>
