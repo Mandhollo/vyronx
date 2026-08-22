@@ -7,7 +7,7 @@ import {
   Gavel, Loader2, Play, Power, DollarSign, Percent, Timer,
   Check, AlertCircle, Settings, Flame, Coins, Trophy, Ban, PauseCircle, Wallet, Image as ImageIcon, Upload,
 } from 'lucide-react';
-import { AUCTION_ADDRESS, AuctionABI, TOKEN_ADDRESS, TokenABI } from '@/lib/contracts';
+import { AUCTION_ADDRESS, AuctionABI, TOKEN_ADDRESS, TokenABI, STAKING_ADDRESS, StakingABI } from '@/lib/contracts';
 import { formatUnits, parseUnits } from 'viem';
 import { bsc } from 'wagmi/chains';
 import toast from 'react-hot-toast';
@@ -111,6 +111,12 @@ export default function AuctionAdminSection({ writeContractAsync, pending, setPe
   const { data: totalRevenue } = cfg('totalUsdtRevenue');
   const { data: totalBurned } = cfg('totalVyrBurned');
   const { data: isPaused } = useReadContract({ address: AUCTION_ADDRESS as `0x${string}`, abi: AuctionABI, functionName: 'paused', chainId: bsc.id, query: { enabled: !NOT_DEPLOYED  }}) as { data: boolean | undefined };
+
+  // ── VYR Price Oracle (auction reads price for buyBidPackWithVYR) ──
+  const { data: oracleAddr } = cfg('stakingOracle');
+  const { data: v5Price } = useReadContract({ address: STAKING_ADDRESS, abi: StakingABI, functionName: 'vyrPriceInUsdt', chainId: bsc.id }) as { data: bigint | undefined };
+  const oracleAligned = oracleAddr != null && (oracleAddr as string).toLowerCase() === STAKING_ADDRESS.toLowerCase();
+
 
   const { data: activeIds, refetch: refetchActive } = useReadContract({
     address: AUCTION_ADDRESS as `0x${string}`, abi: AuctionABI,
@@ -277,6 +283,42 @@ export default function AuctionAdminSection({ writeContractAsync, pending, setPe
 
   return (
     <>
+      {/* ⚡ VYR PRICE ORACLE — one-click align (auction prices bids-with-VYR from this oracle) */}
+      <motion.div variants={fadeUp} className={`rounded-2xl p-6 ${oracleAligned ? 'border border-green-500/30 bg-green-500/5' : 'border border-red-500/40 bg-red-500/5'}`}>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h3 className="text-base font-bold text-white">💵 VYR Price Oracle</h3>
+              {oracleAligned
+                ? <span className="px-2 py-0.5 text-xs rounded-full bg-green-500/10 text-green-400 font-bold">ALIGNED ✓</span>
+                : <span className="px-2 py-0.5 text-xs rounded-full bg-red-500/10 text-red-400 font-bold">ACTION NEEDED</span>}
+            </div>
+            <div className="text-xs text-beige-muted mt-1">
+              Price used when buying bids with VYR. Source: <span className="font-mono text-gold">{oracleAddr ? `${(oracleAddr as string).slice(0, 6)}...${(oracleAddr as string).slice(-4)}` : '...'}</span>
+              {v5Price != null && <> — live VYR price: <span className="text-gold font-bold">${fmt(v5Price, 2)}</span></>}
+            </div>
+            {!oracleAligned && (
+              <div className="text-xs text-red-400 mt-1">
+                ⚠ Auction is reading the OLD staking (V4, $1.00). Bids bought with VYR are valued 20× wrong.
+              </div>
+            )}
+          </div>
+          {!oracleAligned && (
+            <button
+              onClick={() => doTx('Fix Price Oracle', () => writeContractAsync({
+                address: AUCTION_ADDRESS as `0x${string}`, abi: AuctionABI,
+                functionName: 'setStakingOracle', args: [STAKING_ADDRESS], chainId: bsc.id,
+              }))}
+              disabled={pending !== null}
+              className="shrink-0 px-5 py-3 rounded-xl font-bold text-sm bg-gold text-black hover:bg-gold-light transition-colors disabled:opacity-50 flex items-center gap-2"
+            >
+              {pending === 'Fix Price Oracle' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+              ONE CLICK — Fix Oracle
+            </button>
+          )}
+        </div>
+      </motion.div>
+
       {/* Overview bar */}
       <motion.div variants={fadeUp} className="rounded-2xl border border-dark-border bg-dark-card/60 p-4">
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
