@@ -1160,24 +1160,13 @@ export default function AdminPage() {
                 </div>
               </div>
 
-              {/* Voucher List */}
-              {voucherCount && Number(voucherCount) > 0 ? (
-                <div className="space-y-2">
-                  <div className="text-xs text-beige-muted uppercase tracking-wider mb-2">Voucher Recipients</div>
-                  {Array.from({ length: Math.min(Number(voucherCount), 50) }, (_, i) => (
-                    <VoucherRow key={i} id={i} pending={pending} onAction={async (action, vid) => {
-                      if (action === 'cancel') {
-                        if (!confirm(`Cancel voucher #${vid}? This cannot be undone.`)) return;
-                        await exec(`Cancel Voucher ${vid}`, async () => {
-                          await writeContractAsync({ address: STAKING_ADDRESS, abi: StakingABI, functionName: 'cancelVoucher', args: [BigInt(vid)] });
-                        });
-                      }
-                    }} />
-                  ))}
-                </div>
-              ) : (
-                <div className="text-sm text-beige-muted text-center py-6">No vouchers issued yet.</div>
-              )}
+              {/* Voucher List — full list, newest first + wallet search */}
+              <VoucherList count={voucherCount ? Number(voucherCount) : 0} pending={pending} onCancel={async (vid) => {
+                if (!confirm(`Cancel voucher #${vid}? This cannot be undone.`)) return;
+                await exec(`Cancel Voucher ${vid}`, async () => {
+                  await writeContractAsync({ address: STAKING_ADDRESS, abi: StakingABI, functionName: 'cancelVoucher', args: [BigInt(vid)] });
+                });
+              }} />
             </motion.div>
           </motion.div>
         )}
@@ -1584,6 +1573,84 @@ function InfoBox({ label, value, gold, highlight }: { label: string; value: stri
     <div className={`rounded-xl p-4 ${gold ? 'bg-gold/5 border border-gold/20' : highlight ? 'bg-red-500/10 border border-red-500/20' : 'bg-dark-elevated'}`}>
       <div className="text-xs text-beige-muted">{label}</div>
       <div className={`text-lg font-bold ${gold ? 'text-gold' : 'text-white'}`}>{value}</div>
+    </div>
+  );
+}
+
+// ═══ VOUCHER LIST — full list newest-first + wallet search (Beto request) ═══
+function VoucherList({ count, pending, onCancel }: { count: number; pending: string | null; onCancel: (vid: number) => Promise<void> }) {
+  const [search, setSearch] = useState('');
+  const [limit, setLimit] = useState(25);
+
+  // Full list, newest first: ids [count-1 .. 0]
+  const idsDesc = Array.from({ length: count }, (_, i) => count - 1 - i);
+
+  // Wallet lookup via getUserVouchers (returns ALL vouchers of a wallet, incl. cancelled)
+  const isWallet = /^0x[0-9a-fA-F]{40}$/.test(search.trim());
+  const { data: userVouchers, isLoading: searching } = useReadContract({
+    address: STAKING_ADDRESS, abi: StakingABI, functionName: 'getUserVouchers',
+    args: [search.trim() as `0x${string}`], chainId: bsc.id,
+    query: { enabled: isWallet },
+  }) as { data: { ids: readonly bigint[]; poolIds: readonly bigint[]; usdtValues: readonly bigint[]; expiries: readonly bigint[]; redeemed: readonly boolean[]; cancelled: readonly boolean[] } | undefined; isLoading: boolean };
+  const userVoucherIds = isWallet && userVouchers ? userVouchers.ids.map(Number) : null;
+
+  const visible = userVoucherIds ?? idsDesc.slice(0, limit);
+  const hasMore = !userVoucherIds && limit < count;
+
+  return (
+    <div className="space-y-3">
+      {/* Search */}
+      <div className="relative">
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search by wallet (0x...) — shows every voucher of that wallet"
+          className="w-full bg-dark-elevated border border-dark-border rounded-lg px-3 py-2 text-sm text-white font-mono placeholder:text-beige-muted/50 placeholder:font-sans focus:outline-none focus:border-gold/50"
+        />
+        {search && (
+          <button onClick={() => setSearch('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-beige-muted hover:text-white text-sm">×</button>
+        )}
+      </div>
+
+      {isWallet ? (
+        /* ── WALLET SEARCH RESULT ── */
+        searching ? (
+          <div className="text-sm text-beige-muted text-center py-4">Searching on-chain...</div>
+        ) : userVoucherIds && userVoucherIds.length > 0 ? (
+          <div className="space-y-2">
+            <div className="text-xs text-beige-muted">
+              Found <span className="text-gold font-bold">{userVoucherIds.length}</span> voucher{userVoucherIds.length > 1 ? 's' : ''} for this wallet
+            </div>
+            {userVoucherIds.map((id) => (
+              <VoucherRow key={`u-${id}`} id={id} pending={pending} onAction={(_a, vid) => onCancel(vid)} />
+            ))}
+          </div>
+        ) : (
+          <div className="text-sm text-beige-muted text-center py-4">No vouchers found for this wallet.</div>
+        )
+      ) : count > 0 ? (
+        /* ── FULL LIST, NEWEST FIRST ── */
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <div className="text-xs text-beige-muted uppercase tracking-wider">Voucher Recipients — Newest First</div>
+            <div className="text-xs text-beige-muted">Showing {visible.length} of {count}</div>
+          </div>
+          {visible.map((id) => (
+            <VoucherRow key={id} id={id} pending={pending} onAction={(_a, vid) => onCancel(vid)} />
+          ))}
+          {hasMore && (
+            <button
+              onClick={() => setLimit((l) => l + 25)}
+              className="w-full text-xs px-3 py-2 rounded-lg bg-gold/10 text-gold border border-gold/30 hover:bg-gold/20 transition-colors"
+            >
+              Show more ({count - visible.length} remaining)
+            </button>
+          )}
+        </div>
+      ) : (
+        <div className="text-sm text-beige-muted text-center py-6">No vouchers issued yet.</div>
+      )}
     </div>
   );
 }
