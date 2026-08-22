@@ -519,14 +519,42 @@ export default function AdminPage() {
               </div>
             </div>
 
+            {/* Stuck Tokens Burn — dedicated section for the owner */}
+            <div className="rounded-2xl glass-card p-6 border border-red-500/30">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                  <Flame className="w-5 h-5 text-red-400" /> Stuck Tokens (Burn)
+                </h3>
+                {tokenContractBalance !== undefined && (
+                  <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${stuckTokens > 0 ? 'bg-red-500/15 text-red-300' : 'bg-green-500/15 text-green-300'}`}>
+                    {stuckTokens > 0 ? 'ACTION NEEDED' : 'CLEAN ✓'}
+                  </span>
+                )}
+              </div>
+              <div className="bg-black/30 rounded-xl p-4 mb-4 space-y-2">
+                <div className="flex items-baseline justify-between">
+                  <span className="text-sm text-beige-muted">Tokens locked inside the token contract:</span>
+                  <span className={`text-2xl font-black ${stuckTokens > 0 ? 'text-red-300' : 'text-green-300'}`}>
+                    {stuckTokens.toLocaleString('en-US', { maximumFractionDigits: 0 })} VYR
+                  </span>
+                </div>
+                <div className="text-xs text-beige-muted/70 leading-relaxed">
+                  These tokens came from the pre-launch fee split. They serve no purpose and <span className="text-red-300 font-semibold">risk triggering an automatic mass-sale of ~$376K on the first sell after launch</span>, which would crash the price. Burning them permanently removes this risk.
+                </div>
+                <div className="text-xs text-beige-muted/70 leading-relaxed">
+                  <span className="text-gold font-semibold">How it works:</span> one click sends all stuck tokens to the dead address (0x...dEaD). They are destroyed forever — nobody can ever use them again. Total burned rises from 0.94% to <span className="text-gold font-bold">~2.82% of total supply</span>. Recommended before launch.
+                </div>
+              </div>
+              <ActionBtn onClick={handleBurnStuck} disabled={stuckTokens === 0 || pending === 'Burn Stuck Tokens'} loading={pending === 'Burn Stuck Tokens'} full
+                icon={Flame} label={stuckTokens > 0 ? `🔥 Burn ${stuckTokens.toLocaleString('en-US', { maximumFractionDigits: 0 })} VYR Forever` : 'Nothing to Burn — All Clean'} variant="danger" />
+            </div>
+
             {/* Quick Actions */}
             <div className="rounded-2xl glass-card p-6">
               <h3 className="text-lg font-bold text-white mb-4">Quick Actions</h3>
               <div className="flex flex-wrap gap-3">
                 <ActionBtn onClick={handleEnableTrading} disabled={tradingEnabled === true || pending === 'Enable Trading'} loading={pending === 'Enable Trading'}
                   icon={Power} label={tradingEnabled ? 'Trading Active' : 'Enable Trading'} variant="gold" />
-                <ActionBtn onClick={handleBurnStuck} disabled={stuckTokens === 0 || pending === 'Burn Stuck Tokens'} loading={pending === 'Burn Stuck Tokens'}
-                  icon={Flame} label={`Burn Stuck (${stuckTokens.toLocaleString('en-US', { maximumFractionDigits: 0 })} VYR)`} variant="danger" />
                 {distDue && (
                   <ActionBtn onClick={handleDistribute} disabled={pending === 'Distribute Funds'} loading={pending === 'Distribute Funds'}
                     icon={Banknote} label="Distribute Funds Now" variant="danger" />
