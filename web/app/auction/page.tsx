@@ -9,7 +9,7 @@ import {
   Gavel, Loader2, DollarSign, Users, Trophy, Zap,
   AlertCircle, Timer, Flame, Coins, ShieldCheck, TrendingDown, Sparkles, Crown,
 } from 'lucide-react';
-import { AUCTION_ADDRESS, AuctionABI, TOKEN_ADDRESS, USDT_ADDRESS } from '@/lib/contracts';
+import { AUCTION_ADDRESS, AuctionABI, TOKEN_ADDRESS, USDT_ADDRESS, STAKING_ADDRESS, StakingABI } from '@/lib/contracts';
 import { parseUnits, formatUnits } from 'viem';
 import { bsc } from 'wagmi/chains';
 import toast from 'react-hot-toast';
@@ -62,6 +62,10 @@ export default function AuctionPage() {
     val ? parseFloat(formatUnits(val, 18)).toLocaleString('en-US', { maximumFractionDigits: display }) : '0';
 
   // ── Reads ──
+  // Live VYR price + bonus for the bids-with-VYR preview (matches buyBidPackWithVYR math)
+  const { data: vyrPrice } = useReadContract({ address: STAKING_ADDRESS, abi: StakingABI, functionName: 'vyrPriceInUsdt', chainId: bsc.id }) as { data: bigint | undefined };
+  const { data: vyBonusBps } = useReadContract({ address: AUCTION_ADDRESS as `0x${string}`, abi: AuctionABI, functionName: 'vyBonusBps', chainId: bsc.id, query: { enabled: !PREVIEW_MODE } }) as { data: bigint | undefined };
+
   const { data: activeIds, refetch: refetchActive } = useReadContract({
     address: AUCTION_ADDRESS as `0x${string}`, abi: AuctionABI,
     functionName: 'getActiveAuctionIds', chainId: bsc.id, query: { enabled: !PREVIEW_MODE },
@@ -369,7 +373,7 @@ export default function AuctionPage() {
                 <p className="text-xs text-beige-muted mb-3">50% burned 🔥 + 50% treasury</p>
                 <button onClick={handleBuyVYR} disabled={pending !== null || !isConnected || !vyrBal || vyrBal === BigInt(0)}
                   className="w-full px-3 py-2.5 rounded-lg bg-dark-elevated border border-gold/40 text-gold font-bold text-sm hover:bg-gold/10 disabled:opacity-50">
-                  {t('auc.buy')} {fmt(vyrBal, 0)} VYR → {Math.floor(parseFloat(fmt(vyrBal, 2)) * 1.1)} bids
+                  {t('auc.buy')} {fmt(vyrBal, 0)} VYR → {Math.floor((parseFloat(formatUnits(vyrBal ?? BigInt(0), 18)) * parseFloat(formatUnits(vyrPrice ?? BigInt(0), 18)) * (10000 + Number(vyBonusBps ?? 0))) / 10000)} bids
                 </button>
               </div>
             </div>
