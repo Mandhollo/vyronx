@@ -577,27 +577,34 @@ function BuybackSettings({ writeContractAsync, pending, setPending }: {
   const aucFallbackOk = eq(aucFallback, presaleBuyback ?? undefined);
   const allAligned = lotFallbackOk && lotPrizeOk && aucFallbackOk;
 
-  // One click → align ALL fallbacks to the project buyback wallet (3 txs in sequence)
+  // One click → align ALL fallbacks to the project buyback wallet.
+  // Wallet asks to sign up to 3 times in a row — the owner just presses Confirm each time.
+  const [alignStep, setAlignStep] = useState<string | null>(null);
   const handleAlignAll = async () => {
     if (!onCorrectChain) { await switchChainAsync?.({ chainId: bsc.id }); return; }
     if (!presaleBuyback) { toast.error('Could not read the presale buyback wallet on-chain.'); return; }
     if (!lotFeeWalletsNow) { toast.error('Could not read the lottery fee wallets on-chain.'); return; }
-    if (!window.confirm(`Align ALL fallbacks to the project Buyback wallet?\n\n${presaleBuyback}\n\nThis sends 3 transactions (lottery swap-fallback, lottery prize-fallback, auction fallback). Funds that fail to swap will land in this wallet instead of Collaborators.`)) return;
+    const total = (lotFallbackOk ? 0 : 1) + (lotPrizeOk ? 0 : 1) + (aucFallbackOk ? 0 : 1);
+    if (total === 0) { toast.success('Everything is already aligned! 🎯'); return; }
+    if (!window.confirm(`Fix ALL fallbacks to the project Buyback wallet?\n\n${presaleBuyback}\n\n⚠️ Your wallet will open ${total} confirmation window${total > 1 ? 's' : ''}, one after another — just press CONFIRM each time. That's all.`)) return;
     setPending('Aligning Buyback Wallets');
+    let done = 0;
     try {
-      // 1/3 — Lottery swap fallback
+      // 1 — Lottery swap fallback
       if (!lotFallbackOk) {
+        done++; setAlignStep(`Signing ${done}/${total}...`);
         const tx1 = await writeContractAsync({
           address: LOTTERY_ADDRESS as `0x${string}`, abi: LotteryABI,
           functionName: 'setBuybackFallbackWallet', args: [presaleBuyback as `0x${string}`], chainId: bsc.id,
         });
         await waitForTx(tx1);
-        toast.success('1/3 — Lottery swap-fallback updated');
         refetchFallback();
-      } else toast.success('1/3 — Lottery swap-fallback already OK');
+        toast.success(`${done}/${total} done ✓`);
+      }
 
-      // 2/3 — Lottery buyback wallet (<3 players prize fallback); setFeeWallets updates all 5
+      // 2 — Lottery buyback wallet (<3 players prize fallback); setFeeWallets updates all 5
       if (!lotPrizeOk) {
+        done++; setAlignStep(`Signing ${done}/${total}...`);
         const tx2 = await writeContractAsync({
           address: LOTTERY_ADDRESS as `0x${string}`, abi: LotteryABI,
           functionName: 'setFeeWallets',
@@ -605,25 +612,26 @@ function BuybackSettings({ writeContractAsync, pending, setPending }: {
           chainId: bsc.id,
         });
         await waitForTx(tx2);
-        toast.success('2/3 — Lottery prize-fallback updated');
         refetchLotBb(); refetchLotFees();
-      } else toast.success('2/3 — Lottery prize-fallback already OK');
+        toast.success(`${done}/${total} done ✓`);
+      }
 
-      // 3/3 — Auction fallback
+      // 3 — Auction fallback
       if (!aucFallbackOk) {
+        done++; setAlignStep(`Signing ${done}/${total}...`);
         const tx3 = await writeContractAsync({
           address: AUCTION_ADDRESS as `0x${string}`, abi: AuctionABI,
           functionName: 'setBuybackWallet', args: [presaleBuyback as `0x${string}`], chainId: bsc.id,
         });
         await waitForTx(tx3);
-        toast.success('3/3 — Auction fallback updated');
         refetchAucFallback();
-      } else toast.success('3/3 — Auction fallback already OK');
+        toast.success(`${done}/${total} done ✓`);
+      }
 
       refetchPresaleBb();
-      toast.success('All fallbacks aligned to the project Buyback wallet! 🎯');
-    } catch (e: any) { toast.error(e?.shortMessage || 'Failed'); }
-    finally { setPending(null); }
+      toast.success('All fallbacks now point to the project Buyback wallet! 🎯', { duration: 8000 });
+    } catch (e: any) { toast.error(e?.shortMessage || 'Failed — press the button again to continue from where it stopped.'); }
+    finally { setPending(null); setAlignStep(null); }
   };
 
   const handleToggle = async () => {
@@ -677,11 +685,23 @@ function BuybackSettings({ writeContractAsync, pending, setPending }: {
         </div>
 
         {!allAligned && (
-          <button onClick={handleAlignAll} disabled={pending !== null}
-            className="w-full px-6 py-3 rounded-xl bg-gold/15 text-gold border border-gold/40 font-bold hover:bg-gold/25 disabled:opacity-50 flex items-center justify-center gap-2">
-            {pending === 'Aligning Buyback Wallets' ? <Loader2 className="w-5 h-5 animate-spin" /> : <Target className="w-5 h-5" />}
-            Align ALL Fallbacks to Buyback Wallet (3 txs)
-          </button>
+          <div className="space-y-2">
+            {alignStep && (
+              <div className="text-center text-sm font-bold text-gold bg-gold/10 border border-gold/30 rounded-lg py-2 animate-pulse">
+                {alignStep} — confirm in your wallet
+              </div>
+            )}
+            <button onClick={handleAlignAll} disabled={pending !== null}
+              className="w-full px-6 py-4 rounded-xl bg-gold/15 text-gold border border-gold/40 font-bold hover:bg-gold/25 disabled:opacity-50 flex items-center justify-center gap-2 text-base">
+              {pending === 'Aligning Buyback Wallets' ? <Loader2 className="w-5 h-5 animate-spin" /> : <Target className="w-5 h-5" />}
+              {pending === 'Aligning Buyback Wallets'
+                ? `Working... (${alignStep ?? 'checking'})`
+                : '🎯 ONE CLICK — Fix All Fallbacks'}
+            </button>
+            <div className="text-xs text-center text-beige/40">
+              Your wallet will ask you to confirm {((lotFallbackOk ? 0 : 1) + (lotPrizeOk ? 0 : 1) + (aucFallbackOk ? 0 : 1))} time{((lotFallbackOk ? 0 : 1) + (lotPrizeOk ? 0 : 1) + (aucFallbackOk ? 0 : 1)) !== 1 ? 's' : ''} in a row — just press CONFIRM each time.
+            </div>
+          </div>
         )}
         {allAligned && (
           <div className="text-xs text-green-300 bg-green-500/10 border border-green-500/20 rounded-lg p-3">
