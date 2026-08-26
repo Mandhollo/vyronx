@@ -8,7 +8,7 @@ import { publicClient } from '@/components/web3/Web3Provider';
 import { encodeReferralCode, decodeReferralCode, isReferralCode } from '@/lib/referral-code';
 import {
   Wallet, TrendingUp, Lock, Unlock, Users, Award, Clock, Crown, Medal, Trophy,
-  ArrowRight, Loader2, AlertCircle, Coins, Gift, Zap, ExternalLink,
+  ArrowRight, Loader2, AlertCircle, Coins, Gift, Zap, ExternalLink, Megaphone,
   ChevronRight, Copy, Check, Ticket
 } from 'lucide-react';
 import {
@@ -46,6 +46,28 @@ export default function DashboardPage() {
   const { switchChainAsync } = useSwitchChain();
   const [copied, setCopied] = useState(false);
   const [withdrawing, setWithdrawing] = useState<number | null>(null);
+
+  // Página de captura: idioma escolhido + contato do referral (persistidos)
+  const [capturaLang, setCapturaLang] = useState<'pt' | 'en' | 'es'>('pt');
+  const [capturaContact, setCapturaContact] = useState('');
+  useEffect(() => {
+    try {
+      const sl = localStorage.getItem('vx-captura-lang');
+      if (sl === 'en' || sl === 'es' || sl === 'pt') setCapturaLang(sl);
+      const sc = localStorage.getItem('vx-captura-contact');
+      if (sc) setCapturaContact(sc);
+    } catch {}
+  }, []);
+  useEffect(() => {
+    try { localStorage.setItem('vx-captura-lang', capturaLang); } catch {}
+  }, [capturaLang]);
+  useEffect(() => {
+    try { localStorage.setItem('vx-captura-contact', capturaContact); } catch {}
+  }, [capturaContact]);
+  const origin = typeof window !== 'undefined' ? window.location.origin : 'https://vyronx.io';
+  const capturaLink = address
+    ? `${origin}/captura?ref=${encodeReferralCode(address)}&lang=${capturaLang}` + (capturaContact.trim() ? `&c=${btoa(unescape(encodeURIComponent(capturaContact.trim()))).replace(/\+/g, '-').replace(/\//g, '_')}` : '')
+    : '';
   // CHANGE #6: 12h countdown timer state (declared early so hooks below can use it)
   const [now, setNow] = useState(Math.floor(Date.now() / 1000));
   useEffect(() => { const t = setInterval(() => setNow(Math.floor(Date.now() / 1000)), 1000); return () => clearInterval(t); }, []);
@@ -703,6 +725,7 @@ export default function DashboardPage() {
 
             {/* Referral link — ONLY for active stakers */}
             {stakeCount > 0 ? (
+            <>
             <div className="rounded-xl bg-dark-elevated border border-gold/30 p-4">
               <div className="flex items-center gap-2 mb-2">
                 <Gift className="h-4 w-4 text-gold" />
@@ -714,12 +737,67 @@ export default function DashboardPage() {
                   </code>
                   <button
                     onClick={() => { if (address) { navigator.clipboard.writeText(`${window.location.origin}/staking?ref=${encodeReferralCode(address)}`); toast.success('Referral link copied!'); } }}
+                    className="px-3 py-2 text-xs font-bold rounded-lg border border-gold/30 bg-gold/10 text-gold hover:bg-gold/20 transition-colors flex items-center gap-1"
+                  >
+                    <Copy className="h-3 w-3" /> Copy
+                  </button>
+              </div>
+            </div>
+
+            {/* Capture page referral link — divulgacao com pagina de captura */}
+            <div className="mt-3 rounded-xl bg-dark-elevated border border-gold/30 p-4">
+              <div className="flex items-center justify-between gap-2 mb-1">
+                <div className="flex items-center gap-2">
+                  <Megaphone className="h-4 w-4 text-gold" />
+                  <span className="text-xs text-gold font-bold uppercase tracking-wider">Página de Captura</span>
+                </div>
+                <span className="text-[10px] font-bold uppercase tracking-wide text-gold/80 border border-gold/30 bg-gold/10 rounded-full px-2 py-0.5">Converte melhor</span>
+              </div>
+              <p className="text-xs text-beige-muted mb-3 leading-relaxed">
+                Página pronta para divulgar em redes sociais: explica o projeto para iniciantes e captura o e-mail do interessado. Quem se cadastrar pela sua página e comprar na presale fica vinculado ao seu referral automaticamente.
+              </p>
+
+              {/* idioma da página */}
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-beige-muted">Idioma:</span>
+                {(['pt','en','es'] as const).map(l => (
+                  <button key={l} type="button"
+                    onClick={() => { setCapturaLang(l); }}
+                    className={`px-3 py-1 text-xs font-bold rounded-full border transition-colors ${capturaLang===l?'border-gold/60 bg-gold/15 text-gold':'border-dark-border text-beige-muted hover:text-gold hover:border-gold/40'}`}>
+                    {l.toUpperCase()}
+                  </button>
+                ))}
+              </div>
+
+              {/* contato do referral (aparece na página p/ o lead falar com ele) */}
+              <label className="block text-[10px] font-bold uppercase tracking-wider text-beige-muted mb-1">
+                Seu contato (WhatsApp/Telegram/e-mail — o lead verá na página)
+              </label>
+              <input
+                type="text"
+                value={capturaContact}
+                onChange={(e) => setCapturaContact(e.target.value)}
+                placeholder="+55 21 99999-9999 ou @seuuser ou se@email.com"
+                className="w-full rounded-lg border border-dark-border bg-dark-elevated px-3 py-2 text-sm text-white placeholder:text-beige-muted/50 focus:border-gold/50 focus:outline-none mb-3"
+              />
+
+              <div className="flex items-center gap-2 bg-dark-elevated border border-dark-border rounded-lg px-3 py-2">
+                <code className="text-sm text-gold flex-1 truncate">
+                  {address ? capturaLink : 'Connect wallet'}
+                </code>
+                <button
+                  onClick={() => { if (address) { navigator.clipboard.writeText(capturaLink); toast.success('Link da página de captura copiado!'); } }}
                   className="px-3 py-2 text-xs font-bold rounded-lg border border-gold/30 bg-gold/10 text-gold hover:bg-gold/20 transition-colors flex items-center gap-1"
                 >
                   <Copy className="h-3 w-3" /> Copy
                 </button>
               </div>
+              <a href={address ? capturaLink : '#'} target="_blank" rel="noopener"
+                className="mt-2 inline-flex items-center gap-1 text-xs text-gold hover:text-gold-light">
+                <ExternalLink className="h-3 w-3" /> Preview da página
+              </a>
             </div>
+            </>
             ) : (
               <div className="rounded-xl border border-dark-border bg-dark-card p-6 text-center">
                 <Lock className="h-8 w-8 text-beige-muted mx-auto mb-2" />
