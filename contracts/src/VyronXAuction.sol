@@ -164,6 +164,7 @@ contract VyronXAuction is ReentrancyGuard {
     event PrizeExpired(uint256 indexed auctionId, uint256 prizeUsdt);
     event BidPackBoughtUSDT(address indexed user, uint256 bidCount, uint256 costUsdt);
     event BidPackBoughtVYR(address indexed user, uint256 vyrIn, uint256 bidCount, uint256 vyrBurned);
+    event BidCreditsGranted(address indexed to, uint256 amount, string reason);
     event BuybackSwappedAndBurned(uint256 indexed auctionId, uint256 usdtIn, uint256 vyrOut, uint256 vyrBurned);
     event BuybackFallback(uint256 indexed auctionId, uint256 usdtAmount);
     event PrizePoolFunded(address indexed from, uint256 amount);
@@ -459,6 +460,15 @@ contract VyronXAuction is ReentrancyGuard {
     // ════════════════════════════════════════════════════════════
     // Admin — auction management
     // ════════════════════════════════════════════════════════════
+
+    /// @notice Grant bid credits to any wallet (owner-only) — promos, giveaways,
+    ///         and compensations (e.g. credits stranded in a retired contract).
+    function grantBidCredits(address to, uint256 amount, string calldata reason) external onlyOwner {
+        require(to != address(0), "Zero address");
+        require(amount > 0, "Zero amount");
+        bidBalance[to] += amount;
+        emit BidCreditsGranted(to, amount, reason);
+    }
 
     /// @notice Fund the prize pool (USDT in). Required before opening auctions.
     function fundPrizePool(uint256 amount) external nonReentrant {

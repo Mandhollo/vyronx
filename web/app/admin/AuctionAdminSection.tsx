@@ -76,6 +76,8 @@ export default function AuctionAdminSection({ writeContractAsync, pending, setPe
   const [vyBonusInput, setVyBonusInput] = useState('10');
   const [burnShareInput, setBurnShareInput] = useState('100');
   const [minGoalInput, setMinGoalInput] = useState('50');
+  const [grantAddr, setGrantAddr] = useState('');
+  const [grantAmount, setGrantAmount] = useState('22');
   const [splitInputs, setSplitInputs] = useState({ bb: '40', pool: '25', wl: '20', mlm: '15' });
   // Fee wallet addresses (4) — editable
   const [aucFeeWallets, setAucFeeWallets] = useState<[string, string, string, string]>(['', '', '', '']);
@@ -264,6 +266,17 @@ export default function AuctionAdminSection({ writeContractAsync, pending, setPe
       address: AUCTION_ADDRESS as `0x${string}`, abi: AuctionABI,
       functionName: 'setMinGoalBps', args: [BigInt(Math.round(pct * 100))], chainId: bsc.id,
     }));
+  };
+
+  const handleGrantCredits = async () => {
+    if (!/^0x[a-fA-F0-9]{40}$/.test(grantAddr)) return toast.error('Endereço inválido');
+    const amt = parseInt(grantAmount);
+    if (!amt || amt <= 0) return toast.error('Quantidade inválida');
+    const ok = await doTx('Grant Credits', () => writeContractAsync({
+      address: AUCTION_ADDRESS as `0x${string}`, abi: AuctionABI,
+      functionName: 'grantBidCredits', args: [grantAddr as `0x${string}`, BigInt(amt), 'admin grant'], chainId: bsc.id,
+    }));
+    if (ok) { toast.success(`${amt} lances concedidos!`); setGrantAddr(''); }
   };
 
   const handleSetSplit = async () => {
@@ -704,6 +717,22 @@ export default function AuctionAdminSection({ writeContractAsync, pending, setPe
                 className="px-4 py-2 rounded-lg bg-blue-600/20 text-blue-300 border border-blue-500/30 font-bold text-sm hover:bg-blue-600/30 disabled:opacity-50">Set</button>
             </div>
             <p className="text-[10px] text-beige/30 mt-1">Abaixo do limite no fim do leilão: TODOS os lances voltam como créditos reutilizáveis e o prêmio retorna pro pool. 0 = desligado (sempre paga).</p>
+          </div>
+          <div className="rounded-xl bg-purple-500/5 border border-purple-500/25 p-4 sm:col-span-2">
+            <label className="block text-xs text-purple-300 mb-1">🎁 CONCEDER CRÉDITOS DE LANCE (promoções, compensações, giveaways)</label>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <input type="text" placeholder="0x... endereço da carteira" value={grantAddr} onChange={(e) => setGrantAddr(e.target.value)}
+                className="flex-1 h-9 rounded-lg bg-dark-elevated border border-dark-border text-white px-3 text-sm focus:border-purple-400/50 outline-none" />
+              <input type="number" min="1" value={grantAmount} onChange={(e) => setGrantAmount(e.target.value)}
+                className="w-full sm:w-24 h-9 rounded-lg bg-dark-elevated border border-dark-border text-white px-3 text-sm focus:border-purple-400/50 outline-none" />
+              <button onClick={handleGrantCredits} disabled={pending !== null}
+                className="px-4 py-2 rounded-lg bg-purple-600/20 text-purple-300 border border-purple-500/30 font-bold text-sm hover:bg-purple-600/30 disabled:opacity-50 whitespace-nowrap">Conceder</button>
+            </div>
+            <div className="flex gap-2 mt-2">
+              <button onClick={() => setGrantAddr('0xFfAF2525F659aC7Da49dfCd4D15b12eFc578539c')}
+                className="text-[10px] text-purple-300/70 hover:text-purple-300 underline">usar conta-mãe (22 lances presos no contrato antigo)</button>
+            </div>
+            <p className="text-[10px] text-beige/30 mt-1">Créditos usáveis em qualquer leilão. Fica registrado na blockchain (evento público).</p>
           </div>
         </div>
       </motion.div>

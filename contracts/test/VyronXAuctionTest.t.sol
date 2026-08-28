@@ -309,6 +309,28 @@ contract VyronXAuctionTest is Test {
         auction.setMinGoalBps(5000);
     }
 
+    function test_GrantBidCredits() public {
+        vm.prank(owner);
+        auction.grantBidCredits(alice, 22, "compensation old contract");
+        assertEq(auction.bidBalance(alice), 22);
+        // granted credits are usable immediately
+        uint256 id = _open(PRIZE, 3600);
+        _bid(alice, id);
+        assertEq(auction.bidBalance(alice), 21);
+    }
+
+    function test_GrantBidCredits_Reverts() public {
+        vm.prank(owner);
+        vm.expectRevert("Zero amount");
+        auction.grantBidCredits(alice, 0, "x");
+        vm.prank(owner);
+        vm.expectRevert("Zero address");
+        auction.grantBidCredits(address(0), 5, "x");
+        vm.prank(alice);
+        vm.expectRevert("Not owner");
+        auction.grantBidCredits(bob, 5, "x");
+    }
+
     function test_BuyBidPack_VYR_DifferentPrice() public {
         oracle.setPrice(2e18); // 1 VYR = 2 USDT -> 10 VYR = $20 = 22 bids
         vm.prank(alice);
