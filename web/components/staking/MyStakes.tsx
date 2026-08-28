@@ -131,7 +131,7 @@ export default function MyStakes() {
                     {s.isVoucher ? `🎫 License — $${usd}` : `$${usd}`}
                   </span>
                   {s.withdrawn && <span className="px-2 py-0.5 text-xs rounded-full bg-green-500/10 text-green-400">✓ Completed</span>}
-                  {s.isVoucher && !s.withdrawn && <span className="px-2 py-0.5 text-xs rounded-full bg-purple-500/10 text-purple-400">No earnings (license only)</span>}
+                  {s.isVoucher && !s.withdrawn && <span className="px-2 py-0.5 text-xs rounded-full bg-purple-500/10 text-purple-400">No daily yield — MLM commissions paid instantly to wallet 💸</span>}
                 </div>
                 {!s.withdrawn && !s.isVoucher && (
                   <div className="flex items-center gap-2 flex-wrap">

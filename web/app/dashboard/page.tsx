@@ -632,7 +632,7 @@ export default function DashboardPage() {
                           )}
                         </div>
                       ) : (
-                        <div className="text-xs text-purple-400/60 italic">No earnings (license only)</div>
+                        <div className="text-xs text-purple-400/70 italic">No daily yield (license only) — MLM commissions from your network are paid instantly to your wallet 💸</div>
                       )}
                     </div>
 
