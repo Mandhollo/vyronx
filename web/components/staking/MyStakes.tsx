@@ -16,8 +16,8 @@ const fadeUp = { hidden: { opacity: 0, y: 24 }, visible: { opacity: 1, y: 0, tra
 
 const POOL_TIERS = ['Starter', 'Growth', 'Pro', 'Elite'];
 
-// userStakes tuple: [0]staker [1]poolId [2]usdtAmount [3]startTime [4]lockEndTime
-//                   [5]withdrawn [6]isVoucher [7]? [8]?
+// userStakes tuple (8 fields): [0]staker [1]poolId [2]usdtAmount [3]startTime [4]lockEndTime
+//                             [5]withdrawn [6]lastClaimDay [7]isVoucher
 type StakeInfo = {
   poolId: number;
   usdtAmount: string;
@@ -58,9 +58,9 @@ export default function MyStakes() {
           const s = (await publicClient.readContract({
             address: STAKING_ADDRESS as `0x${string}`, abi: StakingABI,
             functionName: 'userStakes', args: [address as `0x${string}`, BigInt(i)],
-          })) as unknown as readonly [string, bigint, bigint, bigint, bigint, boolean, boolean, boolean, boolean];
+          })) as unknown as readonly [string, bigint, bigint, bigint, bigint, boolean, bigint, boolean];
           let pendingUsdt = '0';
-          if (!s[5] && !s[6]) { // not withdrawn, not voucher → can earn
+          if (!s[5] && !s[7]) { // not withdrawn, not voucher → can earn
             try {
               const e = (await publicClient.readContract({
                 address: STAKING_ADDRESS as `0x${string}`, abi: StakingABI,
@@ -71,7 +71,7 @@ export default function MyStakes() {
           }
           out.push({
             poolId: Number(s[1]), usdtAmount: formatUnits(s[2], 18),
-            isVoucher: s[6], withdrawn: s[5], lockEnd: Number(s[4]), pendingUsdt,
+            isVoucher: s[7], withdrawn: s[5], lockEnd: Number(s[4]), pendingUsdt,
           });
         } catch { /* skip */ }
       }
