@@ -134,6 +134,15 @@ export default function AuctionAdminSection({ writeContractAsync, pending, setPe
 
   const fmt = (val: bigint | undefined, display = 2) => val ? parseFloat(formatUnits(val, 18)).toLocaleString('en-US', { maximumFractionDigits: display }) : '0';
 
+  // ── SETUP CHECKLIST reads (leigo: ✅/❌ do que falta) ──
+  const { data: exclFees } = useReadContract({ address: TOKEN_ADDRESS as `0x${string}`, abi: TokenABI, functionName: 'isExcludedFromFees', args: [AUCTION_ADDRESS as `0x${string}`], chainId: bsc.id }) as { data: boolean | undefined };
+  const { data: isAuth } = useReadContract({ address: TOKEN_ADDRESS as `0x${string}`, abi: TokenABI, functionName: 'isAuthorized', args: [AUCTION_ADDRESS as `0x${string}`], chainId: bsc.id }) as { data: boolean | undefined };
+  const { data: exclLimits } = useReadContract({ address: TOKEN_ADDRESS as `0x${string}`, abi: TokenABI, functionName: 'isExcludedFromLimits', args: [AUCTION_ADDRESS as `0x${string}`], chainId: bsc.id }) as { data: boolean | undefined };
+  const feesOk = exclFees && isAuth && exclLimits;
+  const poolOk = (availFunds ?? BigInt(0)) > BigInt(0);
+  const liveOk = (activeIds?.length ?? 0) > 0;
+  const stepsDone = [feesOk, poolOk, liveOk].filter(Boolean).length;
+
   const doTx = async (label: string, fn: () => Promise<`0x${string}`>) => {
     if (!onCorrectChain) { await switchChainAsync?.({ chainId: bsc.id }); return; }
     setPending(label);
@@ -328,6 +337,79 @@ export default function AuctionAdminSection({ writeContractAsync, pending, setPe
             </button>
           )}
         </div>
+      </motion.div>
+
+      {/* ══ SETUP CHECKLIST (leigo: o que falta pra ligar) ══ */}
+      <motion.div variants={fadeUp} className={`rounded-2xl border p-5 ${stepsDone === 3 ? 'border-green-500/30 bg-green-500/5' : 'border-gold/40 bg-gradient-to-br from-gold/10 to-transparent'}`}>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-base font-bold text-white flex items-center gap-2">
+            <Settings className="w-5 h-5 text-gold" /> Status do Leilão — {stepsDone}/3 pronto
+          </h3>
+          {stepsDone === 3 && (
+            <span className="px-3 py-1 rounded-full bg-green-500/15 text-green-400 text-xs font-bold border border-green-500/30">
+              ✅ TUDO LIGADO
+            </span>
+          )}
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {/* Step 1 — fees */}
+          <div className={`rounded-xl p-4 border ${feesOk ? 'border-green-500/30 bg-green-500/5' : 'border-red-500/30 bg-red-500/5'}`}>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-lg">{feesOk ? '✅' : '❌'}</span>
+              <span className="text-sm font-bold text-white">1. Isentar Taxas do Token</span>
+            </div>
+            <p className="text-[11px] text-beige/40 mb-3">Sem isso o leilão perde 8% em cada buyback. Só clicar uma vez.</p>
+            {!feesOk && (
+              <button onClick={async () => {
+                if (!onCorrectChain) { await switchChainAsync?.({ chainId: bsc.id }); return; }
+                setPending('Configurando (3 transações)...');
+                try {
+                  const t1 = await writeContractAsync({ address: TOKEN_ADDRESS as `0x${string}`, abi: TokenABI, functionName: 'setExcludedFromFees', args: [AUCTION_ADDRESS as `0x${string}`, true], chainId: bsc.id });
+                  await waitForTx(t1); toast.success('1/3 — Taxas excluídas');
+                  const t2 = await writeContractAsync({ address: TOKEN_ADDRESS as `0x${string}`, abi: TokenABI, functionName: 'setAuthorized', args: [AUCTION_ADDRESS as `0x${string}`, true], chainId: bsc.id });
+                  await waitForTx(t2); toast.success('2/3 — Autorizado');
+                  const t3 = await writeContractAsync({ address: TOKEN_ADDRESS as `0x${string}`, abi: TokenABI, functionName: 'setExcludedFromLimits', args: [AUCTION_ADDRESS as `0x${string}`, true], chainId: bsc.id });
+                  await waitForTx(t3); toast.success('3/3 — Pronto! ✅');
+                } catch (e: any) { toast.error(e?.shortMessage || 'Falhou'); }
+                finally { setPending(null); }
+              }} disabled={pending !== null}
+                className="w-full py-2 rounded-lg bg-gradient-to-r from-green-600 to-green-800 text-white text-xs font-bold hover:opacity-90 disabled:opacity-50">
+                ⚡ FAZER AUTOMÁTICO
+              </button>
+            )}
+          </div>
+
+          {/* Step 2 — pool */}
+          <div className={`rounded-xl p-4 border ${poolOk ? 'border-green-500/30 bg-green-500/5' : 'border-red-500/30 bg-red-500/5'}`}>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-lg">{poolOk ? '✅' : '❌'}</span>
+              <span className="text-sm font-bold text-white">2. Alimentar Pool de Prêmios</span>
+            </div>
+            <p className="text-[11px] text-beige/40 mb-3">
+              {poolOk ? `Saldo disponível: $${fmt(availFunds, 0)} em prêmios.` : 'Deposite USDT que financia os prêmios. É o dinheiro dos prêmios — use o botão verde logo abaixo.'}
+            </p>
+            {!poolOk && <div className="text-[11px] text-gold">↓ Use "Fund Prize Pool" abaixo</div>}
+          </div>
+
+          {/* Step 3 — live auction */}
+          <div className={`rounded-xl p-4 border ${liveOk ? 'border-green-500/30 bg-green-500/5' : 'border-red-500/30 bg-red-500/5'}`}>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-lg">{liveOk ? '✅' : '❌'}</span>
+              <span className="text-sm font-bold text-white">3. Abrir o Primeiro Leilão</span>
+            </div>
+            <p className="text-[11px] text-beige/40 mb-3">
+              {liveOk ? `${activeIds?.length} leilão(ões) rodando agora.` : 'Defina prêmio + imagem + data/hora no formulário "Open New Auction" abaixo.'}
+            </p>
+            {!liveOk && <div className="text-[11px] text-gold">↓ Use "Open New Auction" abaixo</div>}
+          </div>
+        </div>
+
+        {stepsDone < 3 && (
+          <p className="text-[11px] text-beige/30 mt-3 text-center">
+            Siga na ordem 1 → 2 → 3. Cada passo é um clique. Quando os 3 estiverem verdes, o leilão está no ar.
+          </p>
+        )}
       </motion.div>
 
       {/* Overview bar */}
