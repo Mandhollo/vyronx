@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { STAKING_ADDRESS, USDT_ADDRESS, StakingABI, PRESALE_REFERRAL_ADDRESS, ReferralABI } from '@/lib/contracts';
 import ContractAddress from '@/components/web3/ContractAddress';
+import MyStakes from '@/components/staking/MyStakes';
 import { triggerCoinConfetti } from '@/components/effects/CoinConfetti';
 import { useI18n } from '@/lib/i18n';
 import { publicClient } from '@/components/web3/Web3Provider';
@@ -459,6 +460,9 @@ function StakingPageContent() {
             </div>
           </motion.div>
         )}
+
+        {/* ══ MY STAKES — claim daily (min $10) + withdraw at maturity ══ */}
+        <MyStakes />
 
         {/* How It Works */}
         <motion.div variants={stagger} initial="hidden" whileInView="visible" viewport={{ once: true }} className="mb-16 grid grid-cols-1 sm:grid-cols-4 gap-4">
