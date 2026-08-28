@@ -401,6 +401,30 @@ contract VyronXLotteryTest is Test {
         assertEq(lottery.lotteryNames(1), "Weekly Big");
     }
 
+    function test_SetLotteryImage() public {
+        string memory uri = "data:image/jpeg;base64,AAAA";
+        lottery.setLotteryImage(0, uri);
+        lottery.setLotteryImage(3, "https://example.com/img.png");
+        assertEq(lottery.lotteryImages(0), uri);
+        assertEq(lottery.lotteryImages(3), "https://example.com/img.png");
+        // clear
+        lottery.setLotteryImage(0, "");
+        assertEq(lottery.lotteryImages(0), "");
+    }
+
+    function test_RevertSetLotteryImage_TooLarge() public {
+        // > 131072 bytes must revert
+        string memory big = new string(131073);
+        vm.expectRevert("Image too large");
+        lottery.setLotteryImage(0, big);
+    }
+
+    function test_RevertSetLotteryImage_NotOwner() public {
+        vm.prank(alice);
+        vm.expectRevert("Not owner");
+        lottery.setLotteryImage(0, "data:image/png;base64,AA");
+    }
+
     function test_SetFeeWallets() public {
         address payable[4] memory nw;
         for (uint256 i = 0; i < 4; i++) nw[i] = payable(makeAddr(string(abi.encodePacked("n", vm.toString(i)))));

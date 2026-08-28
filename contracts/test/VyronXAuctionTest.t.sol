@@ -49,6 +49,11 @@ contract VyronXAuctionTest is Test {
             feeWallets, mlmWallet, treasuryWallet, buybackWallet
         );
 
+        // Award-path tests run with refund protection OFF (explicit per-test otherwise).
+        // Refund tests re-enable it with setMinGoalBps(...).
+        vm.prank(owner);
+        auction.setMinGoalBps(0);
+
         // fund prize pool + give users USDT
         usdt.mint(address(this), 1_000_000e18);
         usdt.approve(address(auction), type(uint256).max);
@@ -150,8 +155,8 @@ contract VyronXAuctionTest is Test {
     // 
 
     function test_BuyBidPack_VYR_BonusAndBurn() public {
-        // oracle 1:1 → 10 VYR = $10 = 10 bids + 10% bonus = 11 bids
-        // burnShareBps default 10000 → ALL VYR burned
+        // oracle 1:1  10 VYR = $10 = 10 bids + 10% bonus = 11 bids
+        // burnShareBps default 10000  ALL VYR burned
         uint256 supplyBefore = vyr.totalSupply();
         uint256 treasuryBefore = vyr.balanceOf(treasuryWallet);
         vm.prank(alice);
@@ -164,7 +169,7 @@ contract VyronXAuctionTest is Test {
     }
 
     function test_BuyBidPack_VYR_BurnShare50() public {
-        // owner sets 50% burn → half burned, half treasury
+        // owner sets 50% burn  half burned, half treasury
         vm.prank(owner);
         auction.setBurnShareBps(5000);
         uint256 supplyBefore = vyr.totalSupply();
@@ -184,9 +189,9 @@ contract VyronXAuctionTest is Test {
         auction.setBurnShareBps(5000);
     }
 
-    // ════════════════════════════════════════════════════
-    // SCHEDULED START (data e horário)
-    // ════════════════════════════════════════════════════
+    // 
+    // SCHEDULED START (data e horrio)
+    // 
 
     function test_ScheduledStart_BidBeforeStart_Reverts() public {
         vm.prank(owner);
@@ -229,6 +234,79 @@ contract VyronXAuctionTest is Test {
         vm.prank(owner);
         vm.expectRevert("Start max 30d ahead");
         auction.openAuction(PRIZE, block.timestamp + 31 days, 3600);
+    }
+
+    // 
+    // REFUND PROTECTION (leilo frio  devolve lances como crditos)
+    // 
+
+    function test_Refund_BelowMinGoal_BidsReturned() public {
+        vm.prank(owner);
+        auction.setMinGoalBps(5000); // 50% of $100 = $50 required
+        uint256 id = _open(PRIZE, 3600);
+        _buy(alice, 10); _buy(bob, 10);
+        _bid(alice, id); _bid(bob, id); _bid(alice, id); // 3 lances = $3 = 3% << 50%
+
+        uint256 aliceBids = auction.bidBalance(alice); // 10 - 2 = 8
+        uint256 bobBids = auction.bidBalance(bob);     // 10 - 1 = 9
+        vm.warp(_endTime(id) + 1);
+        auction.finalize(id);
+
+        // ALL bids refunded as credits
+        assertEq(auction.bidBalance(alice), aliceBids + 2, "alice got her 2 bids back");
+        assertEq(auction.bidBalance(bob), bobBids + 1, "bob got his 1 bid back");
+        // no winner, prize back to pool
+        (,,,,address win,,,,,,) = auction.getAuction(id);
+        assertEq(win, address(0));
+        assertEq(auction.lockedPrizeFunds(), 0);
+        assertEq(auction.availablePrizeFunds(), 10_000e18);
+        // global stats adjusted (refunded, not consumed)
+        assertEq(auction.totalBidsPlaced(), 0);
+    }
+
+    function test_Refund_AtExactlyMinGoal_Awards() public {
+        vm.prank(owner);
+        auction.setMinGoalBps(5000); // 50% of $100 = $50 = 50 bids exactly
+        uint256 id = _open(PRIZE, 3600);
+        _buy(alice, 60);
+        for (uint256 i = 0; i < 50; i++) _bid(alice, id); // exactly 50%
+        vm.warp(_endTime(id) + 1);
+        auction.finalize(id);
+        (,,,,address win,,,,,,) = auction.getAuction(id);
+        assertEq(win, alice, "exactly at threshold  awards normally");
+    }
+
+    function test_Refund_Off_AlwaysAwards() public {
+        // minGoalBps = 0 from setUp
+        uint256 id = _open(PRIZE, 3600);
+        _buy(alice, 5);
+        _bid(alice, id); // 1 lance = 1%  still awards
+        vm.warp(_endTime(id) + 1);
+        auction.finalize(id);
+        (,,,,address win,,,,,,) = auction.getAuction(id);
+        assertEq(win, alice);
+    }
+
+    function test_Refund_WinnerCannotClaimAfterRefund() public {
+        vm.prank(owner);
+        auction.setMinGoalBps(5000);
+        uint256 id = _open(PRIZE, 3600);
+        _buy(alice, 5);
+        _bid(alice, id);
+        vm.warp(_endTime(id) + 1);
+        auction.finalize(id); // refunds
+        vm.prank(alice);
+        vm.expectRevert("No winner");
+        auction.claimPrize(id);
+    }
+
+    function test_Refund_SetterBounds() public {
+        vm.prank(owner);
+        vm.expectRevert("Max 10000");
+        auction.setMinGoalBps(10001);
+        vm.prank(alice);
+        vm.expectRevert("Not owner");
+        auction.setMinGoalBps(5000);
     }
 
     function test_BuyBidPack_VYR_DifferentPrice() public {
@@ -495,11 +573,11 @@ contract VyronXAuctionTest is Test {
 
         auction.finalize(id);
 
-        // 40 USDT × rate 1000 = 40000 VYR out; burnShareBps=10000 → ALL burned
+        // 40 USDT  rate 1000 = 40000 VYR out; burnShareBps=10000  ALL burned
         assertEq(auction.totalBuybackUsdt(), 40e18, "40% swapped");
         assertEq(auction.totalVyrBurned(), 40_000e18, "100% of 40k burned");
         assertEq(vyr.balanceOf(treasuryWallet) - treasuryBefore, 0, "nothing to treasury");
-        // burned reduces supply: minted 40k, burned 40k → net supply unchanged
+        // burned reduces supply: minted 40k, burned 40k  net supply unchanged
         assertEq(vyr.totalSupply() - supplyBefore, 0);
         assertEq(vyr.balanceOf(address(auction)), 0, "no VYR stuck");
     }
@@ -515,7 +593,7 @@ contract VyronXAuctionTest is Test {
         uint256 treasuryBefore = vyr.balanceOf(treasuryWallet);
         auction.finalize(id);
 
-        // 40k VYR out → 10k burned / 30k treasury
+        // 40k VYR out  10k burned / 30k treasury
         assertEq(auction.totalVyrBurned(), 10_000e18, "25% burned");
         assertEq(vyr.balanceOf(treasuryWallet) - treasuryBefore, 30_000e18, "75% treasury");
         assertEq(vyr.balanceOf(address(auction)), 0, "no VYR stuck");
@@ -663,7 +741,7 @@ contract VyronXAuctionTest is Test {
         uint256 id = _open(1000e18, 3600); // meta $1000
 
         _buy(alice, 300); _buy(bob, 300); _buy(carol, 300);
-        // war: 250 bids total alternating — bob bids LAST
+        // war: 250 bids total alternating  bob bids LAST
         for (uint256 i = 0; i < 100; i++) {
             _bid(alice, id);
             _bid(bob, id);
@@ -724,9 +802,9 @@ contract VyronXAuctionTest is Test {
         auction.placeBid(999);
     }
 
-    // ════════════════════════════════════════════════════
+    // 
     // METADATA (image + title)
-    // ════════════════════════════════════════════════════
+    // 
 
     function test_Meta_SetAndRead() public {
         uint256 id = _open(PRIZE, 3600);

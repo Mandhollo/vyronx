@@ -94,6 +94,16 @@ contract VyronXAuction is ReentrancyGuard {
     uint256 public weeklyWinLimit = 3;
     mapping(address => mapping(uint256 => uint256)) public winsPerWeek; // user => week => count
 
+    // ── Failure protection (reembolso) ──
+    /// @notice Minimum raised/goal (bps) required to award the prize at finalize.
+    ///         Below it, the auction is REFUNDED: every bidder gets their bids back
+    ///         as reusable credits and the prize returns to the pool.
+    ///         0 = protection OFF (prize always awarded). Default 50%.
+    uint256 public minGoalBps = 5000;
+    /// @dev Per-auction unique bidders + bid counts (for the refund loop)
+    mapping(uint256 => address[]) internal auctionBiddersList;
+    mapping(uint256 => mapping(address => uint256)) public auctionBidCount;
+
     // ── Bid credits (internal, non-transferable) ──
     mapping(address => uint256) public bidBalance;
     /// @notice Bonus bps when buying bid packs with VYR (unilevel balance). Default 10%
@@ -149,6 +159,7 @@ contract VyronXAuction is ReentrancyGuard {
     event BidPlaced(uint256 indexed auctionId, address indexed bidder, uint256 newPrice, uint256 endTime, uint256 windowSeconds);
     event AuctionFinalized(uint256 indexed auctionId, address indexed winner, uint256 bidCount, uint256 revenueUsdt);
     event AuctionCancelled(uint256 indexed auctionId);
+    event AuctionRefunded(uint256 indexed auctionId, uint256 raised, uint256 goal, uint256 refundedBids, uint256 bidderCount);
     event PrizeClaimed(uint256 indexed auctionId, address indexed winner, uint256 prizeUsdt, uint256 finalPricePaid);
     event PrizeExpired(uint256 indexed auctionId, uint256 prizeUsdt);
     event BidPackBoughtUSDT(address indexed user, uint256 bidCount, uint256 costUsdt);
@@ -283,6 +294,9 @@ contract VyronXAuction is ReentrancyGuard {
         a.bidCount += 1;
         a.currentPrice += priceIncrement;
         a.lastBidder = msg.sender;
+        // track unique bidders for the refund path
+        if (auctionBidCount[auctionId][msg.sender] == 0) auctionBiddersList[auctionId].push(msg.sender);
+        auctionBidCount[auctionId][msg.sender] += 1;
         uint256 window = _timerWindow(a.bidCount * bidPrice, a.prizeUsdt);
         a.endTime = block.timestamp + window;
         totalBidsPlaced += 1;
@@ -312,6 +326,22 @@ contract VyronXAuction is ReentrancyGuard {
             lockedPrizeFunds -= a.prizeUsdt;
             availablePrizeFunds += a.prizeUsdt;
             emit AuctionFinalized(auctionId, address(0), 0, 0);
+            return;
+        }
+
+        // ── FAILURE PROTECTION: below minGoalBps of the goal → refund all bids as credits ──
+        uint256 raised = a.bidCount * bidPrice;
+        if (minGoalBps > 0 && raised * 10000 < a.prizeUsdt * minGoalBps) {
+            address[] storage bidders = auctionBiddersList[auctionId];
+            for (uint256 i = 0; i < bidders.length; i++) {
+                bidBalance[bidders[i]] += auctionBidCount[auctionId][bidders[i]];
+            }
+            lockedPrizeFunds -= a.prizeUsdt;
+            availablePrizeFunds += a.prizeUsdt;
+            // adjust global stats: these bids were refunded, not consumed
+            totalBidsPlaced -= a.bidCount;
+            emit AuctionRefunded(auctionId, raised, a.prizeUsdt, a.bidCount, bidders.length);
+            emit AuctionFinalized(auctionId, address(0), a.bidCount, 0);
             return;
         }
 
@@ -604,6 +634,15 @@ contract VyronXAuction is ReentrancyGuard {
         require(_bps <= 10000, "Max 10000");
         burnShareBps = _bps;
         emit ConfigUpdated("burnShareBps");
+    }
+
+    /// @notice Minimum raised/goal (bps) to award the prize. Below it at finalize,
+    ///         ALL bids are refunded as reusable credits and the prize returns to the pool.
+    ///         0 = protection OFF. Default 5000 (50%).
+    function setMinGoalBps(uint256 _bps) external onlyOwner {
+        require(_bps <= 10000, "Max 10000");
+        minGoalBps = _bps;
+        emit ConfigUpdated("minGoalBps");
     }
 
     function setDexRouter(address _router) external onlyOwner {

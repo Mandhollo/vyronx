@@ -75,6 +75,7 @@ export default function AuctionAdminSection({ writeContractAsync, pending, setPe
   const [winLimitInput, setWinLimitInput] = useState('3');
   const [vyBonusInput, setVyBonusInput] = useState('10');
   const [burnShareInput, setBurnShareInput] = useState('100');
+  const [minGoalInput, setMinGoalInput] = useState('50');
   const [splitInputs, setSplitInputs] = useState({ bb: '40', pool: '25', wl: '20', mlm: '15' });
   // Fee wallet addresses (4) — editable
   const [aucFeeWallets, setAucFeeWallets] = useState<[string, string, string, string]>(['', '', '', '']);
@@ -101,6 +102,7 @@ export default function AuctionAdminSection({ writeContractAsync, pending, setPe
   const { data: winLimit } = cfg('weeklyWinLimit');
   const { data: vyBonus } = cfg('vyBonusBps');
   const { data: burnShare } = cfg('burnShareBps');
+  const { data: minGoal } = cfg('minGoalBps');
   const { data: bbBps } = cfg('buybackShareBps');
   const { data: poolBps } = cfg('prizePoolShareBps');
   const { data: wlBps } = cfg('walletShareBps');
@@ -243,6 +245,15 @@ export default function AuctionAdminSection({ writeContractAsync, pending, setPe
     await doTx('Set Burn %', () => writeContractAsync({
       address: AUCTION_ADDRESS as `0x${string}`, abi: AuctionABI,
       functionName: 'setBurnShareBps', args: [BigInt(Math.round(pct * 100))], chainId: bsc.id,
+    }));
+  };
+
+  const handleSetMinGoal = async () => {
+    const pct = parseFloat(minGoalInput);
+    if (isNaN(pct) || pct < 0 || pct > 100) return toast.error('0-100');
+    await doTx('Set Refund Threshold', () => writeContractAsync({
+      address: AUCTION_ADDRESS as `0x${string}`, abi: AuctionABI,
+      functionName: 'setMinGoalBps', args: [BigInt(Math.round(pct * 100))], chainId: bsc.id,
     }));
   };
 
@@ -601,6 +612,16 @@ export default function AuctionAdminSection({ writeContractAsync, pending, setPe
                 className="px-4 py-2 rounded-lg bg-red-600/20 text-red-300 border border-red-500/30 font-bold text-sm hover:bg-red-600/30 disabled:opacity-50">Set</button>
             </div>
             <p className="text-[10px] text-beige/30 mt-1">100% = tudo queimado (padrão). Ex: 50 = metade queimada, metade no treasury.</p>
+          </div>
+          <div className="rounded-xl bg-blue-500/5 border border-blue-500/25 p-4 sm:col-span-2">
+            <label className="block text-xs text-blue-300 mb-1">🛡️ PROTEÇÃO DE REEMBOLSO — % mínima da meta p/ pagar prêmio (atual: {Number(minGoal ?? 5000) / 100}%)</label>
+            <div className="flex gap-2">
+              <input type="number" min="0" max="100" value={minGoalInput} onChange={(e) => setMinGoalInput(e.target.value)}
+                className="flex-1 h-9 rounded-lg bg-dark-elevated border border-dark-border text-white px-3 text-sm focus:border-blue-400/50 outline-none" />
+              <button onClick={handleSetMinGoal} disabled={pending !== null}
+                className="px-4 py-2 rounded-lg bg-blue-600/20 text-blue-300 border border-blue-500/30 font-bold text-sm hover:bg-blue-600/30 disabled:opacity-50">Set</button>
+            </div>
+            <p className="text-[10px] text-beige/30 mt-1">Abaixo do limite no fim do leilão: TODOS os lances voltam como créditos reutilizáveis e o prêmio retorna pro pool. 0 = desligado (sempre paga).</p>
           </div>
         </div>
       </motion.div>

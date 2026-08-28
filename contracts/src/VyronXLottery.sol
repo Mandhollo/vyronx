@@ -61,6 +61,9 @@ contract VyronXLottery is ReentrancyGuard {
     /// @notice Display name per lottery type
     string[4] public lotteryNames;
 
+    /// @notice Custom image per lottery type (data-URI base64 or URL), set by owner.
+    string[4] public lotteryImages;
+
     /// @notice Next globally-unique round ID (starts at 1)
     uint256 public nextRoundId;
 
@@ -135,6 +138,7 @@ contract VyronXLottery is ReentrancyGuard {
     event FeesUpdated(uint256 walletBps, uint256 buybackBps, uint256 w1Bps, uint256 w2Bps, uint256 w3Bps);
     event TicketPriceUpdated(uint8 indexed lotteryType, uint256 newPrice);
     event LotteryNameUpdated(uint8 indexed lotteryType, string newName);
+    event LotteryImageUpdated(uint8 indexed lotteryType, string imageURI);
     event FeeWalletsUpdated(address payable[4] wallets, address buybackWallet);
     event AutoBuybackToggled(bool enabled);
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
@@ -440,6 +444,15 @@ contract VyronXLottery is ReentrancyGuard {
         emit LotteryNameUpdated(lotteryType, _name);
     }
 
+    /// @notice Set custom image for a lottery (data-URI base64 up to ~90KB or external URL).
+    /// @dev Empty string clears the image (falls back to site default).
+    function setLotteryImage(uint8 lotteryType, string calldata _imageURI) external onlyOwner {
+        require(lotteryType < LOTTERY_COUNT, "Invalid type");
+        require(bytes(_imageURI).length <= 131072, "Image too large");
+        lotteryImages[lotteryType] = _imageURI;
+        emit LotteryImageUpdated(lotteryType, _imageURI);
+    }
+
     function setFeeWallets(address payable[4] memory _wallets, address payable _buybackWallet) external onlyOwner {
         for (uint256 i = 0; i < 4; i++) require(_wallets[i] != address(0), "Zero wallet");
         require(_buybackWallet != address(0), "Zero buyback");
@@ -560,6 +573,10 @@ contract VyronXLottery is ReentrancyGuard {
 
     function getLotteryNames() external view returns (string[4] memory) {
         return lotteryNames;
+    }
+
+    function getLotteryImages() external view returns (string[4] memory) {
+        return lotteryImages;
     }
 
     function getTicketPrices() external view returns (uint256[4] memory) {

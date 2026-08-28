@@ -325,6 +325,19 @@
   },
   {
     "type": "function",
+    "name": "getLotteryImages",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "string[4]",
+        "internalType": "string[4]"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "getLotteryNames",
     "inputs": [],
     "outputs": [
@@ -526,6 +539,25 @@
         "name": "",
         "type": "uint256",
         "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "lotteryImages",
+    "inputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "string",
+        "internalType": "string"
       }
     ],
     "stateMutability": "view"
@@ -804,6 +836,24 @@
         "name": "_buybackWallet",
         "type": "address",
         "internalType": "address payable"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "setLotteryImage",
+    "inputs": [
+      {
+        "name": "lotteryType",
+        "type": "uint8",
+        "internalType": "uint8"
+      },
+      {
+        "name": "_imageURI",
+        "type": "string",
+        "internalType": "string"
       }
     ],
     "outputs": [],
@@ -1182,6 +1232,25 @@
         "type": "uint256",
         "indexed": false,
         "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "LotteryImageUpdated",
+    "inputs": [
+      {
+        "name": "lotteryType",
+        "type": "uint8",
+        "indexed": true,
+        "internalType": "uint8"
+      },
+      {
+        "name": "imageURI",
+        "type": "string",
+        "indexed": false,
+        "internalType": "string"
       }
     ],
     "anonymous": false

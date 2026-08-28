@@ -1,0 +1,3 @@
+O Anderson, quando a gente ativa a licença da pessoa, eu percebi que a licença que a pessoa paga com o SDT, aparece o valor.
+Aqui, quando a gente ativa a voucher, aparece a licença, 360 dias, elite, mas não aparece o valor.
+Ali tem como aparecer a informação do PEC da pessoa? O que você acha?

@@ -1,0 +1,9 @@
+Boa, Anderson. Aproveitando, eu estou terminando aqui o treino na academia, lá no Admin,
+lá no Admin, quando a gente entra a Kaoner, que eu estou fazendo a validação dos vouchers,
+eu consigo validar, põe a carteira valida, põe um pacote, tudo direitinho, mas ele
+não aparece mais na lista embaixo. Eu acho que ele deve ter um limite ali de aparecer,
+você acha que lá no Admin a gente consegue do voucher colocar também um campo ali para
+a gente pesquisar se está o voucher, se a gente conseguiu pôr o voucher para a carteira e a lista
+ali também será que ele consegue mostrar tudo que aparece e mostrar para a gente de mais recentes
+antigos, por exemplo, a gente acabou de ativar um voucher para alguém, a gente acabou de ativar um voucher
+para alguém aparecer de mais recente lá em cima para mais antigos, o que você acha?
