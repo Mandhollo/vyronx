@@ -60,19 +60,20 @@ const ERC20_ABI = [
 ] as const;
 
 const PRESALE_PHASES = [
-  { phase: 'Phase 1', price: '$0.010', status: 'active', allocation: '150M VYR' },
-  { phase: 'Phase 2', price: '$0.020', status: 'upcoming', allocation: '150M VYR' },
-  { phase: 'Launch', price: '$0.030', status: 'upcoming', allocation: 'Public Sale' },
+  { phase: 'Phase 1', price: '$0.010', allocation: '150M VYR' },
+  { phase: 'Phase 2', price: '$0.020', allocation: '150M VYR' },
+  { phase: 'Launch', price: '$0.030', allocation: 'Public Sale' },
 ];
 
 const DISTRIBUTION = [
-  { label: 'Collaborators', percent: 10, color: 'bg-amber-500' },
-  { label: 'Infrastructure', percent: 10, color: 'bg-yellow-400' },
-  { label: 'Development', percent: 10, color: 'bg-orange-400' },
-  { label: 'Marketing', percent: 10, color: 'bg-green-500' },
   { label: 'Liquidity Pool', percent: 15, color: 'bg-yellow-300' },
   { label: 'Buyback', percent: 15, color: 'bg-amber-600' },
-  { label: 'Tech Infrastructure', percent: 30, color: 'bg-amber-400' },
+  { label: 'Tech Infrastructure', percent: 20, color: 'bg-amber-400' },
+  { label: 'Marketing', percent: 10, color: 'bg-green-500' },
+  { label: 'Collaborators', percent: 10, color: 'bg-amber-50' },
+  { label: 'Infrastructure', percent: 10, color: 'bg-yellow-400' },
+  { label: 'Development', percent: 10, color: 'bg-orange-400' },
+  { label: 'Dev Team 2', percent: 10, color: 'bg-orange-500' },
 ];
 
 export default function PresalePage() {
@@ -603,9 +604,11 @@ export default function PresalePage() {
                 className={`rounded-2xl border p-5 ${i === (presaleInfo ? Number(presaleInfo[0]) : 1) ? 'border-gold/50 bg-gold/5 glow-gold' : 'border-dark-border bg-dark-card'}`}>
                 <div className="flex items-center justify-between mb-3">
                   <span className="text-sm font-bold text-white">{phase.phase}</span>
-                  {i === (presaleInfo ? Number(presaleInfo[0]) : 1) && (
+                  {i === (presaleInfo ? Number(presaleInfo[0]) : 1) ? (
                     <span className="px-2 py-0.5 text-xs font-bold rounded-full bg-gold/20 text-gold border border-gold/30">{t('presale.live')}</span>
-                  )}
+                  ) : i < (presaleInfo ? Number(presaleInfo[0]) : 1) ? (
+                    <span className="px-2 py-0.5 text-xs font-bold rounded-full bg-green-500/10 text-green-400 border border-green-500/30">✓ Completed</span>
+                  ) : null}
                 </div>
                 <div className="text-3xl font-black text-gold-gradient mb-1">{phase.price}</div>
                 <div className="text-xs text-beige-muted mb-3">{phase.allocation}</div>
