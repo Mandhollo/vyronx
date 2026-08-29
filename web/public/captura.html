@@ -472,23 +472,22 @@ footer{border-top:1px solid var(--border);padding:34px 0 44px;color:var(--muted)
   var md=document.querySelector('meta[name="description"]');
   if(md){md.setAttribute('content',tr('meta_desc'))}
 
-  // ===== Áudio de boas-vindas + portão de entrada (somente PT: o áudio está em português) =====
-  if(lang==='pt'){
-    var A=new Audio('/captura-voice.m4a');
-    A.preload='auto';A.controls=false;
-    var gate=document.getElementById('gate');
-    var gsub=document.getElementById('gateSub');
-    var gbtn=document.getElementById('gateBtn');
-    if(gsub){gsub.textContent=tr('gate_sub')}
-    if(gbtn){gbtn.textContent=tr('gate_btn')}
-    function openGate(){
-      if(gate){gate.style.opacity='0';setTimeout(function(){gate.style.display='none'},480)}
-    }
-    function startAudio(){A.play().then(openGate,openGate)}
-    if(gbtn){gbtn.addEventListener('click',startAudio)}
-    // tenta autoplay imediato; se o navegador bloquear, porta de entrada com 1 clique garante o áudio
-    A.play().then(openGate,function(){if(gate){gate.classList.add('show')}});
+  // ===== Áudio de boas-vindas + portão de entrada (um áudio por idioma) =====
+  var AUDIO={pt:'/captura-voice-pt.m4a',en:'/captura-voice-en.m4a',es:'/captura-voice-es.m4a'};
+  var A=new Audio(AUDIO[lang]||AUDIO.pt);
+  A.preload='auto';A.controls=false;
+  var gate=document.getElementById('gate');
+  var gsub=document.getElementById('gateSub');
+  var gbtn=document.getElementById('gateBtn');
+  if(gsub){gsub.textContent=tr('gate_sub')}
+  if(gbtn){gbtn.textContent=tr('gate_btn')}
+  function openGate(){
+    if(gate){gate.style.opacity='0';setTimeout(function(){gate.style.display='none'},480)}
   }
+  function startAudio(){A.play().then(openGate,openGate)}
+  if(gbtn){gbtn.addEventListener('click',startAudio)}
+  // tenta autoplay imediato; se o navegador bloquear, porta de entrada com 1 clique garante o áudio
+  A.play().then(openGate,function(){if(gate){gate.classList.add('show')}});
 
 
   // form
