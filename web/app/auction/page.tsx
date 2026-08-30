@@ -3,6 +3,7 @@
 export const dynamic = 'force-dynamic';
 
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { useAccount, useReadContract, useWriteContract, useSwitchChain } from 'wagmi';
 import {
@@ -248,6 +249,18 @@ export default function AuctionPage() {
           <motion.h1 variants={fadeUp} className="text-4xl sm:text-6xl font-black text-white mb-4 leading-tight">
             {t('auc.title')} <span className="text-gold">95% OFF</span>
           </motion.h1>
+          <motion.div variants={fadeUp} className="relative rounded-2xl overflow-hidden border border-gold/25 shadow-2xl shadow-gold/10 mb-4 max-w-4xl mx-auto">
+            <Image
+              src="/auction/hero-banner.jpg"
+              alt="VyronX Penny Auction"
+              width={1600}
+              height={853}
+              priority
+              className="w-full h-[170px] sm:h-[240px] lg:h-[300px] object-cover object-[center_40%]"
+              sizes="(max-width: 768px) 100vw, 900px"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-dark/40 via-transparent to-transparent pointer-events-none" />
+          </motion.div>
           <motion.p variants={fadeUp} className="text-beige-muted max-w-2xl mx-auto mb-8">
             {t('auc.subtitle')}
           </motion.p>
