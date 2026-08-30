@@ -328,7 +328,7 @@ export default function AuctionAdminSection({ writeContractAsync, pending, setPe
             </div>
             <div className="text-xs text-beige-muted mt-1">
               Price used when buying bids with VYR. Source: <span className="font-mono text-gold">{oracleAddr ? `${(oracleAddr as string).slice(0, 6)}...${(oracleAddr as string).slice(-4)}` : '...'}</span>
-              {v5Price != null && <> — live VYR price: <span className="text-gold font-bold">${fmt(v5Price, 2)}</span></>}
+              {v5Price != null && <>: live VYR price: <span className="text-gold font-bold">${fmt(v5Price, 2)}</span></>}
             </div>
             {!oracleAligned && (
               <div className="text-xs text-red-400 mt-1">
@@ -346,7 +346,7 @@ export default function AuctionAdminSection({ writeContractAsync, pending, setPe
               className="shrink-0 px-5 py-3 rounded-xl font-bold text-sm bg-gold text-black hover:bg-gold-light transition-colors disabled:opacity-50 flex items-center gap-2"
             >
               {pending === 'Fix Price Oracle' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
-              ONE CLICK — Fix Oracle
+              ONE CLICK: Fix Oracle
             </button>
           )}
         </div>
@@ -356,7 +356,7 @@ export default function AuctionAdminSection({ writeContractAsync, pending, setPe
       <motion.div variants={fadeUp} className={`rounded-2xl border p-5 ${stepsDone === 3 ? 'border-green-500/30 bg-green-500/5' : 'border-gold/40 bg-gradient-to-br from-gold/10 to-transparent'}`}>
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-base font-bold text-white flex items-center gap-2">
-            <Settings className="w-5 h-5 text-gold" /> Status do Leilão — {stepsDone}/3 pronto
+            <Settings className="w-5 h-5 text-gold" /> Status do Leilão: {stepsDone}/3 pronto
           </h3>
           {stepsDone === 3 && (
             <span className="px-3 py-1 rounded-full bg-green-500/15 text-green-400 text-xs font-bold border border-green-500/30">
@@ -379,11 +379,11 @@ export default function AuctionAdminSection({ writeContractAsync, pending, setPe
                 setPending('Configurando (3 transações)...');
                 try {
                   const t1 = await writeContractAsync({ address: TOKEN_ADDRESS as `0x${string}`, abi: TokenABI, functionName: 'setExcludedFromFees', args: [AUCTION_ADDRESS as `0x${string}`, true], chainId: bsc.id });
-                  await waitForTx(t1); toast.success('1/3 — Taxas excluídas');
+                  await waitForTx(t1); toast.success('1/3: Taxas excluídas');
                   const t2 = await writeContractAsync({ address: TOKEN_ADDRESS as `0x${string}`, abi: TokenABI, functionName: 'setAuthorized', args: [AUCTION_ADDRESS as `0x${string}`, true], chainId: bsc.id });
-                  await waitForTx(t2); toast.success('2/3 — Autorizado');
+                  await waitForTx(t2); toast.success('2/3: Autorizado');
                   const t3 = await writeContractAsync({ address: TOKEN_ADDRESS as `0x${string}`, abi: TokenABI, functionName: 'setExcludedFromLimits', args: [AUCTION_ADDRESS as `0x${string}`, true], chainId: bsc.id });
-                  await waitForTx(t3); toast.success('3/3 — Pronto! ✅');
+                  await waitForTx(t3); toast.success('3/3: Pronto! ✅');
                 } catch (e: any) { toast.error(e?.shortMessage || 'Falhou'); }
                 finally { setPending(null); }
               }} disabled={pending !== null}
@@ -526,7 +526,7 @@ export default function AuctionAdminSection({ writeContractAsync, pending, setPe
                   <div className="flex items-center justify-between mb-2">
                     <span className="font-bold text-white">#{a.id} — ${fmt(a.prize, 0)} prize</span>
                     <span className={`text-xs px-2 py-0.5 rounded-full ${expired ? 'bg-red-500/10 text-red-400' : 'bg-green-500/10 text-green-400'}`}>
-                      {expired ? 'EXPIRED — needs finalize' : 'LIVE'}
+                      {expired ? 'EXPIRED: needs finalize' : 'LIVE'}
                     </span>
                   </div>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center text-xs mb-2">
@@ -899,10 +899,10 @@ function AuctionFeeExclusion({ writeContractAsync, pending, setPending }: {
     try {
       const tx1 = await writeContractAsync({ address: TOKEN_ADDRESS as `0x${string}`, abi: TokenABI, functionName: 'setExcludedFromFees', args: [AUCTION_ADDRESS as `0x${string}`, true], chainId: bsc.id });
       await waitForTx(tx1);
-      toast.success('1/3 — Taxas excluídas');
+      toast.success('1/3: Taxas excluídas');
       const tx2 = await writeContractAsync({ address: TOKEN_ADDRESS as `0x${string}`, abi: TokenABI, functionName: 'setAuthorized', args: [AUCTION_ADDRESS as `0x${string}`, true], chainId: bsc.id });
       await waitForTx(tx2);
-      toast.success('2/3 — Autorizado');
+      toast.success('2/3: Autorizado');
       const tx3 = await writeContractAsync({ address: TOKEN_ADDRESS as `0x${string}`, abi: TokenABI, functionName: 'setExcludedFromLimits', args: [AUCTION_ADDRESS as `0x${string}`, true], chainId: bsc.id });
       await waitForTx(tx3);
       toast.success('3/3 — Leilão configurado! ✅');

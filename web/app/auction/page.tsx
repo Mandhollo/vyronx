@@ -246,7 +246,7 @@ export default function AuctionPage() {
             <span className="text-xs font-bold text-gold tracking-wider">VYRONX PENNY AUCTION</span>
           </motion.div>
           <motion.h1 variants={fadeUp} className="text-4xl sm:text-6xl font-black text-white mb-4 leading-tight">
-            {t('auc.title')} — <span className="text-gold">95% OFF</span>
+            {t('auc.title')} <span className="text-gold">95% OFF</span>
           </motion.h1>
           <motion.p variants={fadeUp} className="text-beige-muted max-w-2xl mx-auto mb-8">
             {t('auc.subtitle')}
@@ -361,7 +361,7 @@ export default function AuctionPage() {
                   {BID_PACKS.map((n) => (
                     <button key={n} onClick={() => handleBuyUSDT(n)} disabled={pending !== null || !isConnected}
                       className="px-3 py-2.5 rounded-lg bg-gradient-to-r from-gold-light to-gold-dark text-dark font-bold text-sm hover:opacity-90 disabled:opacity-50">
-                      {n} bids — ${n}
+                      {n} bids: ${n}
                     </button>
                   ))}
                 </div>
@@ -655,7 +655,7 @@ function PreviewCard({ t }: { t: (k: string) => string }) {
         <button disabled className="mt-auto w-full py-3.5 rounded-xl bg-gradient-to-r from-gold-light to-gold-dark text-dark font-black text-base opacity-50 flex items-center justify-center gap-2">
           <Gavel className="w-5 h-5" /> {t('auc.placeBid')}
         </button>
-        <p className="text-center text-[10px] text-beige-muted">Preview — first auctions coming soon 🚀</p>
+        <p className="text-center text-[10px] text-beige-muted">Preview: first auctions coming soon 🚀</p>
       </div>
     </motion.div>
   );
