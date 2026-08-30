@@ -249,10 +249,10 @@ export default function AuctionPage() {
               width={1600}
               height={853}
               priority
-              className="w-full h-auto"
+              className="w-full h-[190px] sm:h-[260px] lg:h-[340px] object-cover object-[center_40%]"
               sizes="(max-width: 768px) 100vw, 1200px"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-dark/40 via-transparent to-transparent pointer-events-none" />
+            <div className="absolute inset-0 bg-gradient-to-t from-dark/50 via-transparent to-dark/10 pointer-events-none" />
           </motion.div>
           <div className="text-center">
             <motion.div variants={fadeUp} className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-gold/30 bg-gold/10 mb-4">
