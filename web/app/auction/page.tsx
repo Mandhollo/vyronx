@@ -3,7 +3,6 @@
 export const dynamic = 'force-dynamic';
 
 import { useState, useEffect } from 'react';
-import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { useAccount, useReadContract, useWriteContract, useSwitchChain } from 'wagmi';
 import {
@@ -240,30 +239,18 @@ export default function AuctionPage() {
       <ParticleField count={10} />
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 py-10 sm:py-14">
 
-        {/* ══ HERO (banner de luxo + headline) ══ */}
-        <motion.div variants={stagger} initial="hidden" animate="visible" className="mb-10">
-          <motion.div variants={fadeUp} className="relative rounded-2xl overflow-hidden border border-gold/25 shadow-2xl shadow-gold/10 mb-6">
-            <Image
-              src="/auction/hero-banner.jpg"
-              alt="VyronX Penny Auction"
-              width={1600}
-              height={853}
-              priority
-              className="w-full h-[190px] sm:h-[260px] lg:h-[340px] object-cover object-[center_40%]"
-              sizes="(max-width: 768px) 100vw, 1200px"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-dark/50 via-transparent to-dark/10 pointer-events-none" />
+        {/* ══ HERO (DealDash-style: headline + 3 value props + stats bar) ══ */}
+        <motion.div variants={stagger} initial="hidden" animate="visible" className="text-center mb-10">
+          <motion.div variants={fadeUp} className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-gold/30 bg-gold/10 mb-4">
+            <Gavel className="w-4 h-4 text-gold" />
+            <span className="text-xs font-bold text-gold tracking-wider">VYRONX PENNY AUCTION</span>
           </motion.div>
-          <div className="text-center">
-            <motion.div variants={fadeUp} className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-gold/30 bg-gold/10 mb-4">
-              <Gavel className="w-4 h-4 text-gold" />
-              <span className="text-xs font-bold text-gold tracking-wider">VYRONX PENNY AUCTION</span>
-            </motion.div>
-            <motion.p variants={fadeUp} className="text-beige-muted max-w-2xl mx-auto">
-              {t('auc.subtitle')}
-            </motion.p>
-          </div>
-        </motion.div>
+          <motion.h1 variants={fadeUp} className="text-4xl sm:text-6xl font-black text-white mb-4 leading-tight">
+            {t('auc.title')} <span className="text-gold">95% OFF</span>
+          </motion.h1>
+          <motion.p variants={fadeUp} className="text-beige-muted max-w-2xl mx-auto mb-8">
+            {t('auc.subtitle')}
+          </motion.p>
 
           {/* Stats bar */}
           <motion.div variants={fadeUp} className="grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-3xl mx-auto">
@@ -280,6 +267,7 @@ export default function AuctionPage() {
               </div>
             ))}
           </motion.div>
+        </motion.div>
 
         {/* ══ WINNERS STRIP (DealDash's social proof wall) ══ */}
         {winners.length > 0 && (
