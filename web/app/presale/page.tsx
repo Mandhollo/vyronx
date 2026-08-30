@@ -66,14 +66,11 @@ const PRESALE_PHASES = [
 ];
 
 const DISTRIBUTION = [
+  { label: 'Project', percent: 40, color: 'bg-amber-500' },
+  { label: 'Tech Infrastructure', percent: 20, color: 'bg-amber-400' },
   { label: 'Liquidity Pool', percent: 15, color: 'bg-yellow-300' },
   { label: 'Buyback', percent: 15, color: 'bg-amber-600' },
-  { label: 'Tech Infrastructure', percent: 20, color: 'bg-amber-400' },
   { label: 'Marketing', percent: 10, color: 'bg-green-500' },
-  { label: 'Collaborators', percent: 10, color: 'bg-amber-50' },
-  { label: 'Infrastructure', percent: 10, color: 'bg-yellow-400' },
-  { label: 'Development', percent: 10, color: 'bg-orange-400' },
-  { label: 'Dev Team 2', percent: 10, color: 'bg-orange-500' },
 ];
 
 export default function PresalePage() {
