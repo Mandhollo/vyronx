@@ -214,6 +214,11 @@ export default function AuctionPage() {
 
   const handleClaim = async (auctionId: bigint) => {
     if (await ensureChain() === false) return;
+    // winner pays the final price (cents) via transferFrom → needs USDT allowance
+    if (!usdtAllow || usdtAllow < parseUnits('1000', 18)) {
+      const ok = await handleApprove('usdt');
+      if (!ok) return;
+    }
     const ok = await doTx('Claim prize', () => writeContractAsync({
       address: AUCTION_ADDRESS as `0x${string}`, abi: AuctionABI,
       functionName: 'claimPrize', args: [auctionId], chainId: bsc.id,

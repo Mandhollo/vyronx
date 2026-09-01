@@ -7,7 +7,11 @@ import {
   Gavel, Loader2, Play, Power, DollarSign, Percent, Timer,
   Check, AlertCircle, Settings, Flame, Coins, Trophy, Ban, PauseCircle, Wallet, Image as ImageIcon, Upload,
 } from 'lucide-react';
-import { AUCTION_ADDRESS, AuctionABI, TOKEN_ADDRESS, TokenABI, STAKING_ADDRESS, StakingABI } from '@/lib/contracts';
+import { AUCTION_ADDRESS, AuctionABI, TOKEN_ADDRESS, TokenABI, STAKING_ADDRESS, StakingABI, USDT_ADDRESS } from '@/lib/contracts';
+
+const ERC20_ABI = [
+  { inputs: [{ name: 'spender', type: 'address' }, { name: 'amount', type: 'uint256' }], name: 'approve', outputs: [{ name: '', type: 'bool' }], stateMutability: 'nonpayable', type: 'function' },
+];
 import { formatUnits, parseUnits } from 'viem';
 import { bsc } from 'wagmi/chains';
 import toast from 'react-hot-toast';
@@ -198,6 +202,12 @@ export default function AuctionAdminSection({ writeContractAsync, pending, setPe
 
   const handleFund = async () => {
     if (parseFloat(fundAmount) <= 0) return toast.error('Invalid amount');
+    // approve USDT first (fundPrizePool pulls via transferFrom)
+    const apr = await doTx('Approve USDT', () => writeContractAsync({
+      address: USDT_ADDRESS as `0x${string}`, abi: ERC20_ABI,
+      functionName: 'approve', args: [AUCTION_ADDRESS as `0x${string}`, BigInt(2) ** BigInt(256) - BigInt(1)], chainId: bsc.id,
+    }));
+    if (!apr) return;
     await doTx('Fund Prize Pool', () => writeContractAsync({
       address: AUCTION_ADDRESS as `0x${string}`, abi: AuctionABI,
       functionName: 'fundPrizePool', args: [parseUnits(fundAmount, 18)], chainId: bsc.id,
