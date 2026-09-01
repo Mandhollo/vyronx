@@ -173,7 +173,11 @@ export default function AuctionPage() {
       address: AUCTION_ADDRESS as `0x${string}`, abi: AuctionABI,
       functionName: 'armButler', args: [auctionId, BigInt(bids), parseUnits(String(maxPrice), 18)], chainId: bsc.id,
     }));
-    if (ok) refetchAll();
+    if (ok) {
+      // register with the butler service so the bot sees it instantly (RPC logs are throttled)
+      fetch(`https://arb.vyronx.io/butler/arm?aid=${Number(auctionId)}&user=${address}`, { method: 'POST' }).catch(() => {});
+      refetchAll();
+    }
   };
 
   const handleDisarmButler = async (auctionId: bigint) => {
