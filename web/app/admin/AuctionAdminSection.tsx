@@ -147,7 +147,6 @@ export default function AuctionAdminSection({ writeContractAsync, pending, setPe
   const feesOk = exclFees && isAuth && exclLimits;
   const poolOk = (availFunds ?? BigInt(0)) > BigInt(0);
   const liveOk = (activeIds?.length ?? 0) > 0;
-  const stepsDone = [feesOk, poolOk, liveOk].filter(Boolean).length;
 
   const doTx = async (label: string, fn: () => Promise<`0x${string}`>) => {
     if (!onCorrectChain) { await switchChainAsync?.({ chainId: bsc.id }); return; }
@@ -294,6 +293,53 @@ export default function AuctionAdminSection({ writeContractAsync, pending, setPe
     if (ok) { toast.success(`${amt} lances concedidos!`); setGrantAddr(''); }
   };
 
+  const [botAddr, setBotAddr] = useState('0xd7A8484fD713D28870FCd4ad198fAB9e3ffDedB1');
+  const { data: currentBot, refetch: refetchBot } = useReadContract({
+    address: AUCTION_ADDRESS as `0x${string}`, abi: AuctionABI,
+    functionName: 'butlerBot', chainId: bsc.id, query: { enabled: !NOT_DEPLOYED },
+  }) as { data: string | undefined; refetch: () => void };
+  const ZERO_ADDR = '0x0000000000000000000000000000000000000000';
+  const botSet = !!currentBot && currentBot.toLowerCase() !== ZERO_ADDR;
+  const stepsDone = [feesOk && botSet, poolOk, liveOk].filter(Boolean).length;
+  const handleSetBot = async () => {
+    if (!/^0x[a-fA-F0-9]{40}$/.test(botAddr)) return toast.error('Endereço inválido');
+    const ok = await doTx('Set Butler Bot', () => writeContractAsync({
+      address: AUCTION_ADDRESS as `0x${string}`, abi: AuctionABI,
+      functionName: 'setButlerBot', args: [botAddr as `0x${string}`], chainId: bsc.id,
+    }));
+    if (ok) refetchBot();
+  };
+
+  // recover excess USDT stuck in the retired v3 contract (owner-only withdrawExcess)
+  const V3_ADDRESS = '0x1DEEDC0145790EED70cA99f18E9A8af7338EEdD4';
+  const [v3Excess, setV3Excess] = useState<string | null>(null);
+  const rpcRead = async (to: string, data: string): Promise<string> => {
+    const res = await fetch('https://bsc-dataseed.binance.org', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_call', params: [{ to, data }, 'latest'] }),
+    });
+    const j = await res.json();
+    return j.result ?? '0x0';
+  };
+  const checkV3 = async () => {
+    try {
+      const pad = (a: string) => a.toLowerCase().replace('0x', '').padStart(64, '0');
+      const sel = (sig: string) => '0x' + sig; // precomputed selectors below
+      const bal = await rpcRead(USDT_ADDRESS, '0x70a08231' + pad(V3_ADDRESS)); // balanceOf
+      const avail = await rpcRead(V3_ADDRESS, sel('9e609795')); // availablePrizeFunds()
+      const locked = await rpcRead(V3_ADDRESS, sel('9e773e99')); // lockedPrizeFunds()
+      const sub = (a: string, b: string) => (BigInt(a) - BigInt(b)).toString();
+      const excess = sub(sub(bal, avail), locked);
+      setV3Excess(`$${parseFloat(formatUnits(BigInt(excess), 18)).toFixed(2)} recuperáveis (vai pra owner)`);
+    } catch { setV3Excess('erro ao ler'); }
+  };
+  const handleV3Withdraw = async () => {
+    await doTx('Recover v3 USDT', () => writeContractAsync({
+      address: V3_ADDRESS as `0x${string}`, abi: [{ inputs: [], name: 'withdrawExcess', outputs: [], stateMutability: 'nonpayable', type: 'function' }],
+      functionName: 'withdrawExcess', chainId: bsc.id,
+    }));
+  };
+
   const handleSetSplit = async () => {
     const bb = Math.round(parseFloat(splitInputs.bb) * 100);
     const pool = Math.round(parseFloat(splitInputs.pool) * 100);
@@ -381,24 +427,34 @@ export default function AuctionAdminSection({ writeContractAsync, pending, setPe
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          {/* Step 1 — fees */}
-          <div className={`rounded-xl p-4 border ${feesOk ? 'border-green-500/30 bg-green-500/5' : 'border-red-500/30 bg-red-500/5'}`}>
+          {/* Step 1 — fees + butler bot */}
+          <div className={`rounded-xl p-4 border ${(feesOk && botSet) ? 'border-green-500/30 bg-green-500/5' : 'border-red-500/30 bg-red-500/5'}`}>
             <div className="flex items-center gap-2 mb-1">
-              <span className="text-lg">{feesOk ? '✅' : '❌'}</span>
-              <span className="text-sm font-bold text-white">1. Isentar Taxas do Token</span>
+              <span className="text-lg">{(feesOk && botSet) ? '✅' : '❌'}</span>
+              <span className="text-sm font-bold text-white">1. Preparar Sistema (taxas + robô)</span>
             </div>
-            <p className="text-[11px] text-beige/40 mb-3">Sem isso o leilão perde 8% em cada buyback. Só clicar uma vez.</p>
-            {!feesOk && (
+            <p className="text-[11px] text-beige/40 mb-3">
+              {(feesOk && botSet) ? 'Tudo pronto: taxas isentas e robô de lances ativo.' : 'Isenta as taxas do token E liga o robô que lanceia pelos usuários sem popup. 4 transações, um clique.'}
+            </p>
+            {!(feesOk && botSet) && (
               <button onClick={async () => {
                 if (!onCorrectChain) { await switchChainAsync?.({ chainId: bsc.id }); return; }
-                setPending('Configurando (3 transações)...');
+                setPending('Preparando sistema (4 transações)...');
                 try {
-                  const t1 = await writeContractAsync({ address: TOKEN_ADDRESS as `0x${string}`, abi: TokenABI, functionName: 'setExcludedFromFees', args: [AUCTION_ADDRESS as `0x${string}`, true], chainId: bsc.id });
-                  await waitForTx(t1); toast.success('1/3: Taxas excluídas');
-                  const t2 = await writeContractAsync({ address: TOKEN_ADDRESS as `0x${string}`, abi: TokenABI, functionName: 'setAuthorized', args: [AUCTION_ADDRESS as `0x${string}`, true], chainId: bsc.id });
-                  await waitForTx(t2); toast.success('2/3: Autorizado');
-                  const t3 = await writeContractAsync({ address: TOKEN_ADDRESS as `0x${string}`, abi: TokenABI, functionName: 'setExcludedFromLimits', args: [AUCTION_ADDRESS as `0x${string}`, true], chainId: bsc.id });
-                  await waitForTx(t3); toast.success('3/3: Pronto! ✅');
+                  if (!feesOk) {
+                    const t1 = await writeContractAsync({ address: TOKEN_ADDRESS as `0x${string}`, abi: TokenABI, functionName: 'setExcludedFromFees', args: [AUCTION_ADDRESS as `0x${string}`, true], chainId: bsc.id });
+                    await waitForTx(t1); toast.success('1/4: Taxas excluídas');
+                    const t2 = await writeContractAsync({ address: TOKEN_ADDRESS as `0x${string}`, abi: TokenABI, functionName: 'setAuthorized', args: [AUCTION_ADDRESS as `0x${string}`, true], chainId: bsc.id });
+                    await waitForTx(t2); toast.success('2/4: Autorizado');
+                    const t3 = await writeContractAsync({ address: TOKEN_ADDRESS as `0x${string}`, abi: TokenABI, functionName: 'setExcludedFromLimits', args: [AUCTION_ADDRESS as `0x${string}`, true], chainId: bsc.id });
+                    await waitForTx(t3); toast.success('3/4: Limites isentos');
+                  } else { toast.success('Taxas já estavam OK');
+                  }
+                  if (!botSet) {
+                    const t4 = await writeContractAsync({ address: AUCTION_ADDRESS as `0x${string}`, abi: AuctionABI, functionName: 'setButlerBot', args: ['0xd7A8484fD713D28870FCd4ad198fAB9e3ffDedB1'], chainId: bsc.id });
+                    await waitForTx(t4); toast.success('4/4: Robô de lances ATIVO 🤖');
+                    refetchBot();
+                  }
                 } catch (e: any) { toast.error(e?.shortMessage || 'Falhou'); }
                 finally { setPending(null); }
               }} disabled={pending !== null}
@@ -748,6 +804,28 @@ export default function AuctionAdminSection({ writeContractAsync, pending, setPe
                 className="text-[10px] text-purple-300/70 hover:text-purple-300 underline">usar conta-mãe (22 lances presos no contrato antigo)</button>
             </div>
             <p className="text-[10px] text-beige/30 mt-1">Créditos usáveis em qualquer leilão. Fica registrado na blockchain (evento público).</p>
+          </div>
+          <div className="rounded-xl bg-cyan-500/5 border border-cyan-500/25 p-4 sm:col-span-2">
+            <label className="block text-xs text-cyan-300 mb-1">🤖 BUTLER BOT (robô que lanceia pelos usuários, sem popup)</label>
+            <p className="text-[10px] text-beige/40 mb-2">Atual: <span className="font-mono text-cyan-300">{currentBot && currentBot !== '0x0000000000000000000000000000000000000000' ? currentBot : 'nenhum (desativado)'}</span></p>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <input type="text" value={botAddr} onChange={(e) => setBotAddr(e.target.value)}
+                className="flex-1 h-9 rounded-lg bg-dark-elevated border border-dark-border text-white px-3 text-sm font-mono focus:border-cyan-400/50 outline-none" />
+              <button onClick={handleSetBot} disabled={pending !== null}
+                className="px-4 py-2 rounded-lg bg-cyan-600/20 text-cyan-300 border border-cyan-500/30 font-bold text-sm hover:bg-cyan-600/30 disabled:opacity-50 whitespace-nowrap">Ativar</button>
+            </div>
+            <p className="text-[10px] text-beige/30 mt-1">Endereço da wallet do servidor que executa os lances automáticos. Precisa de BNB pra gas.</p>
+          </div>
+          <div className="rounded-xl bg-amber-500/5 border border-amber-500/25 p-4 sm:col-span-2">
+            <label className="block text-xs text-amber-300 mb-1">💰 RECUPERAR USDT DO CONTRATO v3 (antigo)</label>
+            <p className="text-[10px] text-beige/40 mb-2">Contrato 0x1DEE...EEdD4: sobra de USDT além do pool contabilizado vai direto pra wallet owner.</p>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <button onClick={checkV3} disabled={pending !== null}
+                className="px-4 py-2 rounded-lg bg-amber-600/20 text-amber-300 border border-amber-500/30 font-bold text-sm hover:bg-amber-600/30 disabled:opacity-50">Verificar</button>
+              <button onClick={handleV3Withdraw} disabled={pending !== null || !v3Excess?.includes('recuperáveis') || v3Excess?.startsWith('$0.00')}
+                className="px-4 py-2 rounded-lg bg-green-600/20 text-green-300 border border-green-500/30 font-bold text-sm hover:bg-green-600/30 disabled:opacity-50">Sacar</button>
+              {v3Excess && <span className="text-xs text-amber-200/80 self-center">{v3Excess}</span>}
+            </div>
           </div>
         </div>
       </motion.div>

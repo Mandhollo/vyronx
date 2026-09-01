@@ -166,6 +166,24 @@ export default function AuctionPage() {
     } finally { setPending(null); }
   };
 
+  const handleArmButler = async (auctionId: bigint, bids: number, maxPrice: number) => {
+    if (!isConnected) return toast.error(t('auc.connectFirst'));
+    if (await ensureChain() === false) return;
+    const ok = await doTx('Arm Butler', () => writeContractAsync({
+      address: AUCTION_ADDRESS as `0x${string}`, abi: AuctionABI,
+      functionName: 'armButler', args: [auctionId, BigInt(bids), parseUnits(String(maxPrice), 18)], chainId: bsc.id,
+    }));
+    if (ok) refetchAll();
+  };
+
+  const handleDisarmButler = async (auctionId: bigint) => {
+    const ok = await doTx('Disarm Butler', () => writeContractAsync({
+      address: AUCTION_ADDRESS as `0x${string}`, abi: AuctionABI,
+      functionName: 'disarmButler', args: [auctionId], chainId: bsc.id,
+    }));
+    if (ok) refetchAll();
+  };
+
   const handleBid = async (auctionId: bigint) => {
     if (!isConnected) return toast.error(t('auc.connectFirst'));
     if (!bidBal || bidBal === BigInt(0)) return toast.error(t('auc.noCredits'));
@@ -337,6 +355,8 @@ export default function AuctionPage() {
                 pending={pending}
                 t={t}
                 onBid={() => handleBid(BigInt(a.id))}
+                onArmButler={(b, mp) => handleArmButler(BigInt(a.id), b, mp)}
+                onDisarmButler={() => handleDisarmButler(BigInt(a.id))}
                 onClaim={() => handleClaim(BigInt(a.id))}
                 onFinalize={() => handleFinalize(BigInt(a.id))}
               />
@@ -501,13 +521,23 @@ function Countdown({ endTime, tick }: { endTime: bigint; tick: number }) {
   );
 }
 
-function AuctionCard({ info, tick, address, isConnected, bidBal, winLimited, paused, pending, t, onBid, onClaim, onFinalize }: {
+function AuctionCard({ info, tick, address, isConnected, bidBal, winLimited, paused, pending, t, onBid, onClaim, onFinalize, onArmButler, onDisarmButler }: {
   info: AuctionInfo; tick: number; address: string | undefined; isConnected: boolean;
   bidBal: bigint | undefined; winLimited: boolean; paused: boolean; pending: string | null;
   t: (k: string) => string;
   onBid: () => void; onClaim: () => void; onFinalize: () => void;
+  onArmButler: (bids: number, maxPrice: number) => void; onDisarmButler: () => void;
 }) {
+  const { data: myButler } = useReadContract({
+    address: AUCTION_ADDRESS as `0x${string}`, abi: AuctionABI,
+    functionName: 'butlers', args: address ? [BigInt(info.id), address] : undefined,
+    chainId: bsc.id, query: { enabled: !!address && info.status === 0, refetchInterval: 5000 },
+  }) as { data: readonly [bigint, bigint, boolean] | undefined };
+  const butlerActive = !!(myButler && myButler[2] && myButler[0] > BigInt(0));
+  const [butlerBids, setButlerBids] = useState(10);
+  const [butlerMax, setButlerMax] = useState('1.00');
   const fmt = (val: bigint, display = 2) => parseFloat(formatUnits(val, 18)).toLocaleString('en-US', { maximumFractionDigits: display });
+  const fmt2 = (val: bigint) => '$' + parseFloat(formatUnits(val, 18)).toFixed(2);
   const expired = Math.floor(Date.now() / 1000) > Number(info.endTime);
   const notStarted = Math.floor(Date.now() / 1000) < Number(info.startTime);
   const isWinner = address && info.winner && info.winner.toLowerCase() === address.toLowerCase() && !info.prizeClaimed;
@@ -609,6 +639,40 @@ function AuctionCard({ info, tick, address, isConnected, bidBal, winLimited, pau
               {pending === 'Bid' ? <Loader2 className="w-5 h-5 animate-spin" /> : <Gavel className="w-5 h-5" />}
               {t('auc.placeBid')}
             </button>
+          )}
+          {info.status === 0 && !expired && !notStarted && (
+            butlerActive ? (
+              <div className="rounded-xl border border-blue-500/40 bg-blue-500/10 px-3 py-2.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-blue-300">🤖 Butler ativo: {Number(myButler![0])} lances restantes</span>
+                  <button onClick={onDisarmButler} disabled={pending !== null}
+                    className="px-2.5 py-1 rounded-lg bg-red-500/15 text-red-300 border border-red-500/30 text-[10px] font-bold hover:bg-red-500/25 disabled:opacity-50">
+                    Parar
+                  </button>
+                </div>
+                <p className="text-[10px] text-blue-200/60 mt-1">Ele lanceia por você até {fmt2(myButler![1])}. Zero popups.</p>
+              </div>
+            ) : (
+              <div className="rounded-xl border border-dark-border bg-dark-elevated/60 px-3 py-2.5 space-y-2">
+                <div className="text-[10px] text-beige/50 font-bold uppercase tracking-wide">🤖 Butler (lance automático)</div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-[9px] text-beige/40">Qtd lances</label>
+                    <input type="number" min="1" value={butlerBids} onChange={(e) => setButlerBids(parseInt(e.target.value) || 1)}
+                      className="w-full h-8 rounded-lg bg-dark border border-dark-border text-white px-2 text-xs" />
+                  </div>
+                  <div>
+                    <label className="text-[9px] text-beige/40">Preço máx $</label>
+                    <input type="text" value={butlerMax} onChange={(e) => setButlerMax(e.target.value)}
+                      className="w-full h-8 rounded-lg bg-dark border border-dark-border text-white px-2 text-xs" />
+                  </div>
+                </div>
+                <button onClick={() => onArmButler(butlerBids, parseFloat(butlerMax) || 1)} disabled={pending !== null || !isConnected || (bidBal ?? BigInt(0)) < BigInt(butlerBids)}
+                  className="w-full py-1.5 rounded-lg bg-blue-600/20 text-blue-300 border border-blue-500/30 text-xs font-bold hover:bg-blue-600/30 disabled:opacity-50">
+                  Armar robô (1 assinatura)
+                </button>
+              </div>
+            )
           )}
           {info.status === 0 && expired && (
             <button onClick={onFinalize} disabled={pending !== null}

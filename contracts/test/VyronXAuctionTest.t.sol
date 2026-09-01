@@ -331,6 +331,116 @@ contract VyronXAuctionTest is Test {
         auction.grantBidCredits(bob, 5, "x");
     }
 
+    // ════════════════════════════════════════════════════
+    // BID BUTLER (lance automático sem popup por lance)
+    // ════════════════════════════════════════════════════
+
+    function _armButler(address u, uint256 id, uint96 bids, uint128 maxPrice) internal {
+        vm.prank(u);
+        auction.armButler(id, bids, maxPrice);
+    }
+
+    function test_Butler_ArmAndExecute() public {
+        uint256 id = _open(PRIZE, 3600);
+        _buy(alice, 10); _buy(bob, 10);
+        _bid(bob, id); // bob leads
+        _armButler(alice, id, 5, 1e18); // 5 bids, até $1.00
+
+        // bot executa em nome de alice
+        vm.prank(owner);
+        auction.setButlerBot(address(this));
+        uint256 aliceBefore = auction.bidBalance(alice);
+        auction.executeButler(id, alice);
+
+        (,,, address last,,,,,,, ) = auction.getAuction(id);
+        assertEq(last, alice, "butler bid placed, alice winning");
+        assertEq(auction.bidBalance(alice), aliceBefore - 1);
+        (uint96 mb1, uint128 mp1, bool act1) = auction.butlers(id, alice);
+        assertEq(mb1, 4, "one bid consumed");
+        assertTrue(act1);
+    }
+
+    function test_Butler_SelfService() public {
+        uint256 id = _open(PRIZE, 3600);
+        _buy(alice, 5); _buy(bob, 5);
+        _bid(bob, id);
+        _armButler(alice, id, 3, 1e18);
+        vm.prank(alice); // própria alice dispara (fallback sem bot)
+        auction.executeButler(id, alice);
+        (,,, address last,,,,,,, ) = auction.getAuction(id);
+        assertEq(last, alice);
+    }
+
+    function test_Butler_StopsWhenWinning() public {
+        uint256 id = _open(PRIZE, 3600);
+        _buy(alice, 5); _buy(bob, 5);
+        _armButler(alice, id, 5, 1e18);
+        vm.prank(owner);
+        auction.setButlerBot(address(this));
+        _bid(bob, id);              // bob leads
+        auction.executeButler(id, alice); // alice takes lead
+        // agora alice JÁ está ganhando → butler não dá outro lance
+        vm.expectRevert("Already winning");
+        auction.executeButler(id, alice);
+    }
+
+    function test_Butler_MaxPrice_Reverts() public {
+        uint256 id = _open(PRIZE, 3600);
+        _buy(alice, 5);
+        _armButler(alice, id, 5, 2e16); // maxPrice $0.02
+        vm.prank(owner);
+        auction.setButlerBot(address(this));
+        _buy(bob, 5);
+        _bid(bob, id); // price $0.02 → butler would make $0.03 > $0.02
+        vm.expectRevert("Max price");
+        auction.executeButler(id, alice);
+    }
+
+    function test_Butler_Disarm() public {
+        uint256 id = _open(PRIZE, 3600);
+        _buy(alice, 5); _buy(bob, 5);
+        _armButler(alice, id, 5, 1e18);
+        vm.prank(alice);
+        auction.disarmButler(id);
+        vm.prank(owner);
+        auction.setButlerBot(address(this));
+        _bid(bob, id);
+        vm.expectRevert("Butler off");
+        auction.executeButler(id, alice);
+        // credits intact
+        assertEq(auction.bidBalance(alice), 5);
+    }
+
+    function test_Butler_OnlyBotOrSelf() public {
+        uint256 id = _open(PRIZE, 3600);
+        _buy(alice, 5); _buy(bob, 5);
+        _armButler(alice, id, 5, 1e18);
+        vm.prank(owner);
+        auction.setButlerBot(address(this));
+        _bid(bob, id);
+        vm.prank(carol);
+        vm.expectRevert("Not allowed");
+        auction.executeButler(id, alice);
+    }
+
+    function test_Butler_ExhaustsAndDeactivates() public {
+        uint256 id = _open(PRIZE, 3600);
+        _buy(alice, 2); _buy(bob, 10);
+        _armButler(alice, id, 2, 1e18);
+        vm.prank(owner);
+        auction.setButlerBot(address(this));
+        _bid(bob, id);
+        auction.executeButler(id, alice); // 1 left
+        _bid(bob, id);
+        auction.executeButler(id, alice); // 0 left → auto off
+        (uint96 mb2, , bool act2) = auction.butlers(id, alice);
+        assertEq(mb2, 0);
+        assertFalse(act2);
+        _bid(bob, id);
+        vm.expectRevert("Butler off");
+        auction.executeButler(id, alice);
+    }
+
     function test_BuyBidPack_VYR_DifferentPrice() public {
         oracle.setPrice(2e18); // 1 VYR = 2 USDT -> 10 VYR = $20 = 22 bids
         vm.prank(alice);

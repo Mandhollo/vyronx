@@ -142,6 +142,19 @@ contract VyronXAuction is ReentrancyGuard {
     /// @notice Winner must claim within 7 days of finalize
     uint256 public constant CLAIM_WINDOW = 7 days;
 
+    // ── Bid Butler (lance automático: usuário arma uma vez, bot disputa sem popup) ──
+    struct Butler {
+        uint96 maxBids;       // quantos lances o robô ainda pode dar
+        uint128 maxPrice;     // preço do lote em que o robô para (18 dec)
+        bool active;
+    }
+    /// @dev auctionId => user => Butler
+    mapping(uint256 => mapping(address => Butler)) public butlers;
+    /// @notice Endereço autorizado a executar os lances em nome dos usuários (relayer do projeto).
+    address public butlerBot;
+    /// @notice Se o próprio usuário pode disparar o próprio butler via arbiter público (fallback).
+    bool public butlerSelfService = true;
+
     bool public paused;
 
     // ── Global stats ──
@@ -165,6 +178,8 @@ contract VyronXAuction is ReentrancyGuard {
     event BidPackBoughtUSDT(address indexed user, uint256 bidCount, uint256 costUsdt);
     event BidPackBoughtVYR(address indexed user, uint256 vyrIn, uint256 bidCount, uint256 vyrBurned);
     event BidCreditsGranted(address indexed to, uint256 amount, string reason);
+    event ButlerArmed(uint256 indexed auctionId, address indexed user, uint96 maxBids, uint128 maxPrice);
+    event ButlerExecuted(uint256 indexed auctionId, address indexed user, uint256 bidsUsed);
     event BuybackSwappedAndBurned(uint256 indexed auctionId, uint256 usdtIn, uint256 vyrOut, uint256 vyrBurned);
     event BuybackFallback(uint256 indexed auctionId, uint256 usdtAmount);
     event PrizePoolFunded(address indexed from, uint256 amount);
@@ -303,6 +318,61 @@ contract VyronXAuction is ReentrancyGuard {
         totalBidsPlaced += 1;
 
         emit BidPlaced(auctionId, msg.sender, a.currentPrice, a.endTime, window);
+    }
+
+    // ════════════════════════════════════════════════════════════
+    // Bid Butler (lance automático)
+    // ════════════════════════════════════════════════════════════
+
+    /// @notice Usuário arma seu robô: ele dá 1 lance sempre que estiver perdendo,
+    ///         até esgotar maxBids ou o preço passar maxPrice. UMA assinatura só.
+    function armButler(uint256 auctionId, uint96 maxBids, uint128 maxPrice) external nonReentrant {
+        require(!paused, "Paused");
+        Auction storage a = auctions[auctionId];
+        require(a.status == Status.Active && a.endTime > 0, "Not active");
+        require(maxBids > 0, "Zero bids");
+        require(bidBalance[msg.sender] >= maxBids, "Not enough credits");
+        butlers[auctionId][msg.sender] = Butler(maxBids, maxPrice, true);
+        emit ButlerArmed(auctionId, msg.sender, maxBids, maxPrice);
+    }
+
+    /// @notice Cancela o robô (lances não usados ficam como créditos normais).
+    function disarmButler(uint256 auctionId) external {
+        butlers[auctionId][msg.sender].active = false;
+    }
+
+    /// @notice O relayer do projeto (butlerBot) executa 1 lance em nome do usuário.
+    ///         Chamado quando o leilão está prestes a acabar e o usuário está perdendo.
+    function executeButler(uint256 auctionId, address user) external {
+        require(msg.sender == butlerBot || (butlerSelfService && msg.sender == user), "Not allowed");
+        Auction storage a = auctions[auctionId];
+        require(a.status == Status.Active && a.endTime > 0, "Not active");
+        require(block.timestamp >= a.startTime, "Not started yet");
+        Butler storage b = butlers[auctionId][user];
+        require(b.active && b.maxBids > 0, "Butler off");
+        require(a.lastBidder != user, "Already winning");
+        require(a.currentPrice + priceIncrement <= b.maxPrice, "Max price");
+        require(bidBalance[user] >= 1, "No credits");
+
+        b.maxBids -= 1;
+        if (b.maxBids == 0) b.active = false;
+        _placeBidInternal(auctionId, user);
+        emit ButlerExecuted(auctionId, user, 1);
+    }
+
+    /// @dev Núcleo do lance reaproveitado por placeBid e executeButler.
+    function _placeBidInternal(uint256 auctionId, address bidder) internal {
+        Auction storage a = auctions[auctionId];
+        bidBalance[bidder] -= 1;
+        a.bidCount += 1;
+        a.currentPrice += priceIncrement;
+        a.lastBidder = bidder;
+        if (auctionBidCount[auctionId][bidder] == 0) auctionBiddersList[auctionId].push(bidder);
+        auctionBidCount[auctionId][bidder] += 1;
+        uint256 window = _timerWindow(a.bidCount * bidPrice, a.prizeUsdt);
+        a.endTime = block.timestamp + window;
+        totalBidsPlaced += 1;
+        emit BidPlaced(auctionId, bidder, a.currentPrice, a.endTime, window);
     }
 
     // ════════════════════════════════════════════════════════════
@@ -670,6 +740,12 @@ contract VyronXAuction is ReentrancyGuard {
     function setPaused(bool _paused) external onlyOwner {
         paused = _paused;
         emit ConfigUpdated("paused");
+    }
+
+    /// @notice Set/replace the butler relayer bot address.
+    function setButlerBot(address _bot) external onlyOwner {
+        butlerBot = _bot;
+        emit ConfigUpdated("butlerBot");
     }
 
     /// @notice Withdraw USDT that is neither prize pool nor locked prizes (rounding dust).
