@@ -34,6 +34,8 @@ SEL_ACTIVE = sel("getActiveAuctionIds()")
 SEL_GETAUC = sel("getAuction(uint256)")
 SEL_BUTLER = sel("butlers(uint256,address)")
 SEL_EXEC = sel("executeButler(uint256,address)")
+SEL_FINALIZE = sel("finalize(uint256)")
+SEL_PRICEINC = sel("priceIncrement()")
 
 def word(d, i): return d[2 + 64 * i: 2 + 64 * (i + 1)]
 def addr_in_word(d, i): return "0x" + word(d, i)[24:]
@@ -77,6 +79,11 @@ def main():
             ids_raw = call(AUCTION, SEL_ACTIVE)
             n = h2i(word(ids_raw, 1)) if ids_raw and len(ids_raw) > 130 else 0
             now = int(time.time())
+
+            # per-auction cached state (priceIncrement etc. read once)
+            if not hasattr(main, "_price_inc"):
+                main._price_inc = h2i(call(AUCTION, SEL_PRICEINC))
+
             for i in range(n):
                 aid = h2i(word(ids_raw, 2 + i))
                 au = call(AUCTION, SEL_GETAUC + pad32hex(aid))
@@ -84,7 +91,15 @@ def main():
                 last_bidder = addr_in_word(au, 3).lower()
                 end_time = h2i(word(au, 6))
                 left = end_time - now
-                if left > TRIGGER or left < -3: continue
+
+                # ── AUTO-FINALIZE: expired auction (>10s over) gets closed by the bot ──
+                if left < -10:
+                    print(f"AUTO-FINALIZE: aid={aid} expired {-left}s ago", flush=True)
+                    send_tx(AUCTION, SEL_FINALIZE + pad32hex(aid))
+                    time.sleep(1.5)
+                    continue
+
+                if left > TRIGGER: continue
                 for (a2, user) in list(armed):
                     if a2 != aid: continue
                     if user == last_bidder: continue
@@ -95,6 +110,10 @@ def main():
                     active = h2i(word(st, 2)) == 1
                     if not active or max_bids == 0:
                         continue  # keep registered; maybe re-armed later
+                    # max-price pre-check to avoid a reverting tx
+                    cur_price = h2i(word(au, 1))
+                    if cur_price + main._price_inc > max_price:
+                        continue
                     print(f"FIRE: aid={aid} user={user} left={left}s bids={max_bids}", flush=True)
                     send_tx(AUCTION, SEL_EXEC + pad32hex(aid) + pad32hex(user))
                     time.sleep(1.5)
