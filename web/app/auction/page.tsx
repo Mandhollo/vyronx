@@ -69,22 +69,22 @@ export default function AuctionPage() {
 
   const { data: activeIds, refetch: refetchActive } = useReadContract({
     address: AUCTION_ADDRESS as `0x${string}`, abi: AuctionABI,
-    functionName: 'getActiveAuctionIds', chainId: bsc.id, query: { enabled: !PREVIEW_MODE },
+    functionName: 'getActiveAuctionIds', chainId: bsc.id, query: { enabled: !PREVIEW_MODE, refetchInterval: 5000 },
   }) as { data: readonly bigint[] | undefined; refetch: () => void };
 
   const { data: stats } = useReadContract({
     address: AUCTION_ADDRESS as `0x${string}`, abi: AuctionABI,
-    functionName: 'getRecentWinners', args: [BigInt(12)], chainId: bsc.id, query: { enabled: !PREVIEW_MODE },
+    functionName: 'getRecentWinners', args: [BigInt(12)], chainId: bsc.id, query: { enabled: !PREVIEW_MODE, refetchInterval: 10000 },
   }) as { data: readonly [readonly bigint[], readonly `0x${string}`[], readonly bigint[], readonly bigint[]] | undefined; refetch: () => void };
 
   const { data: totalBurned } = useReadContract({
     address: AUCTION_ADDRESS as `0x${string}`, abi: AuctionABI,
-    functionName: 'totalVyrBurned', chainId: bsc.id, query: { enabled: !PREVIEW_MODE },
+    functionName: 'totalVyrBurned', chainId: bsc.id, query: { enabled: !PREVIEW_MODE, refetchInterval: 10000 },
   }) as { data: bigint | undefined };
 
   const { data: totalBids } = useReadContract({
     address: AUCTION_ADDRESS as `0x${string}`, abi: AuctionABI,
-    functionName: 'totalBidsPlaced', chainId: bsc.id, query: { enabled: !PREVIEW_MODE },
+    functionName: 'totalBidsPlaced', chainId: bsc.id, query: { enabled: !PREVIEW_MODE, refetchInterval: 10000 },
   }) as { data: bigint | undefined };
 
   const { data: bidBal } = useReadContract({
@@ -466,7 +466,7 @@ function useAuction(preview: boolean, id: bigint | undefined): AuctionInfo | nul
   const { data, refetch } = useReadContract({
     address: AUCTION_ADDRESS as `0x${string}`, abi: AuctionABI,
     functionName: 'getAuction', args: id !== undefined ? [id] : undefined,
-    chainId: bsc.id, query: { enabled: !preview && id !== undefined },
+    chainId: bsc.id, query: { enabled: !preview && id !== undefined, refetchInterval: 3000 },
   }) as { data: AuctionTuple | undefined; refetch: () => void };
 
   const { data: meta } = useReadContract({

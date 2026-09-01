@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useId } from 'react';
+import { useState, useId, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { useAccount, useReadContract, useSwitchChain } from 'wagmi';
 import {
@@ -189,8 +189,8 @@ export default function AuctionAdminSection({ writeContractAsync, pending, setPe
     refetchActive();
   };
 
-  // track next auction id for meta-setting right after open
-  const nextIdRef = { current: 0 };
+  // track next auction id for meta-setting right after open (stable ref, survives async)
+  const nextIdRef = useRef(0);
   const { data: nextId_ } = useReadContract({
     address: AUCTION_ADDRESS as `0x${string}`, abi: AuctionABI,
     functionName: 'nextAuctionId', chainId: bsc.id, query: { enabled: !NOT_DEPLOYED },
