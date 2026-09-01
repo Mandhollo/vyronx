@@ -165,10 +165,15 @@ export default function AuctionAdminSection({ writeContractAsync, pending, setPe
   const handleOpen = async () => {
     if (parseFloat(newPrize) <= 0) return toast.error('Invalid prize');
     // datetime-local → unix timestamp (interpreted as local time)
-    let startAt = Math.floor(Date.now() / 1000);
+    // empty field → NOW + 2min buffer: tx must be mined BEFORE startAt or it reverts
+    // ("Start in the past"); 120s safely covers wallet-sign + block-time latency.
+    let startAt = Math.floor(Date.now() / 1000) + 120;
     if (newStartAt) {
       startAt = Math.floor(new Date(newStartAt).getTime() / 1000);
       if (isNaN(startAt)) return toast.error('Invalid date/time');
+      if (startAt < Math.floor(Date.now() / 1000) + 60) {
+        return toast.error('Escolha um horário pelo menos 1 minuto no futuro');
+      }
     }
     const opened = await doTx('Open Auction', () => writeContractAsync({
       address: AUCTION_ADDRESS as `0x${string}`, abi: AuctionABI,
