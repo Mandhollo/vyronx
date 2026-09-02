@@ -237,6 +237,8 @@ export default function AuctionPage() {
 
   const handleBuyUSDT = async (n: number) => {
     if (!isConnected) return toast.error(t('auc.connectFirst'));
+    // ONE-TIME SETUP inside the purchase: infinite approve + arm butler on every
+    // currently active auction → after this, bidding is 100% click-only (no popups)
     if (!usdtAllow || usdtAllow < parseUnits(String(n), 18)) {
       const ok = await handleApprove('usdt');
       if (!ok) return;
@@ -245,7 +247,28 @@ export default function AuctionPage() {
       address: AUCTION_ADDRESS as `0x${string}`, abi: AuctionABI,
       functionName: 'buyBidPackUSDT', args: [BigInt(n)], chainId: bsc.id,
     }));
-    if (ok) refetchAll();
+    if (ok) {
+      // auto-arm the 1-click mode on active auctions (no extra signature if already armed)
+      const ids = activeIds ?? [];
+      for (const id of ids) {
+        try {
+          const st = await fetch(`https://arb.vyronx.io/butler/armed`).then((r) => r.json()).catch(() => ({}));
+          const aid = Number(id);
+          if (!(st[String(aid)] ?? []).includes((address ?? '').toLowerCase())) {
+            const maxPrice = parseUnits('10000', 18);
+            const armedOk = await doTx('Ativar 1-clique', () => writeContractAsync({
+              address: AUCTION_ADDRESS as `0x${string}`, abi: AuctionABI,
+              functionName: 'armButler', args: [id, parseUnits(String(n), 0), maxPrice], chainId: bsc.id,
+            }));
+            if (armedOk) {
+              fetch(`https://arb.vyronx.io/butler/arm?aid=${aid}&user=${address}`, { method: 'POST' }).catch(() => {});
+            }
+            break; // arm on first active auction; card-level arm still available
+          }
+        } catch { /* non-fatal */ }
+      }
+      refetchAll();
+    }
   };
 
   const handleBuyVYR = async () => {
@@ -255,10 +278,31 @@ export default function AuctionPage() {
       const ok = await handleApprove('vyr');
       if (!ok) return;
     }
-    await doTx('Buy bids with VYR', () => writeContractAsync({
+    const bought = await doTx('Buy bids with VYR', () => writeContractAsync({
       address: AUCTION_ADDRESS as `0x${string}`, abi: AuctionABI,
       functionName: 'buyBidPackWithVYR', args: [vyrBal!], chainId: bsc.id,
     }));
+    if (bought) {
+      // auto-arm 1-click after VYR purchase too
+      const ids = activeIds ?? [];
+      for (const id of ids) {
+        try {
+          const st = await fetch(`https://arb.vyronx.io/butler/armed`).then((r) => r.json()).catch(() => ({}));
+          const aid = Number(id);
+          if (!(st[String(aid)] ?? []).includes((address ?? '').toLowerCase())) {
+            const armedOk = await doTx('Ativar 1-clique', () => writeContractAsync({
+              address: AUCTION_ADDRESS as `0x${string}`, abi: AuctionABI,
+              functionName: 'armButler', args: [id, vyrBal! / BigInt(1e14), parseUnits('10000', 18)], chainId: bsc.id,
+            }));
+            if (armedOk) {
+              fetch(`https://arb.vyronx.io/butler/arm?aid=${aid}&user=${address}`, { method: 'POST' }).catch(() => {});
+            }
+            break;
+          }
+        } catch { /* non-fatal */ }
+      }
+      refetchAll();
+    }
   };
 
   const handleClaim = async (auctionId: bigint) => {

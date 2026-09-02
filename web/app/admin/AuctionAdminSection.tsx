@@ -913,13 +913,40 @@ function ImageUploader({ value, onChange }: { value: string; onChange: (url: str
   const [uploading, setUploading] = useState(false);
   const inputId = useId();
 
+  // client-side compression: any image → max 1600px JPEG (~85% quality)
+  // solves >5MB files and unsupported formats (HEIC screenshots etc.)
+  const compressImage = async (file: File): Promise<Blob> => {
+    try {
+      const img = await new Promise<HTMLImageElement>((res, rej) => {
+        const el = new window.Image();
+        el.onload = () => res(el);
+        el.onerror = rej;
+        el.src = URL.createObjectURL(file);
+      });
+      const MAX = 1600;
+      const scale = Math.min(1, MAX / Math.max(img.width, img.height));
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.round(img.width * scale);
+      canvas.height = Math.round(img.height * scale);
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return file;
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      const blob: Blob | null = await new Promise((res) => canvas.toBlob(res, 'image/jpeg', 0.85));
+      return blob ?? file;
+    } catch {
+      return file; // fallback: send original (server validates)
+    }
+  };
+
   const handleFile = async (file: File | undefined) => {
     if (!file) return;
-    if (file.size > 5 * 1024 * 1024) { toast.error('Max 5MB'); return; }
     setUploading(true);
-    const tid = toast.loading('Enviando imagem...');
+    const tid = toast.loading('Otimizando e enviando imagem...');
     try {
-      const url = await uploadImage(file);
+      const blob = await compressImage(file);
+      const compressed = blob === file ? file : new File([blob], 'image.jpg', { type: 'image/jpeg' });
+      if (compressed.size > 5 * 1024 * 1024) { toast.error('Imagem muito grande (max 5MB)', { id: tid }); return; }
+      const url = await uploadImage(compressed);
       onChange(url);
       toast.success('Imagem enviada!', { id: tid });
     } catch (e) {
