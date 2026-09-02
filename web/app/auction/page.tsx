@@ -204,6 +204,9 @@ export default function AuctionPage() {
       if (!ok) return;
       toast.success('Modo 1-clique ATIVO: os próximos lances entram sem assinar ⚡', { duration: 3000 });
       fetch(`https://arb.vyronx.io/butler/arm?aid=${Number(auctionId)}&user=${address}`, { method: 'POST' }).catch(() => {});
+      // the arm tx itself is the activation; the user's FIRST bid still needs
+      // a moment for the registry write → give the bot a beat, then queue it
+      await new Promise((r) => setTimeout(r, 2000));
     }
 
     // ── INSTANT PATH: server executes the bid (no wallet popup) ──
@@ -211,8 +214,9 @@ export default function AuctionPage() {
       const r = await fetch(`https://arb.vyronx.io/butler/click?aid=${Number(auctionId)}&user=${address}`, { method: 'POST' });
       const j = await r.json();
       if (j.ok) {
-        toast.success('Lance ⚡ (~1s)', { duration: 1500 });
+        toast.success('Lance enviado ⚡ confirme no card (~2s)', { duration: 2000 });
         setTimeout(refetchAll, 1500);
+        setTimeout(refetchAll, 3500);
         return;
       }
     } catch { /* fall through to manual path */ }

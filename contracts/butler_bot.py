@@ -37,6 +37,7 @@ SEL_BUTLER = sel("butlers(uint256,address)")
 SEL_EXEC = sel("executeButler(uint256,address)")
 SEL_FINALIZE = sel("finalize(uint256)")
 SEL_PRICEINC = sel("priceIncrement()")
+SEL_BIDBAL = sel("bidBalance(address)")
 
 def word(d, i): return d[2 + 64 * i: 2 + 64 * (i + 1)]
 def addr_in_word(d, i): return "0x" + word(d, i)[24:]
@@ -72,7 +73,7 @@ def send_tx(to, data):
         return None
 
 def main():
-    print(f"butler-bot v6 up | auction={AUCTION} | bot={acct.address} | registry={ARMED_FILE}", flush=True)
+    print(f"butler-bot v7 up | auction={AUCTION} | bot={acct.address} | registry={ARMED_FILE}", flush=True)
     beat = 0
     while True:
         try:
@@ -91,15 +92,31 @@ def main():
             for c in live_clicks:
                 aid_c, user_c = c["aid"], c["user"]
                 au = call(AUCTION, SEL_GETAUC + pad32hex(aid_c))
-                if not au or len(au) < 300: continue
+                # BUGFIX: auction must be ACTIVE (status word 10 == 0) — a queued click
+                # on an expired/finalized auction must be dropped, not "processed"
+                status_c = h2i(word(au, 10)) if au and len(au) >= 700 else -1
+                if status_c != 0:
+                    clicks.remove(c)
+                    continue
                 st = call(AUCTION, SEL_BUTLER + pad32hex(aid_c) + pad32hex(user_c))
-                if not st or len(st) < 200: continue
+                if not st or len(st) < 200:
+                    clicks.remove(c)  # butler not armed (user skipped activation)
+                    continue
                 max_bids = h2i(word(st, 0))
+                max_price = h2i(word(st, 1))
                 active = h2i(word(st, 2)) == 1
-                if not active or max_bids == 0: continue
+                bal = h2i(call(AUCTION, SEL_BIDBAL + pad32hex(user_c)))
+                if not active or max_bids == 0 or bal == 0:
+                    clicks.remove(c)  # exhausted → drop silently
+                    continue
                 last_bidder = addr_in_word(au, 3).lower()
                 if last_bidder == user_c:
                     clicks.remove(c)  # already winning → nothing to do
+                    continue
+                # max-price pre-check (mirror of contract rule)
+                cur_price = h2i(word(au, 1))
+                if cur_price + (main._price_inc if hasattr(main, "_price_inc") else 10**16) > max_price:
+                    clicks.remove(c)
                     continue
                 print(f"CLICK-BID: aid={aid_c} user={user_c}", flush=True)
                 send_tx(AUCTION, SEL_EXEC + pad32hex(aid_c) + pad32hex(user_c))
