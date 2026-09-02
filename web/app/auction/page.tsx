@@ -188,11 +188,23 @@ export default function AuctionPage() {
     if (ok) refetchAll();
   };
 
-  const handleBid = async (auctionId: bigint) => {
+  const handleBid = async (auctionId: bigint, instant = false) => {
     if (!isConnected) return toast.error(t('auc.connectFirst'));
     if (!bidBal || bidBal === BigInt(0)) return toast.error(t('auc.noCredits'));
     if (winLimit && winsWeek && winLimit > BigInt(0) && winsWeek >= winLimit) return toast.error(t('auc.winLimit'));
     if (await ensureChain() === false) return;
+    // ── INSTANT PATH: butler armed → server bids for the user (no wallet popup) ──
+    if (instant) {
+      try {
+        const r = await fetch(`https://arb.vyronx.io/butler/click?aid=${Number(auctionId)}&user=${address}`, { method: 'POST' });
+        const j = await r.json();
+        if (j.ok) {
+          toast.success('Lance ⚡ (~1s)', { duration: 1500 });
+          setTimeout(refetchAll, 1500);
+          return;
+        }
+      } catch { /* fall through to manual path */ }
+    }
     const ok = await doTx('Bid', () => writeContractAsync({
       address: AUCTION_ADDRESS as `0x${string}`, abi: AuctionABI,
       functionName: 'placeBid', args: [auctionId], chainId: bsc.id,
@@ -358,7 +370,7 @@ export default function AuctionPage() {
                 paused={!!paused_}
                 pending={pending}
                 t={t}
-                onBid={() => handleBid(BigInt(a.id))}
+                onBid={(instant) => handleBid(BigInt(a.id), instant)}
                 onArmButler={(b, mp) => handleArmButler(BigInt(a.id), b, mp)}
                 onDisarmButler={() => handleDisarmButler(BigInt(a.id))}
                 onClaim={() => handleClaim(BigInt(a.id))}
@@ -529,7 +541,7 @@ function AuctionCard({ info, tick, address, isConnected, bidBal, winLimited, pau
   info: AuctionInfo; tick: number; address: string | undefined; isConnected: boolean;
   bidBal: bigint | undefined; winLimited: boolean; paused: boolean; pending: string | null;
   t: (k: string) => string;
-  onBid: () => void; onClaim: () => void; onFinalize: () => void;
+  onBid: (instant?: boolean) => void; onClaim: () => void; onFinalize: () => void;
   onArmButler: (bids: number, maxPrice: number) => void; onDisarmButler: () => void;
 }) {
   const { data: myButler } = useReadContract({
@@ -638,10 +650,12 @@ function AuctionCard({ info, tick, address, isConnected, bidBal, winLimited, pau
             </div>
           )}
           {info.status === 0 && !expired && !notStarted && (
-            <button onClick={onBid} disabled={pending !== null || !isConnected || paused || (bidBal === BigInt(0)) || winLimited}
-              className="w-full py-3.5 rounded-xl bg-gradient-to-r from-gold-light to-gold-dark text-dark font-black text-base hover:opacity-90 active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2 transition-transform">
+            <button onClick={() => onBid(butlerActive)} disabled={pending !== null || !isConnected || paused || (bidBal === BigInt(0)) || winLimited}
+              className={`w-full py-3.5 rounded-xl font-black text-base hover:opacity-90 active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2 transition-transform ${
+                butlerActive ? 'bg-gradient-to-r from-blue-500 to-blue-700 text-white' : 'bg-gradient-to-r from-gold-light to-gold-dark text-dark'
+              }`}>
               {pending === 'Bid' ? <Loader2 className="w-5 h-5 animate-spin" /> : <Gavel className="w-5 h-5" />}
-              {t('auc.placeBid')}
+              {butlerActive ? `${t('auc.placeBid')} ⚡` : t('auc.placeBid')}
             </button>
           )}
           {info.status === 0 && !expired && !notStarted && (

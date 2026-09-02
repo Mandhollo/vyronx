@@ -7,6 +7,7 @@ import json, time, os, urllib.request
 RPC = os.environ.get("BSC_RPC", "https://bsc-dataseed.binance.org")
 AUCTION = os.environ.get("AUCTION", "0xd238121ca8c40F87E75f05e6E9c75C87704A2D94")
 ARMED_FILE = os.environ.get("ARMED_FILE", "/opt/vyronx-butler/armed.json")
+CLICKS_FILE = os.environ.get("CLICKS_FILE", "/opt/vyronx-butler/clicks.json")
 BOT_KEY = os.environ["BOT_KEY"]
 POLL = int(os.environ.get("POLL", "3"))
 TRIGGER = int(os.environ.get("TRIGGER", "5"))
@@ -71,7 +72,7 @@ def send_tx(to, data):
         return None
 
 def main():
-    print(f"butler-bot v4 up | auction={AUCTION} | bot={acct.address} | registry={ARMED_FILE}", flush=True)
+    print(f"butler-bot v6 up | auction={AUCTION} | bot={acct.address} | registry={ARMED_FILE}", flush=True)
     beat = 0
     while True:
         try:
@@ -79,6 +80,37 @@ def main():
             ids_raw = call(AUCTION, SEL_ACTIVE)
             n = h2i(word(ids_raw, 1)) if ids_raw and len(ids_raw) > 130 else 0
             now = int(time.time())
+
+            # ── INSTANT CLICK-TO-BID QUEUE: process user clicks (no wallet popup) ──
+            try:
+                with open(CLICKS_FILE) as f:
+                    clicks = json.load(f)
+            except FileNotFoundError:
+                clicks = []
+            live_clicks = [c for c in clicks if now - c.get("ts", 0) < 30]
+            for c in live_clicks:
+                aid_c, user_c = c["aid"], c["user"]
+                au = call(AUCTION, SEL_GETAUC + pad32hex(aid_c))
+                if not au or len(au) < 300: continue
+                st = call(AUCTION, SEL_BUTLER + pad32hex(aid_c) + pad32hex(user_c))
+                if not st or len(st) < 200: continue
+                max_bids = h2i(word(st, 0))
+                active = h2i(word(st, 2)) == 1
+                if not active or max_bids == 0: continue
+                last_bidder = addr_in_word(au, 3).lower()
+                if last_bidder == user_c:
+                    clicks.remove(c)  # already winning → nothing to do
+                    continue
+                print(f"CLICK-BID: aid={aid_c} user={user_c}", flush=True)
+                send_tx(AUCTION, SEL_EXEC + pad32hex(aid_c) + pad32hex(user_c))
+                clicks.remove(c)
+                time.sleep(1.0)
+            # persist processed queue
+            try:
+                with open(CLICKS_FILE, "w") as f:
+                    json.dump([c for c in clicks if now - c.get("ts", 0) < 30], f)
+            except Exception:
+                pass
 
             # per-auction cached state (priceIncrement etc. read once)
             if not hasattr(main, "_price_inc"):
