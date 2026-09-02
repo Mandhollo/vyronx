@@ -6,7 +6,7 @@ from pathlib import Path
 app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://vyronx.io", "http://localhost:3000"],
+    allow_origins=["https://vyronx.io", "https://www.vyronx.io", "http://localhost:3000"],
     allow_methods=["*"],
     allow_headers=["*"],
 )

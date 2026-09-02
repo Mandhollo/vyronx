@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useId, useRef } from 'react';
+import { useState, useId, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useAccount, useReadContract, useSwitchChain } from 'wagmi';
 import {
@@ -101,6 +101,15 @@ export default function AuctionAdminSection({ writeContractAsync, pending, setPe
       functionName: 'setFeeWallets', args: [ws], chainId: bsc.id,
     }));
   };
+
+  // auto-fill the 4 inputs with current on-chain values once (leigo: edit only what changes)
+  const seededFeeWallets = useRef(false);
+  useEffect(() => {
+    if (!seededFeeWallets.current && aucW1 && aucW2 && aucW3 && aucW4) {
+      setAucFeeWallets([aucW1, aucW2, aucW3, aucW4]);
+      seededFeeWallets.current = true;
+    }
+  }, [aucW1, aucW2, aucW3, aucW4]);
 
   const { data: bidPrice } = cfg('bidPrice');
   const { data: inc } = cfg('priceIncrement');
