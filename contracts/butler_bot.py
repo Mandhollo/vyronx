@@ -92,15 +92,15 @@ def main():
             for c in live_clicks:
                 aid_c, user_c = c["aid"], c["user"]
                 au = call(AUCTION, SEL_GETAUC + pad32hex(aid_c))
-                # BUGFIX: auction must be ACTIVE (status word 10 == 0) — a queued click
-                # on an expired/finalized auction must be dropped, not "processed"
-                status_c = h2i(word(au, 10)) if au and len(au) >= 700 else -1
+                # auction must be ACTIVE (status word 10 == 0)
+                status_c = h2i(word(au, 10)) if au and len(au) >= 660 else -1
                 if status_c != 0:
                     clicks.remove(c)
                     continue
+                # butlers() returns exactly 3 words (96 bytes = 194 hex chars incl. 0x)
                 st = call(AUCTION, SEL_BUTLER + pad32hex(aid_c) + pad32hex(user_c))
-                if not st or len(st) < 200:
-                    clicks.remove(c)  # butler not armed (user skipped activation)
+                if not st or len(st) < 100:
+                    clicks.remove(c)  # butler not armed
                     continue
                 max_bids = h2i(word(st, 0))
                 max_price = h2i(word(st, 1))
@@ -122,7 +122,7 @@ def main():
                 send_tx(AUCTION, SEL_EXEC + pad32hex(aid_c) + pad32hex(user_c))
                 clicks.remove(c)
                 time.sleep(1.0)
-            # persist processed queue
+            # persist queue (keep unprocessed, drop stale >30s)
             try:
                 with open(CLICKS_FILE, "w") as f:
                     json.dump([c for c in clicks if now - c.get("ts", 0) < 30], f)

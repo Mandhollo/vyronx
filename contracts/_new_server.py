@@ -73,7 +73,8 @@ async def butler_click(aid: int, user: str, request: Request):
             q = []
         now = time.time()
         q = [c for c in q if now - c.get("ts", 0) < 30]
-        if not any(c["aid"] == aid and c["user"] == user for c in q):
+        # dedupe window: 1.5s (rapid-fire clicks allowed, spam-bot bursts limited by rate-limit)
+        if not any(c["aid"] == aid and c["user"] == user and now - c.get("ts", 0) < 1.5 for c in q):
             q.append({"aid": aid, "user": user, "ts": now})
             CLICKS_FILE.write_text(json.dumps(q))
     return {"ok": True, "queued": len(q)}
@@ -84,6 +85,11 @@ async def butler_arm(aid: int, user: str, request: Request):
     if _rate_limited(f"arm:{ip}"):
         raise HTTPException(429, "Too many requests")
     user = user.lower()
+    with LOCK:
+        d = _load()
+        d[str(aid)] = sorted(set(d.get(str(aid), [])) | {user})
+        _save(d)
+    return {"ok": True, "registered": d[str(aid)]}
 
 @app.get("/butler/clicks")
 async def butler_clicks():
