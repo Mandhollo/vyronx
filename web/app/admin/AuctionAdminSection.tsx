@@ -105,8 +105,9 @@ export default function AuctionAdminSection({ writeContractAsync, pending, setPe
   // auto-fill the 4 inputs with current on-chain values once (leigo: edit only what changes)
   const seededFeeWallets = useRef(false);
   useEffect(() => {
-    if (!seededFeeWallets.current && aucW1 && aucW2 && aucW3 && aucW4) {
-      setAucFeeWallets([aucW1, aucW2, aucW3, aucW4]);
+    const ws = [aucW1, aucW2, aucW3, aucW4].map((r) => (r as any)?.data ?? r) as (string | undefined)[];
+    if (!seededFeeWallets.current && ws.every(Boolean)) {
+      setAucFeeWallets(ws as [string, string, string, string]);
       seededFeeWallets.current = true;
     }
   }, [aucW1, aucW2, aucW3, aucW4]);
