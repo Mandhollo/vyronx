@@ -289,6 +289,19 @@ export default function AuctionPage() {
       }))
     : [];
 
+  // ── MY PRIZES: recent auctions won by the connected wallet, not yet claimed ──
+  const myWins = address
+    ? winners.filter((w) => w.winner.toLowerCase() === address.toLowerCase())
+    : [];
+  const w0 = useAuction(PREVIEW_MODE, myWins[0] ? BigInt(myWins[0].id) : undefined);
+  const w1 = useAuction(PREVIEW_MODE, myWins[1] ? BigInt(myWins[1].id) : undefined);
+  const w2 = useAuction(PREVIEW_MODE, myWins[2] ? BigInt(myWins[2].id) : undefined);
+  const w3 = useAuction(PREVIEW_MODE, myWins[3] ? BigInt(myWins[3].id) : undefined);
+  const w4 = useAuction(PREVIEW_MODE, myWins[4] ? BigInt(myWins[4].id) : undefined);
+  const w5 = useAuction(PREVIEW_MODE, myWins[5] ? BigInt(myWins[5].id) : undefined);
+  const myWinInfos = [w0, w1, w2, w3, w4, w5].filter(Boolean) as AuctionInfo[];
+  const claimableWins = myWinInfos.filter((info) => !info.prizeClaimed && info.status === 1);
+
   return (
     <main className="relative min-h-screen bg-dark overflow-x-hidden">
       <ParticleField count={10} />
@@ -335,6 +348,38 @@ export default function AuctionPage() {
             ))}
           </motion.div>
         </motion.div>
+
+        {/* ══ MY PRIZES (resgate de prêmios ganhos) ══ */}
+        {isConnected && claimableWins.length > 0 && (
+          <motion.div variants={fadeUp} initial="hidden" animate="visible" className="mb-10 rounded-2xl border border-green-500/40 bg-gradient-to-r from-green-500/10 via-dark-card to-green-500/10 p-5">
+            <div className="flex items-center gap-2 mb-4">
+              <Trophy className="w-5 h-5 text-green-400" />
+              <span className="text-base font-bold text-green-300 tracking-wide uppercase">Seus Prêmios a Resgatar 🏆</span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {claimableWins.map((info) => {
+                const fmt = (val: bigint) => parseFloat(formatUnits(val, 18)).toLocaleString('en-US', { maximumFractionDigits: 2 });
+                const price = parseFloat(formatUnits(info.price, 18)).toFixed(2);
+                return (
+                  <div key={info.id} className="rounded-xl border border-green-500/30 bg-dark-elevated p-4 flex flex-col">
+                    <div className="flex items-start justify-between mb-2">
+                      <span className="text-xs text-beige/50">Leilão #{info.id}</span>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-green-500/15 text-green-300 font-bold border border-green-500/30">GANHOU</span>
+                    </div>
+                    <div className="text-2xl font-black text-gold mb-1">${fmt(info.prize)}</div>
+                    <div className="text-xs text-beige/50 mb-3">Você paga só ${price} para receber</div>
+                    <button onClick={() => handleClaim(BigInt(info.id))} disabled={pending !== null}
+                      className="mt-auto w-full py-3 rounded-xl bg-gradient-to-r from-green-500 to-green-700 text-white font-black hover:opacity-90 disabled:opacity-50 flex items-center justify-center gap-2">
+                      {pending === 'Claim prize' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trophy className="w-4 h-4" />}
+                      RESGATAR PRÊMIO
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+            <p className="text-[10px] text-beige/30 mt-3">Prazo de 7 dias após o fim do leilão. Depois disso o prêmio retorna ao pool.</p>
+          </motion.div>
+        )}
 
         {/* ══ WINNERS STRIP (DealDash's social proof wall) ══ */}
         {winners.length > 0 && (
